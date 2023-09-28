@@ -8,14 +8,14 @@ import "../src/SECP256k1.sol";
 contract FutureBridgeTest is Test {
 	// secp256k1 group order
 	uint256 public constant ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-	bytes32 public constant UPDATE_KEY_OPERATION_HASH = keccak256(bytes("UPDATE_KEY_OPERATION_HASH"));
+	uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 1;
 	uint256 _privateKey = uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
 
 	FutureBridge public so;
 
 	function setUp() public {
 		(uint8 parity, uint256 px) = getPubkey(_privateKey);
-		so = new FutureBridge(parity, px);
+		so = new FutureBridge(parity - 25, px);
 	}
 
 	function challenge(
@@ -178,11 +178,11 @@ contract FutureBridgeTest is Test {
 
 			// update pubkey
 			(uint8 newParity, uint256 newPx) = getPubkey(nextPrivateKey);
-			bytes32 messageHash = keccak256(abi.encodePacked(UPDATE_KEY_OPERATION_HASH, newParity, newPx));
+			bytes32 messageHash = keccak256(abi.encodePacked(UPDATE_KEY_OPERATION_PREFIX, newParity - 25, newPx));
 			(rAddress, s) = schnorrSign(parity, px, randomK(privateKey), messageHash, privateKey);
 
 			start = gasleft();
-			so.updatePubkey(newParity, rAddress, newPx, s);
+			so.updatePubkey(newParity - 25, rAddress, newPx, s);
 			gasUsedUpdateAcc += start - gasleft();
 
 			assertEq(so.parity(), newParity);

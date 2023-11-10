@@ -5,7 +5,7 @@ contract FutureBridge {
 	uint256 public constant ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
 
 	// A prefix that represents the key operation update
-	uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 1;
+	uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 0;
 
 	// The current circle's public key's parity value
 	uint8 public parity;

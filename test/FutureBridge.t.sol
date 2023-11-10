@@ -8,7 +8,7 @@ import "../src/SECP256k1.sol";
 contract FutureBridgeTest is Test {
 	// secp256k1 group order
 	uint256 public constant ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-	uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 1;
+	uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 0;
 	uint256 _privateKey = uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
 
 	FutureBridge public so;

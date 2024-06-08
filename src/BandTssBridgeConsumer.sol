@@ -8,12 +8,12 @@ contract BandTssBridgeConsumer {
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     // The prefix for the oracle result message
     bytes8 ORACLE_RESULT_PREFIX = 0x89cbf5af45b4e7ea;
+    // The prefix for the key update message.
+    bytes8 UPDATE_KEY_PREFIX = 0x135e4b6353a9c808;
     // The prefix for the hashing process in bandchain
     string constant CONTEXT = "BAND-TSS-secp256k1-v0";
     // The prefix for the challenging hash message
     string constant CHALLENGE_PREFIX = "challenge";
-    // A prefix that represents the key operation update
-    uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 0;
 
     // The current circle's public key's parity value
     uint8 public parity;
@@ -92,9 +92,7 @@ contract BandTssBridgeConsumer {
             verify(
                 rAddress,
                 s,
-                keccak256(
-                    abi.encodePacked(UPDATE_KEY_OPERATION_PREFIX, _parity, _px)
-                )
+                keccak256(abi.encodePacked(UPDATE_KEY_PREFIX, _parity, _px))
             ),
             "BandTssBridgeConsumer: Public key update fails, the current circle's signature is invalid."
         );

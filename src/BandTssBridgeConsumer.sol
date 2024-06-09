@@ -61,7 +61,7 @@ contract BandTssBridgeConsumer {
     // requestID to request type
     mapping(uint => OracleTssEncodeType) public OracleRequestTypes;
     // signalID to feeds price data
-    mapping(uint => FeedsPriceData) public SignalPrices;
+    mapping(uint => FeedsPriceData) private SigningIDToFeedsPriceData;
 
     event RelayOracleResult(
         uint64 indexed requestID,
@@ -125,7 +125,7 @@ contract BandTssBridgeConsumer {
         int64 timestamp;
         (sp, timestamp) = unpackResult(slice(result, 8, result.length - 8));
         
-        FeedsPriceData storage feedsPriceData = SignalPrices[signingID];
+        FeedsPriceData storage feedsPriceData = SigningIDToFeedsPriceData[signingID];
         delete feedsPriceData.SignalPrices;
         for (uint256 i = 0; i < sp.length; i++) {
             feedsPriceData.SignalPrices.push(sp[i]);
@@ -133,6 +133,14 @@ contract BandTssBridgeConsumer {
         feedsPriceData.timestamp = timestamp;
 
         emit RelayFeedsPriceResult(signingID);
+    }
+
+    /// @dev get the feeds price data from the chain
+    /// @param signingID is the signing ID of the feeds price data
+    /// @return SignalPrice array and the timestamp of the feeds price data
+    function getFeedsPriceData(uint64 signingID) external view returns (SignalPrice[] memory, int64) {
+        FeedsPriceData storage feedsPriceData = SigningIDToFeedsPriceData[signingID];
+        return (feedsPriceData.SignalPrices, feedsPriceData.timestamp);
     }
 
     /// @dev slice the bytes data

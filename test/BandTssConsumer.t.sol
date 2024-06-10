@@ -2,22 +2,23 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/BandTssBridgeConsumer.sol";
+import "../src/BandTssConsumer.sol";
 import "../src/SECP256k1.sol";
 
-contract BandTssBridgeConsumerTest is Test {
+contract BandTssConsumerTest is Test {
     // secp256k1 group order
     uint256 public constant ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-    uint8 public constant UPDATE_KEY_OPERATION_PREFIX = 0;
+    // The prefix for the key update message.
+    bytes8 UPDATE_KEY_PREFIX = 0x135e4b6353a9c808;
     uint256 _privateKey =
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
 
-    BandTssBridgeConsumer public so;
+    BandTssConsumer public so;
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
-        so = new BandTssBridgeConsumer(parity - 25, px);
+        so = new BandTssConsumer(parity - 25, px);
     }
 
     function challenge(
@@ -235,11 +236,7 @@ contract BandTssBridgeConsumerTest is Test {
             // update pubkey
             (uint8 newParity, uint256 newPx) = getPubkey(nextPrivateKey);
             bytes32 messageHash = keccak256(
-                abi.encodePacked(
-                    UPDATE_KEY_OPERATION_PREFIX,
-                    newParity - 25,
-                    newPx
-                )
+                abi.encodePacked(UPDATE_KEY_PREFIX, newParity - 25, newPx)
             );
             (rAddress, s) = schnorrSign(
                 parity,

@@ -33,7 +33,7 @@ abstract contract FeedConsumer is BandTssBridge {
         bytes32 msgHash = keccak256(abi.encodePacked(result));
         require(
             verify(rAddress, s, msgHash),
-            "FeedConsumer: Public key update fails, the current circle's signature is invalid."
+            "FeedConsumer: Fail to verify message."
         );
 
         SignalPrice[] memory sp;

@@ -57,7 +57,7 @@ abstract contract OracleConsumer is BandTssBridge {
         );
         require(
             verify(rAddress, s, msgHash),
-            "OracleConsumer: Public key update fails, the current circle's signature is invalid."
+            "OracleConsumer: Fail to verify message."
         );
 
         OracleResults[result.RequestID] = result;

@@ -1,24 +1,28 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/BandTssConsumer.sol";
+import "../src/BandTssVerifier.sol";
 import "../src/SECP256k1.sol";
 
-contract BandTssConsumerTest is Test {
+contract BandTssVerifierTest is Test {
     // secp256k1 group order
     uint256 public constant ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+    bytes32 constant HASH_ORIGINATOR_REPLACEMENT =
+        0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
+
     // The prefix for the key update message.
     bytes8 UPDATE_KEY_PREFIX = 0x135e4b6353a9c808;
     uint256 _privateKey =
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
-
-    BandTssConsumer public so;
+    BandTssVerifier public verifier;
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
-        so = new BandTssConsumer(parity - 25, px);
+        verifier = new BandTssVerifier(HASH_ORIGINATOR_REPLACEMENT);
+        verifier.addPubKeyByOwner(0, parity - 25, px);
     }
 
     function challenge(
@@ -56,7 +60,6 @@ contract BandTssConsumerTest is Test {
     function randomK(uint256 privateKey) public pure returns (uint256 k) {
         k = uint256(keccak256(abi.encodePacked("salt", privateKey)));
     }
-
     function schnorrSign(
         uint8 parity,
         uint256 px,
@@ -65,15 +68,25 @@ contract BandTssConsumerTest is Test {
         uint256 privateKey
     ) public pure returns (address rAddress, uint256 s) {
         rAddress = vm.addr(k);
-
         // c = h(address(R) || compressed pubkey || m)
         uint256 c = challenge(parity, rAddress, px, messageHash);
-
         // cx = c*x
         uint256 cx = mulmod(c, privateKey, ORDER);
-
         // s = k + cx
         s = addmod(k, cx, ORDER);
+    }
+
+    function cmpPubKey(
+        uint64 expectTimestamp,
+        uint8 expectParity,
+        uint expectPx
+    ) public {
+        uint nPubKey = verifier.publicKeyLength();
+        (uint64 actualTimestamp, uint8 actualParity, uint actualPx) = verifier
+            .publicKeys(nPubKey - 1);
+        assertEq(actualTimestamp, expectTimestamp);
+        assertEq(actualParity, expectParity);
+        assertEq(actualPx, expectPx);
     }
 
     function test_k_to_rAddress() public {
@@ -124,7 +137,6 @@ contract BandTssConsumerTest is Test {
     function test_getPubkey() public {
         uint8 parity;
         uint256 px;
-
         (parity, px) = getPubkey(
             0xbbfee063f4b3af6cfb1e3b69944401d36dee7d295753f8e47934ce6e63e2d2d0
         );
@@ -133,7 +145,6 @@ contract BandTssConsumerTest is Test {
             0xbbc14502dc6f2fb3dce112a7237a57420c3b302204f021dfa60d18446789eaaa,
             px
         );
-
         (parity, px) = getPubkey(
             0x5575ba296d17a5241c58517b9c235586a2ab77deeb1b4299ecd027ace48c67d1
         );
@@ -142,7 +153,6 @@ contract BandTssConsumerTest is Test {
             0xd8c41847e84013f83ab06e98d5fbf75f7117ee0f20c45415c5216e7ba273789b,
             px
         );
-
         (parity, px) = getPubkey(
             0x672c7b975947e5ba6fa739540df1c7f53d0275aea1d23e626e036bec4aa24b57
         );
@@ -151,7 +161,6 @@ contract BandTssConsumerTest is Test {
             0x2459b0c6f115152e906d6650662109abb5f23812dc1d990dc2c1460283bc42a1,
             px
         );
-
         (parity, px) = getPubkey(
             0x93942b3b629d2464ef9eb112547de73c8043fcd6ef7ccc9bbe2325af1dbbadc8
         );
@@ -182,7 +191,6 @@ contract BandTssConsumerTest is Test {
             s,
             0xc8727773e662c4c23db072ce0ce27b1ffe3f4ee8a93460efdf61b5a9af5edffd
         );
-
         secret = 0x05cff511ca26b944fb22285c8a56595baeefe399d49e5aeef27233701b59b8ad;
         (parity, px) = getPubkey(secret);
         (rAddress, s) = schnorrSign(
@@ -204,67 +212,124 @@ contract BandTssConsumerTest is Test {
         );
     }
 
-    function test_verify() public {
+    struct InternalStore {
+        uint256 privateKey;
         uint256 gasUsedVerifyAcc;
         uint256 gasUsedUpdateAcc;
+    }
+
+    struct TemporaryStore {
         uint256 nextPrivateKey;
-        uint256 privateKey = _privateKey;
+        uint64 signingID;
+        uint64 timestamp;
+        bytes32 hashOriginator;
+        uint8 parity;
+        uint256 px;
+        uint8 newParity;
+        uint256 newPx;
+        bytes32 messageHash;
+        address rAddress;
+        uint256 s;
         uint256 start;
+    }
+
+    function test_verify() public {
+        InternalStore memory store = InternalStore({
+            privateKey: _privateKey,
+            gasUsedVerifyAcc: 0,
+            gasUsedUpdateAcc: 0
+        });
+        TemporaryStore memory tmp;
 
         for (uint256 i = 0; i < 100; i++) {
-            bytes32 anyMessageHash = keccak256(
-                abi.encodePacked(i, "any message to be sign")
-            );
-            (uint8 parity, uint256 px) = getPubkey(privateKey);
-            (address rAddress, uint256 s) = schnorrSign(
-                parity,
-                px,
-                randomK(privateKey),
-                anyMessageHash,
-                privateKey
+            tmp.signingID = uint64(i + 1);
+            tmp.hashOriginator = 0x00;
+            tmp.timestamp = uint64(i + 1);
+
+            bytes memory data = abi.encodePacked(i, "any message to be sign");
+            tmp.messageHash = verifier.getMessageHash(
+                tmp.signingID,
+                tmp.timestamp,
+                tmp.hashOriginator,
+                data
             );
 
-            start = gasleft();
+            (tmp.parity, tmp.px) = getPubkey(store.privateKey);
+            (tmp.rAddress, tmp.s) = schnorrSign(
+                tmp.parity,
+                tmp.px,
+                randomK(store.privateKey),
+                tmp.messageHash,
+                store.privateKey
+            );
+
             // verify signature
-            assertEq(so.verify(rAddress, s, anyMessageHash), true);
-            gasUsedVerifyAcc += start - gasleft();
+            tmp.start = gasleft();
+            bool result = verifier.verifySignature(
+                tmp.signingID,
+                tmp.timestamp,
+                tmp.hashOriginator,
+                tmp.rAddress,
+                tmp.s,
+                data
+            );
+            store.gasUsedVerifyAcc += tmp.start - gasleft();
+            assertEq(result, true);
 
-            nextPrivateKey = uint256(
-                keccak256(abi.encodePacked(i, privateKey, "next privateKey"))
+            // prepare data for add new public key
+            tmp.nextPrivateKey = uint256(
+                keccak256(
+                    abi.encodePacked(i, store.privateKey, "next privateKey")
+                )
+            );
+            (tmp.newParity, tmp.newPx) = getPubkey(tmp.nextPrivateKey);
+
+            data = abi.encodePacked(
+                UPDATE_KEY_PREFIX,
+                tmp.newParity - 25,
+                tmp.newPx
+            );
+            tmp.messageHash = verifier.getMessageHash(
+                tmp.signingID,
+                tmp.timestamp,
+                HASH_ORIGINATOR_REPLACEMENT,
+                data
             );
 
-            // update pubkey
-            (uint8 newParity, uint256 newPx) = getPubkey(nextPrivateKey);
-            bytes32 messageHash = keccak256(
-                abi.encodePacked(UPDATE_KEY_PREFIX, newParity - 25, newPx)
-            );
-            (rAddress, s) = schnorrSign(
-                parity,
-                px,
-                randomK(privateKey),
-                messageHash,
-                privateKey
+            (tmp.rAddress, tmp.s) = schnorrSign(
+                tmp.parity,
+                tmp.px,
+                randomK(store.privateKey),
+                tmp.messageHash,
+                store.privateKey
             );
 
-            start = gasleft();
-            so.updatePubkey(newParity - 25, rAddress, newPx, s);
-            gasUsedUpdateAcc += start - gasleft();
-
-            assertEq(so.parity(), newParity);
-            assertEq(so.px(), newPx);
-
-            privateKey = nextPrivateKey;
+            // add new public key
+            tmp.start = gasleft();
+            verifier.addPubKeyWithProof(
+                tmp.signingID,
+                tmp.timestamp,
+                tmp.newParity - 25,
+                tmp.newPx,
+                tmp.rAddress,
+                tmp.s
+            );
+            store.gasUsedUpdateAcc += tmp.start - gasleft();
+            cmpPubKey(uint64(i + 1), tmp.newParity, tmp.newPx);
+            store.privateKey = tmp.nextPrivateKey;
 
             if (i == 0) {
-                console.log("initial verify gas avg = ", gasUsedVerifyAcc);
+                console.log(
+                    "initial verify gas avg = ",
+                    store.gasUsedVerifyAcc
+                );
                 console.log(
                     "initial update pubkey gas avg = ",
-                    gasUsedUpdateAcc
+                    store.gasUsedUpdateAcc
                 );
             }
         }
-
-        console.log("verify gas avg = ", gasUsedVerifyAcc / 100);
-        console.log("update pubkey gas avg = ", gasUsedUpdateAcc / 100);
+        console.log("verify gas avg = ", store.gasUsedVerifyAcc / 100);
+        console.log("update pubkey gas avg = ", store.gasUsedUpdateAcc / 100);
     }
 }

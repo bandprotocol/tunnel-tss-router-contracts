@@ -29,7 +29,6 @@ contract FeedsConsumerTest is Test {
             IBandTssVerifier(address(bandTssVerifier))
         );
         bandTssVerifier.addPubKeyByOwner(
-            1,
             2,
             52551505504720240751042067870270254170339901460264528997229698051448949240000
         );

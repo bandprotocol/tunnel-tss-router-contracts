@@ -22,7 +22,7 @@ contract BandTssVerifierTest is Test {
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
         verifier = new BandTssVerifier(HASH_ORIGINATOR_REPLACEMENT);
-        verifier.addPubKeyByOwner(0, parity - 25, px);
+        verifier.addPubKeyByOwner(parity - 25, px);
     }
 
     function challenge(
@@ -244,7 +244,8 @@ contract BandTssVerifierTest is Test {
         for (uint256 i = 0; i < 100; i++) {
             tmp.signingID = uint64(i + 1);
             tmp.hashOriginator = 0x00;
-            tmp.timestamp = uint64(i + 1);
+            tmp.timestamp = uint64(block.timestamp + 1);
+            vm.warp(tmp.timestamp);
 
             bytes memory data = abi.encodePacked(i, "any message to be sign");
             tmp.messageHash = verifier.getMessageHash(
@@ -308,14 +309,13 @@ contract BandTssVerifierTest is Test {
             tmp.start = gasleft();
             verifier.addPubKeyWithProof(
                 tmp.signingID,
-                tmp.timestamp,
                 tmp.newParity - 25,
                 tmp.newPx,
                 tmp.rAddress,
                 tmp.s
             );
             store.gasUsedUpdateAcc += tmp.start - gasleft();
-            cmpPubKey(uint64(i + 1), tmp.newParity, tmp.newPx);
+            cmpPubKey(tmp.timestamp, tmp.newParity, tmp.newPx);
             store.privateKey = tmp.nextPrivateKey;
 
             if (i == 0) {

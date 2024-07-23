@@ -53,20 +53,19 @@ contract BandTssVerifier is Pausable, Ownable2Step {
 
     /// @dev Add the new public key with proof from the current group.
     /// @param signingID is the signing ID of the replacement message.
-    /// @param timestamp is the timestamp that the new public key is activated.
     /// @param parity is the parity value of the new public key.
     /// @param px is the x-coordinate value of the new public key.
     /// @param rAddress is the address form of the commitment R.
     /// @param s represents the Schnorr signature.
     function addPubKeyWithProof(
         uint64 signingID,
-        uint64 timestamp,
         uint8 parity,
         uint256 px,
         address rAddress,
         uint256 s
     ) external whenNotPaused {
         uint nPubKey = publicKeys.length;
+        uint64 timestamp = uint64(block.timestamp);
         require(nPubKey > 0, "BandTssBridge: No public key available.");
 
         PublicKey memory latestPubKey = publicKeys[nPubKey - 1];
@@ -98,15 +97,11 @@ contract BandTssVerifier is Pausable, Ownable2Step {
     }
 
     /// @dev Add the new public key by the owner.
-    /// @param timestamp is the timestamp that the new public key is activated.
     /// @param parity is the parity value of the new public key
     /// @param px is the x-coordinate value of the new public key
-    function addPubKeyByOwner(
-        uint64 timestamp,
-        uint8 parity,
-        uint256 px
-    ) external onlyOwner {
+    function addPubKeyByOwner(uint8 parity, uint256 px) external onlyOwner {
         uint nPubKey = publicKeys.length;
+        uint64 timestamp = uint64(block.timestamp);
         if (nPubKey > 0) {
             PublicKey memory latestPubKey = publicKeys[nPubKey - 1];
             require(

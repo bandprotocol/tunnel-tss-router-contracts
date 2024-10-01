@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.23;
 
 /*
 Taken from https://github.com/jbaylina/ecsol and https://github.com/1Address/ecsol
@@ -10,17 +10,17 @@ License: GPL-3.0
 
 // This library was included solely for testing purposes and is not a component of FutureBridge.
 library SECP256k1 {
-    uint256 public constant gx =
+    uint256 public constant GX =
         0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
-    uint256 public constant gy =
+    uint256 public constant GY =
         0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
-    uint256 public constant n =
+    uint256 public constant N =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-    uint256 public constant a = 0;
-    uint256 public constant b = 7;
+    uint256 public constant A = 0;
+    uint256 public constant B = 7;
 
     function order() public pure returns (uint256) {
-        return n;
+        return N;
     }
 
     function _jAdd(
@@ -30,8 +30,8 @@ library SECP256k1 {
         uint256 z2
     ) public pure returns (uint256 x3, uint256 z3) {
         (x3, z3) = (
-            addmod(mulmod(z2, x1, n), mulmod(x2, z1, n), n),
-            mulmod(z1, z2, n)
+            addmod(mulmod(z2, x1, N), mulmod(x2, z1, N), N),
+            mulmod(z1, z2, N)
         );
     }
 
@@ -42,8 +42,8 @@ library SECP256k1 {
         uint256 z2
     ) public pure returns (uint256 x3, uint256 z3) {
         (x3, z3) = (
-            addmod(mulmod(z2, x1, n), mulmod(n - x2, z1, n), n),
-            mulmod(z1, z2, n)
+            addmod(mulmod(z2, x1, N), mulmod(N - x2, z1, N), N),
+            mulmod(z1, z2, N)
         );
     }
 
@@ -53,7 +53,7 @@ library SECP256k1 {
         uint256 x2,
         uint256 z2
     ) public pure returns (uint256 x3, uint256 z3) {
-        (x3, z3) = (mulmod(x1, x2, n), mulmod(z1, z2, n));
+        (x3, z3) = (mulmod(x1, x2, N), mulmod(z1, z2, N));
     }
 
     function _jDiv(
@@ -62,19 +62,19 @@ library SECP256k1 {
         uint256 x2,
         uint256 z2
     ) public pure returns (uint256 x3, uint256 z3) {
-        (x3, z3) = (mulmod(x1, z2, n), mulmod(z1, x2, n));
+        (x3, z3) = (mulmod(x1, z2, N), mulmod(z1, x2, N));
     }
 
     function _inverse(uint256 val) public pure returns (uint256 invVal) {
         uint256 t = 0;
         uint256 newT = 1;
-        uint256 r = n;
+        uint256 r = N;
         uint256 newR = val;
         uint256 q;
         while (newR != 0) {
             q = r / newR;
 
-            (t, newT) = (newT, addmod(t, (n - mulmod(q, newT, n)), n));
+            (t, newT) = (newT, addmod(t, (N - mulmod(q, newT, N)), N));
             (r, newR) = (newR, r - q * newR);
         }
 
@@ -105,7 +105,7 @@ library SECP256k1 {
         if (x1 == x2 && y1 == y2) {
             (lx, lz) = _jMul(x1, z1, x1, z1);
             (lx, lz) = _jMul(lx, lz, 3, 1);
-            (lx, lz) = _jAdd(lx, lz, a, 1);
+            (lx, lz) = _jAdd(lx, lz, A, 1);
 
             (da, db) = _jMul(y1, z1, 2, 1);
         } else {
@@ -124,9 +124,9 @@ library SECP256k1 {
         (y3, db) = _jSub(y3, db, y1, z1);
 
         if (da != db) {
-            x3 = mulmod(x3, db, n);
-            y3 = mulmod(y3, da, n);
-            z3 = mulmod(da, db, n);
+            x3 = mulmod(x3, db, N);
+            y3 = mulmod(y3, da, N);
+            z3 = mulmod(da, db, N);
         } else {
             z3 = da;
         }
@@ -178,8 +178,8 @@ library SECP256k1 {
         uint256 z;
         (x3, y3, z) = _ecAdd(x1, y1, 1, x2, y2, 1);
         z = _inverse(z);
-        x3 = mulmod(x3, z, n);
-        y3 = mulmod(y3, z, n);
+        x3 = mulmod(x3, z, N);
+        y3 = mulmod(y3, z, N);
     }
 
     function ecmul(
@@ -190,11 +190,11 @@ library SECP256k1 {
         uint256 z;
         (x2, y2, z) = _ecMul(scalar, x1, y1, 1);
         z = _inverse(z);
-        x2 = mulmod(x2, z, n);
-        y2 = mulmod(y2, z, n);
+        x2 = mulmod(x2, z, N);
+        y2 = mulmod(y2, z, N);
     }
 
-    function point_hash(uint256[2] memory point) public pure returns (address) {
+    function pointHash(uint256[2] memory point) public pure returns (address) {
         return
             address(
                 uint160(
@@ -207,21 +207,21 @@ library SECP256k1 {
     /**
      * hash(g^a + B^c)
      */
-    function sbmul_add_mul(
+    function sbmulAddMul(
         uint256 s,
-        uint256[2] memory B,
+        uint256[2] memory b,
         uint256 c
     ) public pure returns (address) {
-        uint256 Q = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-        s = (Q - s) % Q;
-        s = mulmod(s, B[0], Q);
+        uint256 q = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+        s = (q - s) % q;
+        s = mulmod(s, b[0], q);
 
         return
             ecrecover(
                 bytes32(s),
-                B[1] % 2 != 0 ? 28 : 27,
-                bytes32(B[0]),
-                bytes32(mulmod(c, B[0], Q))
+                b[1] % 2 != 0 ? 28 : 27,
+                bytes32(b[0]),
+                bytes32(mulmod(c, b[0], q))
             );
     }
 
@@ -236,14 +236,14 @@ library SECP256k1 {
         uint256 qx,
         uint256 qy
     ) public pure returns (bool) {
-        address signer = sbmul_add_mul(0, [x1, y1], scalar);
-        return point_hash([qx, qy]) == signer;
+        address signer = sbmulAddMul(0, [x1, y1], scalar);
+        return pointHash([qx, qy]) == signer;
     }
 
     function publicKey(
         uint256 privKey
     ) public pure returns (uint256 qx, uint256 qy) {
-        return ecmul(gx, gy, privKey);
+        return ecmul(GX, GY, privKey);
     }
 
     function publicKeyVerify(
@@ -251,7 +251,7 @@ library SECP256k1 {
         uint256 x,
         uint256 y
     ) public pure returns (bool) {
-        return ecmulVerify(gx, gy, privKey, x, y);
+        return ecmulVerify(GX, GY, privKey, x, y);
     }
 
     function deriveKey(
@@ -262,7 +262,7 @@ library SECP256k1 {
         uint256 z;
         (qx, qy, z) = _ecMul(privKey, pubX, pubY, 1);
         z = _inverse(z);
-        qx = mulmod(qx, z, n);
-        qy = mulmod(qy, z, n);
+        qx = mulmod(qx, z, N);
+        qy = mulmod(qy, z, N);
     }
 }

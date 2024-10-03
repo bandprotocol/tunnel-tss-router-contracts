@@ -47,7 +47,7 @@ abstract contract PacketDecoder {
     ) internal pure returns (TssMessage memory) {
         EncoderType encoder = _toEncoderType(bytes4(message[84:88]));
 
-        Packet memory packet = _decodePacket(message[88:]);
+        Packet memory packet = _decodePacket(message);
 
         TssMessage memory tssMessage = TssMessage(
             bytes32(message[0:32]),
@@ -67,7 +67,7 @@ abstract contract PacketDecoder {
     function _decodePacket(
         bytes calldata message
     ) internal pure returns (Packet memory) {
-        Packet memory packet = abi.decode(message[176:], (Packet));
+        Packet memory packet = abi.decode(message[88:], (Packet));
         return packet;
     }
 

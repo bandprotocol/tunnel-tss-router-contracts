@@ -7,7 +7,7 @@ import "forge-std/Test.sol";
 import "./TssSignerHelper.sol";
 
 contract TssVerifierTest is Test, TssSignerHelper {
-    function testCalChallenge() public {
+    function testCalChallenge() public pure {
         assertEq(
             0x0c0753165ef3bd86580a99a06e89577319e79de82cb6b5ebf7e95ffc6204d118,
             challenge(
@@ -37,7 +37,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
         );
     }
 
-    function testGetPubkey() public {
+    function testGetPubkey() public pure {
         uint8 parity;
         uint256 px;
         (parity, px) = getPubkey(
@@ -74,7 +74,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
         );
     }
 
-    function testSchnorrSign() public {
+    function testSchnorrSign() public pure {
         uint256 secret = 0x383b4a7a98c26e381cf5149dade39a61b3f43e1af4ff1f78d17daf9ffaf35177;
         (uint8 parity, uint256 px) = getPubkey(secret);
         (address rAddress, uint256 s) = schnorrSign(

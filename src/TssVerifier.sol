@@ -3,7 +3,7 @@
 pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 import "./interfaces/ITssVerifier.sol";
 
@@ -40,7 +40,10 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         bool isByAdmin
     );
 
-    constructor(bytes32 hashOriginatorReplacement_) {
+    constructor(
+        bytes32 hashOriginatorReplacement_,
+        address initialAddr
+    ) Ownable(initialAddr) {
         hashOriginatorReplacement = hashOriginatorReplacement_;
     }
 

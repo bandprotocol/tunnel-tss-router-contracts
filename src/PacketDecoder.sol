@@ -22,6 +22,7 @@ abstract contract PacketDecoder {
     struct Packet {
         uint64 tunnelID;
         uint64 nonce;
+        // TODO: require confirmation.
         // address targetAddr;
         // uint chainID;
         SignalPrice[] signals;

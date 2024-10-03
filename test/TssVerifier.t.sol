@@ -19,7 +19,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
-        verifier = new TssVerifier(_HASH_ORIGINATOR_REPLACEMENT);
+        verifier = new TssVerifier(_HASH_ORIGINATOR_REPLACEMENT, address(this));
         verifier.addPubKeyByOwner(parity - 25, px);
     }
 
@@ -27,7 +27,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
         uint expectTimestamp,
         uint8 expectParity,
         uint expectPx
-    ) public {
+    ) public view {
         uint nPubKey = verifier.publicKeyLength();
         (uint actualTimestamp, uint8 actualParity, uint actualPx) = verifier
             .publicKeys(nPubKey - 1);

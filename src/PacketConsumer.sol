@@ -37,7 +37,11 @@ contract PacketConsumer is IDataConsumer, PacketDecoder, Ownable2Step {
         _;
     }
 
-    constructor(address tunnelRouter_, bytes32 hashOriginator_) {
+    constructor(
+        address tunnelRouter_,
+        bytes32 hashOriginator_,
+        address initialOwner
+    ) Ownable(initialOwner) {
         tunnelRouter = tunnelRouter_;
         hashOriginator = hashOriginator_;
     }

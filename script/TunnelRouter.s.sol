@@ -25,7 +25,7 @@ contract DeployScript is Script {
         address proxyBandReserveAddr = Upgrades.deployTransparentProxy(
             "BandReserve.sol",
             msg.sender,
-            abi.encodeCall(BandReserve.initialize, ())
+            abi.encodeCall(BandReserve.initialize, (msg.sender))
         );
         address implBandReserveAddr = Upgrades.getImplementationAddress(
             proxyBandReserveAddr
@@ -46,6 +46,7 @@ contract DeployScript is Script {
                 (
                     ITssVerifier(tssVerifier),
                     IBandReserve(proxyBandReserveAddr),
+                    msg.sender,
                     0,
                     0,
                     0,

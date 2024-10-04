@@ -45,11 +45,13 @@ contract TunnelRouter is
     function initialize(
         ITssVerifier tssVerifier_,
         IBandReserve bandReserve_,
+        address initialOwner,
         uint gasPrice_,
         uint additionalGas_,
         uint maxGasUsedProcess_,
         uint maxGasUsedCollectFee_
     ) public initializer {
+        __Ownable_init(initialOwner);
         __Ownable2Step_init();
         __Pausable_init();
 
@@ -155,13 +157,17 @@ contract TunnelRouter is
         uint collectedFee = address(this).balance;
         emit CollectFee(address(targetAddr), collectedFee);
 
-        if (!isReverted && collectedFee > fee) {
-            payable(msg.sender).transfer(collectedFee);
-        } else {
+        if (isReverted || fee > collectedFee) {
             uint remainingFee = fee > collectedFee ? fee - collectedFee : 0;
             bandReserve.borrowOnBehalf(remainingFee, address(targetAddr));
+
             _deactivate(address(targetAddr));
+
+            collectedFee = collectedFee + remainingFee;
         }
+
+        (bool ok, ) = payable(msg.sender).call{value: collectedFee}("");
+        require(ok, "TunnelRouter: Fail to send fee");
     }
 
     /// @dev reactivate the target contract by repaying the debt and set the nonce of the target contract.

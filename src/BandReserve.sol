@@ -27,7 +27,8 @@ contract BandReserve is IBandReserve, Initializable, Ownable2StepUpgradeable {
         _;
     }
 
-    function initialize() public initializer {
+    function initialize(address initialOwner) public initializer {
+        __Ownable_init(initialOwner);
         __Ownable2Step_init();
     }
 
@@ -75,7 +76,7 @@ contract BandReserve is IBandReserve, Initializable, Ownable2StepUpgradeable {
 
     /// @dev repay the debt.
     /// @param debtor address of the debtor.
-    function repay(address debtor) external payable {
+    function repay(address debtor) public payable {
         if (msg.value >= debt[debtor]) {
             debt[debtor] = 0;
         } else {
@@ -83,6 +84,13 @@ contract BandReserve is IBandReserve, Initializable, Ownable2StepUpgradeable {
         }
 
         emit Repay(debtor, msg.value);
+    }
+
+    /// @dev retrieve eth out of the contract.
+    /// @param amount amount of eth to be withdrawn.
+    function withdraw(uint amount) external onlyOwner {
+        (bool ok, ) = payable(msg.sender).call{value: amount}("");
+        require(ok, "BandReserve: Fail to send eth");
     }
 
     receive() external payable {}

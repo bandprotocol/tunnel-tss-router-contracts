@@ -5,8 +5,8 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 
 import "../src/PacketConsumer.sol";
-import "./helper/MockTunnelRouter.sol";
 import "./helper/Constants.sol";
+import "./helper/MockTunnelRouter.sol";
 
 contract PacketConsumerTest is Test, Constants {
     PacketConsumer packetConsumer;

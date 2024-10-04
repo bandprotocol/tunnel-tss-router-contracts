@@ -74,8 +74,20 @@ contract PacketConsumer is IDataConsumer, PacketDecoder, Ownable2Step {
     /// @dev transfer fee to the contract.
     /// @param amount The amount of requested fee to be transferred to tunnelRouter contract.
     function collectFee(uint amount) external onlyTunnelRouter {
-        (bool ok, ) = tunnelRouter.call{value: amount}("");
-        require(ok, "FeedsConsumer: Fail to send fee");
+        require(
+            address(this).balance >= amount,
+            "PacketConsumer: insufficient balance"
+        );
+
+        (bool ok, bytes memory result) = tunnelRouter.call{value: amount}("");
+        if (!ok) {
+            // Next 5 lines from https://ethereum.stackexchange.com/a/83577
+            if (result.length < 68) revert("PacketConsumer: Fail to send fee");
+            assembly {
+                result := add(result, 0x04)
+            }
+            revert(abi.decode(result, (string)));
+        }
     }
 
     /// @dev reactivate the target contract with the latest nonce.
@@ -90,4 +102,6 @@ contract PacketConsumer is IDataConsumer, PacketDecoder, Ownable2Step {
     }
 
     receive() external payable {}
+
+    fallback() external payable {}
 }

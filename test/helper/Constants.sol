@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.13;
+
+import "../../src/interfaces/IDataConsumer.sol";
+import "../../src/PacketDecoder.sol";
+
+contract Constants is PacketDecoder {
+    bytes constant TSS_RAW_MESSAGE =
+        abi.encodePacked(
+            hex"0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6",
+            hex"A37F90F0501F931F161F3C51421BED9A59819335D8D0F009D0E1357A863AC96B",
+            hex"0000000066FE6FED0000000000000013D3813E0CCBA0AD5A",
+            hex"0000000000000000000000000000000000000000000000000000000000000020",
+            hex"0000000000000000000000000000000000000000000000000000000000000001",
+            hex"0000000000000000000000000000000000000000000000000000000000000013",
+            hex"0000000000000000000000000000000000000000000000000000000000000080",
+            hex"0000000000000000000000000000000000000000000000000000000066FE6FED",
+            hex"0000000000000000000000000000000000000000000000000000000000000001",
+            hex"0000000000000000000000000000000000000000000000000000000000455448",
+            hex"0000000000000000000000000000000000000000000000000000000000000000"
+        );
+
+    function DECODED_TSS_MESSAGE() public pure returns (TssMessage memory) {
+        SignalPrice[] memory signalPriceInfos = new SignalPrice[](1);
+        bytes memory signalIDEth = abi.encodePacked(
+            hex"0000000000000000000000000000000000000000000000000000000000",
+            "ETH"
+        );
+        signalPriceInfos[0] = SignalPrice(bytes32(signalIDEth), 0);
+
+        Packet memory packet = Packet(1, 19, signalPriceInfos, 1727950829);
+
+        TssMessage memory tssMessage = TssMessage(
+            0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6,
+            0xA37F90F0501F931F161F3C51421BED9A59819335D8D0F009D0E1357A863AC96B,
+            1727950829,
+            19,
+            EncoderType.FixedPoint,
+            packet
+        );
+
+        return tssMessage;
+    }
+
+    constructor() {}
+}

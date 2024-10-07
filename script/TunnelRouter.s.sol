@@ -10,7 +10,7 @@ import {ITssVerifier} from "../src/interfaces/ITssVerifier.sol";
 import {IBandReserve} from "../src/interfaces/IBandReserve.sol";
 import {BandReserve} from "../src/BandReserve.sol";
 import {TssVerifier} from "../src/TssVerifier.sol";
-import {TunnelRouter} from "../src/TunnelRouter.sol";
+import {GasPriceTunnelRouter} from "../src/GasPriceTunnelRouter.sol";
 
 contract DeployScript is Script {
     bytes32 constant _HASH_ORIGINATOR_REPLACEMENT =
@@ -39,10 +39,10 @@ contract DeployScript is Script {
 
         // Deploy the upgradeable TunnelRouter contract
         address proxyTunnelRouterAddr = Upgrades.deployTransparentProxy(
-            "TunnelRouter.sol",
+            "GasPriceTunnelRouter.sol",
             msg.sender,
             abi.encodeCall(
-                TunnelRouter.initialize,
+                GasPriceTunnelRouter.initialize,
                 (
                     ITssVerifier(tssVerifier),
                     IBandReserve(proxyBandReserveAddr),
@@ -63,7 +63,10 @@ contract DeployScript is Script {
         console.log("BandReserve Proxy: ", proxyBandReserveAddr);
         console.log("BandReserve Implementation: ", implBandReserveAddr);
         console.log("TssVerifier: ", address(tssVerifier));
-        console.log("TunnelRouter Proxy: ", proxyTunnelRouterAddr);
-        console.log("TunnelRouter Implementation: ", implTunnelRouterAddr);
+        console.log("GasPriceTunnelRouter Proxy: ", proxyTunnelRouterAddr);
+        console.log(
+            "GasPriceTunnelRouter Implementation: ",
+            implTunnelRouterAddr
+        );
     }
 }

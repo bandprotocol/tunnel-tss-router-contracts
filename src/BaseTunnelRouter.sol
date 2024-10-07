@@ -11,7 +11,7 @@ import "./interfaces/ITssVerifier.sol";
 import "./interfaces/IDataConsumer.sol";
 import "./PacketDecoder.sol";
 
-contract TunnelRouter is
+abstract contract BaseTunnelRouter is
     Initializable,
     Ownable2StepUpgradeable,
     PausableUpgradeable,
@@ -20,7 +20,6 @@ contract TunnelRouter is
     ITssVerifier public tssVerifier;
     IBandReserve public bandReserve;
 
-    uint public gasPrice;
     uint public additionalGas;
     uint public maxGasUsedProcess;
     uint public maxGasUsedCollectFee;
@@ -28,9 +27,8 @@ contract TunnelRouter is
     mapping(address => bool) public isInactive;
     mapping(address => uint64) public nonces;
 
-    uint[49] __gap;
+    uint[50] __gap;
 
-    event SetGasPrice(uint gasPrice);
     event SetMaxGasUsedProcess(uint maxGasUsedProcess);
     event SetMaxGasUsedCollectFee(uint maxGasUsedCollectFee);
     event ProcessMessage(
@@ -42,32 +40,23 @@ contract TunnelRouter is
     event Reactivate(address indexed targetAddr, uint64 latestNonce);
     event Deactivate(address indexed targetAddr, uint64 latestNonce);
 
-    function initialize(
+    function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IBandReserve bandReserve_,
         address initialOwner,
-        uint gasPrice_,
         uint additionalGas_,
         uint maxGasUsedProcess_,
         uint maxGasUsedCollectFee_
-    ) public initializer {
+    ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
         __Pausable_init();
 
         tssVerifier = tssVerifier_;
         bandReserve = bandReserve_;
-        gasPrice = gasPrice_;
         additionalGas = additionalGas_;
         maxGasUsedProcess = maxGasUsedProcess_;
         maxGasUsedCollectFee = maxGasUsedCollectFee_;
-    }
-
-    /// @dev set the gas price.
-    /// @param gasPrice_ is the new gas price.
-    function setGasPrice(uint gasPrice_) external onlyOwner {
-        gasPrice = gasPrice_;
-        emit SetGasPrice(gasPrice);
     }
 
     /// @dev set the additionalGas being used in relaying message.
@@ -146,7 +135,7 @@ contract TunnelRouter is
         emit ProcessMessage(address(targetAddr), packet.nonce, isReverted);
 
         // charge a fee from the target contract.
-        uint fee = (gasLeft - gasleft() + additionalGas) * gasPrice;
+        uint fee = _routerFee(gasLeft - gasleft() + additionalGas);
         isReverted = false;
         try targetAddr.collectFee{gas: maxGasUsedCollectFee}(fee) {} catch {
             isReverted = true;
@@ -196,6 +185,13 @@ contract TunnelRouter is
     function _deactivate(address addr) internal {
         isInactive[addr] = true;
         emit Deactivate(addr, nonces[addr]);
+    }
+
+    /// @dev calculate the fee for the router.
+    function _routerFee(uint gasUsed) internal view virtual returns (uint) {
+        gasUsed; // Shh
+
+        return 0;
     }
 
     receive() external payable {}

@@ -7,14 +7,14 @@ import "forge-std/console.sol";
 
 import "../src/BandReserve.sol";
 import "../src/TssVerifier.sol";
-import "../src/TunnelRouter.sol";
+import "../src/GasPriceTunnelRouter.sol";
 import "../src/PacketConsumer.sol";
 import "./helper/Constants.sol";
 import "./helper/TssSignerHelper.sol";
 
 contract RelayFullLoopTest is Test, Constants {
     PacketConsumer packetConsumer;
-    TunnelRouter tunnelRouter;
+    GasPriceTunnelRouter tunnelRouter;
     TssVerifier tssVerifier;
     BandReserve bandReserve;
 
@@ -29,15 +29,15 @@ contract RelayFullLoopTest is Test, Constants {
         bandReserve.initialize(address(this));
         vm.deal(address(bandReserve), 10 ether);
 
-        tunnelRouter = new TunnelRouter();
+        tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
             tssVerifier,
             bandReserve,
             address(this),
-            1,
             75000,
             50000,
-            50000
+            50000,
+            1
         );
 
         address[] memory whitelistAddrs = new address[](1);

@@ -75,7 +75,7 @@ contract RelayFullLoopTest is Test, Constants {
         assertGt(feeGain, 0);
 
         uint gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasPrice() -
+            tunnelRouter.gasFee() -
             tunnelRouter.additionalGas();
 
         console.log(
@@ -111,7 +111,7 @@ contract RelayFullLoopTest is Test, Constants {
         assertGt(feeGain, 0);
 
         uint gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasPrice() -
+            tunnelRouter.gasFee() -
             tunnelRouter.additionalGas();
 
         console.log(

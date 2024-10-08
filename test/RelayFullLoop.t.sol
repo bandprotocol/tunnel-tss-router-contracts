@@ -20,10 +20,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function setUp() public {
         tssVerifier = new TssVerifier(0x00, address(this));
-        tssVerifier.addPubKeyByOwner(
-            2,
-            0x22CA06770AB5FD60D3EA06E9B93200225E7F9B4D73B09B681BF9617D101001F3
-        );
+        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         bandReserve = new BandReserve();
         bandReserve.initialize(address(this));
@@ -33,6 +30,7 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             bandReserve,
+            "eth",
             address(this),
             75000,
             50000,
@@ -45,17 +43,25 @@ contract RelayFullLoopTest is Test, Constants {
 
         bandReserve.setWhitelist(whitelistAddrs, true);
 
-        packetConsumer = new PacketConsumer(
+        // deploy packet Consumer with specific address.
+        bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            0xA37F90F0501F931F161F3C51421BED9A59819335D8D0F009D0E1357A863AC96B,
+            0x95C07FC70EB214B432CC70A9CFA044AEB532577C0B6F7B1AAB2F6E5A7D030E92,
             address(this)
         );
+        address packetConsumerAddr = makeAddr("PacketConsumer");
+        deployCodeTo(
+            "PacketConsumer.sol:PacketConsumer",
+            packetConsumerArgs,
+            packetConsumerAddr
+        );
+        packetConsumer = PacketConsumer(payable(packetConsumerAddr));
     }
 
     function testRelayMessageConsumerHasEnoughFund() public {
         // set latest nonce.
         packetConsumer.deactivate();
-        packetConsumer.reactivate(18);
+        packetConsumer.reactivate(1);
 
         vm.deal(address(packetConsumer), 10 ether);
 
@@ -64,11 +70,11 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             packetConsumer,
-            address(0x3c3CA8c8A0bED1AdB3d690c1134A63dB699eC516),
-            0x20E410DEBC3EB7C29ADB312165C00A759A5EE877CFF5FDDA17502C0AE34198A0
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
         );
         uint gasUsed = currentGas - gasleft();
-        assertEq(tunnelRouter.nonces(address(packetConsumer)), 19);
+        assertEq(tunnelRouter.nonces(address(packetConsumer)), 2);
         assertEq(tunnelRouter.isInactive(address(packetConsumer)), false);
 
         uint feeGain = address(this).balance - relayerBalance;
@@ -91,7 +97,7 @@ contract RelayFullLoopTest is Test, Constants {
     function testRelayMessageConsumerUseReserve() public {
         // set latest nonce.
         packetConsumer.deactivate();
-        packetConsumer.reactivate(18);
+        packetConsumer.reactivate(1);
 
         uint relayerBalance = address(this).balance;
 
@@ -99,12 +105,12 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             packetConsumer,
-            address(0x3c3CA8c8A0bED1AdB3d690c1134A63dB699eC516),
-            0x20E410DEBC3EB7C29ADB312165C00A759A5EE877CFF5FDDA17502C0AE34198A0
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
         );
         uint gasUsed = currentGas - gasleft();
 
-        assertEq(tunnelRouter.nonces(address(packetConsumer)), 19);
+        assertEq(tunnelRouter.nonces(address(packetConsumer)), 2);
         assertEq(tunnelRouter.isInactive(address(packetConsumer)), true);
 
         uint feeGain = address(this).balance - relayerBalance;
@@ -129,8 +135,8 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             packetConsumer,
-            address(0x3c3CA8c8A0bED1AdB3d690c1134A63dB699eC516),
-            0x20E410DEBC3EB7C29ADB312165C00A759A5EE877CFF5FDDA17502C0AE34198A0
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
         );
     }
 
@@ -141,15 +147,15 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             packetConsumer,
-            address(0x3c3CA8c8A0bED1AdB3d690c1134A63dB699eC516),
-            0x20E410DEBC3EB7C29ADB312165C00A759A5EE877CFF5FDDA17502C0AE34198A0
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
         );
     }
 
     function testRelayBandReserveNotEnough() public {
         // set latest nonce.
         packetConsumer.deactivate();
-        packetConsumer.reactivate(18);
+        packetConsumer.reactivate(1);
 
         vm.deal(address(bandReserve), 0 ether);
 
@@ -157,14 +163,14 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             packetConsumer,
-            address(0x3c3CA8c8A0bED1AdB3d690c1134A63dB699eC516),
-            0x20E410DEBC3EB7C29ADB312165C00A759A5EE877CFF5FDDA17502C0AE34198A0
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
         );
     }
 
     function testReactivateAlreadyActive() public {
         vm.expectRevert("TunnelRouter: !inactive");
-        packetConsumer.reactivate(18);
+        packetConsumer.reactivate(1);
     }
 
     receive() external payable {}

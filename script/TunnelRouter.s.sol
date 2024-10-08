@@ -46,6 +46,7 @@ contract DeployScript is Script {
                 (
                     ITssVerifier(tssVerifier),
                     IBandReserve(proxyBandReserveAddr),
+                    "eth",
                     msg.sender,
                     0,
                     0,

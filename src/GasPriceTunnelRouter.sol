@@ -16,6 +16,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
     function initialize(
         ITssVerifier tssVerifier_,
         IBandReserve bandReserve_,
+        string memory chainID_,
         address initialOwner,
         uint additionalGas_,
         uint maxGasUsedProcess_,
@@ -25,6 +26,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         __BaseRouter_init(
             tssVerifier_,
             bandReserve_,
+            chainID_,
             initialOwner,
             additionalGas_,
             maxGasUsedProcess_,

@@ -20,6 +20,7 @@ abstract contract BaseTunnelRouter is
     ITssVerifier public tssVerifier;
     IBandReserve public bandReserve;
 
+    string public chainID;
     uint public additionalGas;
     uint public maxGasUsedProcess;
     uint public maxGasUsedCollectFee;
@@ -43,6 +44,7 @@ abstract contract BaseTunnelRouter is
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IBandReserve bandReserve_,
+        string memory chainID_,
         address initialOwner,
         uint additionalGas_,
         uint maxGasUsedProcess_,
@@ -54,6 +56,7 @@ abstract contract BaseTunnelRouter is
 
         tssVerifier = tssVerifier_;
         bandReserve = bandReserve_;
+        chainID = chainID_;
         additionalGas = additionalGas_;
         maxGasUsedProcess = maxGasUsedProcess_;
         maxGasUsedCollectFee = maxGasUsedCollectFee_;
@@ -106,18 +109,23 @@ abstract contract BaseTunnelRouter is
         require(!isInactive[address(targetAddr)], "TunnelRouter: !active");
 
         // decoding and validate the message.
-        Packet memory packet = _decodePacket(message);
+        TssMessage memory tssMessage = _decodeTssMessage(message);
+        Packet memory packet = tssMessage.packet;
         require(
             nonces[address(targetAddr)] + 1 == packet.nonce,
             "TunnelRouter: !nonce"
         );
 
-        // TODO: require confirmation.
-        // require(packet.chainID == block.chainid, "TunnelRouter: !chainID");
-        // require(
-        //     packet.targetAddr == address(targetAddr),
-        //     "TunnelRouter: !targetAddr"
-        // );
+        // validate the hashOriginator.
+        bytes32 hashOriginator = _toHashOriginator(
+            packet.tunnelID,
+            address(targetAddr),
+            chainID
+        );
+        require(
+            tssMessage.hashOriginator == hashOriginator,
+            "TunnelRouter: !hashOriginator"
+        );
 
         // update the nonce.
         nonces[address(targetAddr)] = packet.nonce;

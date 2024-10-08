@@ -17,6 +17,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     function initialize(
         ITssVerifier tssVerifier_,
         IBandReserve bandReserve_,
+        string memory chainID_,
         address initialOwner,
         uint additionalGas_,
         uint maxGasUsedProcess_,
@@ -27,6 +28,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         __BaseRouter_init(
             tssVerifier_,
             bandReserve_,
+            chainID_,
             initialOwner,
             additionalGas_,
             maxGasUsedProcess_,

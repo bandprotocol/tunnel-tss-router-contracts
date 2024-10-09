@@ -3,23 +3,31 @@
 pragma solidity ^0.8.13;
 
 import "../../src/interfaces/IDataConsumer.sol";
-import "../../src/PacketDecoder.sol";
 
-contract Constants is PacketDecoder {
+import "../../src/libraries/PacketDecoder.sol";
+
+contract Constants {
     uint8 CURRENT_GROUP_PARITY = 2;
     uint CURRENT_GROUP_PX =
-        0x44417D812CD100AC005F5554F83BCBC4FAE4DFACC74C3833733A0EE67946FDB9;
+        0x42A11E3B2FF09B9F01794BFB05EB19F19693AB1D1E2DFBCD1C53C8D7ECD134AD;
 
     bytes constant TSS_RAW_MESSAGE =
         abi.encodePacked(
             hex"0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6",
-            hex"95C07FC70EB214B432CC70A9CFA044AEB532577C0B6F7B1AAB2F6E5A7D030E92",
-            hex"000000006703A3240000000000000002D3813E0CCBA0AD5A",
+            hex"78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4",
+            hex"000000006705E8A00000000000000002D3813E0CCBA0AD5A",
             hex"0000000000000000000000000000000000000000000000000000000000000020",
             hex"0000000000000000000000000000000000000000000000000000000000000001",
             hex"0000000000000000000000000000000000000000000000000000000000000002",
-            hex"0000000000000000000000000000000000000000000000000000000000000080",
-            hex"000000000000000000000000000000000000000000000000000000006703A324",
+            hex"00000000000000000000000000000000000000000000000000000000000000C0",
+            hex"0000000000000000000000000000000000000000000000000000000000000100",
+            hex"0000000000000000000000000000000000000000000000000000000000000160",
+            hex"000000000000000000000000000000000000000000000000000000006705E8A0",
+            hex"0000000000000000000000000000000000000000000000000000000000000003",
+            hex"6574680000000000000000000000000000000000000000000000000000000000",
+            hex"000000000000000000000000000000000000000000000000000000000000002A",
+            hex"307865303046316638356162444232614636373630373539353437643435306461363843453636426231",
+            hex"00000000000000000000000000000000000000000000",
             hex"0000000000000000000000000000000000000000000000000000000000000002",
             hex"0000000000000000000000000063727970746F5F70726963652E627463757364",
             hex"0000000000000000000000000000000000000000000000000000000000000000",
@@ -27,32 +35,50 @@ contract Constants is PacketDecoder {
             hex"0000000000000000000000000000000000000000000000000000000000000000"
         );
     uint constant MESSAGE_SIGNATURE =
-        0x5DDF044945CBD0EA1472AF39766E9D93999F9D2815C3EC01BBF9017609084BD0;
+        0x5A1B0A6ACD177D54D88E8CF18706C8ABB98EE3BBBC58A4AAA1351E3EA8AB9FC6;
     address constant SIGNATURE_NONCE_ADDR =
-        0x2E868784006cD3C6e2C5EfCd2D3DA2c4dCAC20a4;
+        0x0b7754FD4545b561C1bc2E978922A5b7772F01D8;
 
-    function DECODED_TSS_MESSAGE() public pure returns (TssMessage memory) {
-        SignalPrice[] memory signalPriceInfos = new SignalPrice[](2);
+    function DECODED_TSS_MESSAGE()
+        public
+        pure
+        returns (PacketDecoder.TssMessage memory)
+    {
+        PacketDecoder.SignalPrice[]
+            memory signalPriceInfos = new PacketDecoder.SignalPrice[](2);
         bytes memory signalIDBtc = abi.encodePacked(
             hex"00000000000000000000000000",
             "crypto_price.btcusd"
         );
-        signalPriceInfos[0] = SignalPrice(bytes32(signalIDBtc), 0);
+        signalPriceInfos[0] = PacketDecoder.SignalPrice(
+            bytes32(signalIDBtc),
+            0
+        );
 
         bytes memory signalIDEth = abi.encodePacked(
             hex"00000000000000000000000000",
             "crypto_price.ethusd"
         );
-        signalPriceInfos[1] = SignalPrice(bytes32(signalIDEth), 0);
+        signalPriceInfos[1] = PacketDecoder.SignalPrice(
+            bytes32(signalIDEth),
+            0
+        );
 
-        Packet memory packet = Packet(1, 2, signalPriceInfos, 1728291620);
-
-        TssMessage memory tssMessage = TssMessage(
-            0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6,
-            0x95C07FC70EB214B432CC70A9CFA044AEB532577C0B6F7B1AAB2F6E5A7D030E92,
-            1728291620,
+        PacketDecoder.Packet memory packet = PacketDecoder.Packet(
+            1,
             2,
-            EncoderType.FixedPoint,
+            "eth",
+            "0xe00F1f85abDB2aF6760759547d450da68CE66Bb1",
+            signalPriceInfos,
+            1728440480
+        );
+
+        PacketDecoder.TssMessage memory tssMessage = PacketDecoder.TssMessage(
+            0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6,
+            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
+            1728440480,
+            2,
+            PacketDecoder.EncoderType.FixedPoint,
             packet
         );
 

@@ -5,10 +5,10 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import "../src/BandReserve.sol";
-import "../src/TssVerifier.sol";
 import "../src/GasPriceTunnelRouter.sol";
 import "../src/PacketConsumer.sol";
+import "../src/TssVerifier.sol";
+import "../src/Vault.sol";
 import "./helper/Constants.sol";
 import "./helper/TssSignerHelper.sol";
 
@@ -16,20 +16,19 @@ contract RelayFullLoopTest is Test, Constants {
     PacketConsumer packetConsumer;
     GasPriceTunnelRouter tunnelRouter;
     TssVerifier tssVerifier;
-    BandReserve bandReserve;
+    Vault vault;
 
     function setUp() public {
         tssVerifier = new TssVerifier(0x00, address(this));
         tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
-        bandReserve = new BandReserve();
-        bandReserve.initialize(address(this));
-        vm.deal(address(bandReserve), 10 ether);
+        vault = new Vault();
+        vault.initialize(address(this), 0, address(0x00));
 
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
             tssVerifier,
-            bandReserve,
+            vault,
             "eth",
             address(this),
             75000,
@@ -38,15 +37,12 @@ contract RelayFullLoopTest is Test, Constants {
             1
         );
 
-        address[] memory whitelistAddrs = new address[](1);
-        whitelistAddrs[0] = address(tunnelRouter);
-
-        bandReserve.setWhitelist(whitelistAddrs, true);
+        vault.setTunnelRouter(address(tunnelRouter));
 
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            0x95C07FC70EB214B432CC70A9CFA044AEB532577C0B6F7B1AAB2F6E5A7D030E92,
+            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");
@@ -56,26 +52,22 @@ contract RelayFullLoopTest is Test, Constants {
             packetConsumerAddr
         );
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
+
+        // set latest nonce.
+        packetConsumer.activate{value: 0.01 ether}(1, 1);
     }
 
     function testRelayMessageConsumerHasEnoughFund() public {
-        // set latest nonce.
-        packetConsumer.deactivate();
-        packetConsumer.reactivate(1);
-
-        vm.deal(address(packetConsumer), 10 ether);
-
         uint relayerBalance = address(this).balance;
         uint currentGas = gasleft();
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
-            packetConsumer,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
         uint gasUsed = currentGas - gasleft();
-        assertEq(tunnelRouter.nonces(address(packetConsumer)), 2);
-        assertEq(tunnelRouter.isInactive(address(packetConsumer)), false);
+        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
+        assertEq(tunnelRouter.isActive(1, address(packetConsumer)), true);
 
         uint feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
@@ -95,23 +87,20 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerUseReserve() public {
-        // set latest nonce.
-        packetConsumer.deactivate();
-        packetConsumer.reactivate(1);
-
         uint relayerBalance = address(this).balance;
+
+        vault.setMinimumActiveBalance(1 ether);
 
         uint currentGas = gasleft();
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
-            packetConsumer,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
         uint gasUsed = currentGas - gasleft();
 
-        assertEq(tunnelRouter.nonces(address(packetConsumer)), 2);
-        assertEq(tunnelRouter.isInactive(address(packetConsumer)), true);
+        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
+        assertEq(tunnelRouter.isActive(1, address(packetConsumer)), false);
 
         uint feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
@@ -130,39 +119,36 @@ contract RelayFullLoopTest is Test, Constants {
         );
     }
 
-    function testRelayInvalidNonce() public {
-        vm.expectRevert("TunnelRouter: !nonce");
+    function testRelayInvalidSequence() public {
+        packetConsumer.deactivate(1);
+
+        packetConsumer.activate{value: 0.01 ether}(1, 0);
+
+        vm.expectRevert("TunnelRouter: !sequence");
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
-            packetConsumer,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
     }
 
     function testRelayInactiveTargetContract() public {
-        packetConsumer.deactivate();
+        packetConsumer.deactivate(1);
 
         vm.expectRevert("TunnelRouter: !active");
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
-            packetConsumer,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
     }
 
-    function testRelayBandReserveNotEnough() public {
-        // set latest nonce.
-        packetConsumer.deactivate();
-        packetConsumer.reactivate(1);
+    function testRelayVaultNotEnoughToken() public {
+        tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(1 ether));
 
-        vm.deal(address(bandReserve), 0 ether);
-
-        vm.expectRevert("BandReserve: Fail to send eth");
+        vm.expectRevert(); // underflow error
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
-            packetConsumer,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
@@ -170,7 +156,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testReactivateAlreadyActive() public {
         vm.expectRevert("TunnelRouter: !inactive");
-        packetConsumer.reactivate(1);
+        packetConsumer.activate(1, 1);
     }
 
     receive() external payable {}

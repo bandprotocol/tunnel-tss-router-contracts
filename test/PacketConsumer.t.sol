@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
 
+import "../src/libraries/PacketDecoder.sol";
 import "../src/PacketConsumer.sol";
 import "./helper/Constants.sol";
 import "./helper/MockTunnelRouter.sol";
@@ -16,7 +17,7 @@ contract PacketConsumerTest is Test, Constants {
         tunnelRouter = new MockTunnelRouter();
         packetConsumer = new PacketConsumer(
             address(tunnelRouter),
-            0x95C07FC70EB214B432CC70A9CFA044AEB532577C0B6F7B1AAB2F6E5A7D030E92,
+            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
             address(this)
         );
     }
@@ -24,8 +25,8 @@ contract PacketConsumerTest is Test, Constants {
     function testProcess() public {
         tunnelRouter.relay(TSS_RAW_MESSAGE, packetConsumer);
 
-        TssMessage memory tssMessage = DECODED_TSS_MESSAGE();
-        Packet memory packet = tssMessage.packet;
+        PacketDecoder.TssMessage memory tssMessage = DECODED_TSS_MESSAGE();
+        PacketDecoder.Packet memory packet = tssMessage.packet;
 
         // check prices mapping.
         (uint64 price, int64 timestamp) = packetConsumer.prices(
@@ -41,35 +42,7 @@ contract PacketConsumerTest is Test, Constants {
         for (uint i = 32; i < 64; i++) {
             message[i] = 0x00;
         }
-
-        vm.expectRevert("PacketConsumer: Invalid hash originator");
+        vm.expectRevert("PacketConsumer: !hashOriginator");
         tunnelRouter.relay(message, packetConsumer);
-    }
-
-    function testCollectFee() public {
-        address owner = vm.addr(1);
-        vm.prank(owner);
-        vm.deal(owner, 100 wei);
-        (bool ok, ) = address(packetConsumer).call{value: 100 wei}("");
-        assertEq(ok, true);
-        assertEq(address(packetConsumer).balance, 100);
-        vm.stopPrank();
-
-        tunnelRouter.collectFee(packetConsumer, 100);
-        assertEq(address(tunnelRouter).balance, 100);
-        assertEq(address(packetConsumer).balance, 0);
-    }
-
-    function testCollectFeeInsufficientFund() public {
-        address owner = vm.addr(1);
-        vm.prank(owner);
-        vm.deal(owner, 50 wei);
-        (bool ok, ) = address(packetConsumer).call{value: 50 wei}("");
-        assertEq(ok, true);
-        assertEq(address(packetConsumer).balance, 50);
-        vm.stopPrank();
-
-        vm.expectRevert("PacketConsumer: insufficient balance");
-        tunnelRouter.collectFee(packetConsumer, 100);
     }
 }

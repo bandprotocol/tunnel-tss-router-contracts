@@ -6,44 +6,58 @@ import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
-import "./interfaces/IBandReserve.sol";
-import "./interfaces/ITssVerifier.sol";
 import "./interfaces/IDataConsumer.sol";
-import "./PacketDecoder.sol";
+import "./interfaces/ITssVerifier.sol";
+import "./interfaces/ITunnelRouter.sol";
+import "./interfaces/IVault.sol";
+
+import "./libraries/PacketDecoder.sol";
+import "./libraries/StringAddress.sol";
 
 abstract contract BaseTunnelRouter is
     Initializable,
     Ownable2StepUpgradeable,
     PausableUpgradeable,
-    PacketDecoder
+    ITunnelRouter
 {
+    using StringAddress for string;
+    using PacketDecoder for bytes;
+
     ITssVerifier public tssVerifier;
-    IBandReserve public bandReserve;
+    IVault public vault;
 
     string public chainID;
     uint public additionalGas;
     uint public maxGasUsedProcess;
     uint public maxGasUsedCollectFee;
 
-    mapping(address => bool) public isInactive;
-    mapping(address => uint64) public nonces;
+    mapping(uint64 => mapping(address => bool)) public isActive;
+    mapping(uint64 => mapping(address => uint64)) public sequence;
 
     uint[50] __gap;
 
     event SetMaxGasUsedProcess(uint maxGasUsedProcess);
     event SetMaxGasUsedCollectFee(uint maxGasUsedCollectFee);
     event ProcessMessage(
+        uint64 indexed tunnelID,
         address indexed targetAddr,
-        uint64 indexed nonce,
+        uint64 indexed sequence,
         bool isReverted
     );
-    event CollectFee(address indexed targetAddr, uint fee);
-    event Reactivate(address indexed targetAddr, uint64 latestNonce);
-    event Deactivate(address indexed targetAddr, uint64 latestNonce);
+    event Activate(
+        uint64 indexed tunnelID,
+        address indexed targetAddr,
+        uint64 latestNonce
+    );
+    event Deactivate(
+        uint64 indexed tunnelID,
+        address indexed targetAddr,
+        uint64 latestNonce
+    );
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
-        IBandReserve bandReserve_,
+        IVault vault_,
         string memory chainID_,
         address initialOwner,
         uint additionalGas_,
@@ -55,28 +69,34 @@ abstract contract BaseTunnelRouter is
         __Pausable_init();
 
         tssVerifier = tssVerifier_;
-        bandReserve = bandReserve_;
+        vault = vault_;
         chainID = chainID_;
         additionalGas = additionalGas_;
         maxGasUsedProcess = maxGasUsedProcess_;
         maxGasUsedCollectFee = maxGasUsedCollectFee_;
     }
 
-    /// @dev set the additionalGas being used in relaying message.
-    /// @param additionalGas_ is the new additional gas amount.
+    /**
+     * @dev Set the additionalGas being used in relaying message.
+     * @param additionalGas_ The new additional gas amount.
+     */
     function setBaseGasUsed(uint additionalGas_) external onlyOwner {
         additionalGas = additionalGas_;
     }
 
-    /// @dev set the maximum gas used in calling process.
-    /// @param maxGasUsedProcess_ is the maximum gas used in calling process.
+    /**
+     * @dev Set the maximum gas used in calling process.
+     * @param maxGasUsedProcess_ The maximum gas used in calling process.
+     */
     function setMaxGasUsedProcess(uint maxGasUsedProcess_) external onlyOwner {
         maxGasUsedProcess = maxGasUsedProcess_;
         emit SetMaxGasUsedProcess(maxGasUsedProcess);
     }
 
-    /// @dev set the maximum gas used in calling collectFee.
-    /// @param maxGasUsedCollectFee_ is the maximum gas used in calling collectFee.
+    /**
+     * @dev Set the maximum gas used in calling collectFee.
+     * @param maxGasUsedCollectFee_ The maximum gas used in calling collectFee.
+     */
     function setMaxGasUsedCollectFee(
         uint maxGasUsedCollectFee_
     ) external onlyOwner {
@@ -84,51 +104,45 @@ abstract contract BaseTunnelRouter is
         emit SetMaxGasUsedCollectFee(maxGasUsedCollectFee);
     }
 
-    /// @dev pause the contract.
+    /**
+     * @dev pause the contract.
+     */
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @dev unpause the contract.
+    /**
+     * @dev unpause the contract.
+     */
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @dev relay the message to the target contract.
-    /// @param message is the message to be relayed.
-    /// @param targetAddr is the target contract address.
-    /// @param rAddr is the r address of the signature.
-    /// @param signature is the signature of the message.
+    /**
+     * @dev See {ITunnelRouter-relay}.
+     */
     function relay(
         bytes calldata message,
-        IDataConsumer targetAddr,
         address rAddr,
         uint256 signature
     ) external whenNotPaused {
-        // check if the target is active.
-        require(!isInactive[address(targetAddr)], "TunnelRouter: !active");
+        PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
+        PacketDecoder.Packet memory packet = tssMessage.packet;
+        address targetAddr = packet.targetAddr.toAddress();
 
-        // decoding and validate the message.
-        TssMessage memory tssMessage = _decodeTssMessage(message);
-        Packet memory packet = tssMessage.packet;
+        // check if a message is valid.
+        require(isActive[packet.tunnelID][targetAddr], "TunnelRouter: !active");
         require(
-            nonces[address(targetAddr)] + 1 == packet.nonce,
-            "TunnelRouter: !nonce"
-        );
-
-        // validate the hashOriginator.
-        bytes32 hashOriginator = _toHashOriginator(
-            packet.tunnelID,
-            address(targetAddr),
-            chainID
+            sequence[packet.tunnelID][targetAddr] + 1 == packet.sequence,
+            "TunnelRouter: !sequence"
         );
         require(
-            tssMessage.hashOriginator == hashOriginator,
-            "TunnelRouter: !hashOriginator"
+            keccak256(bytes(packet.chainID)) == keccak256(bytes(chainID)),
+            "TunnelRouter: !chainID"
         );
 
-        // update the nonce.
-        nonces[address(targetAddr)] = packet.nonce;
+        // update the sequence.
+        sequence[packet.tunnelID][targetAddr] = packet.sequence;
 
         // verify signature.
         bool success = tssVerifier.verify(message, rAddr, signature);
@@ -137,62 +151,63 @@ abstract contract BaseTunnelRouter is
         // forward the message to the target contract.
         uint gasLeft = gasleft();
         bool isReverted = false;
-        try targetAddr.process{gas: maxGasUsedProcess}(message) {} catch {
+        try
+            IDataConsumer(targetAddr).process{gas: maxGasUsedProcess}(message)
+        {} catch {
             isReverted = true;
         }
-        emit ProcessMessage(address(targetAddr), packet.nonce, isReverted);
+        emit ProcessMessage(
+            packet.tunnelID,
+            targetAddr,
+            packet.sequence,
+            isReverted
+        );
 
         // charge a fee from the target contract.
         uint fee = _routerFee(gasLeft - gasleft() + additionalGas);
-        isReverted = false;
-        try targetAddr.collectFee{gas: maxGasUsedCollectFee}(fee) {} catch {
-            isReverted = true;
+        vault.collectFee(packet.tunnelID, targetAddr, fee);
+
+        if (!vault.isBalanceOverThreshold(packet.tunnelID, targetAddr)) {
+            _deactivate(packet.tunnelID, targetAddr);
         }
 
-        // check the collectedFee is enough to cover the fee. If not, withdraw from the reserve
-        // and deactivate the target contract.
-        uint collectedFee = address(this).balance;
-        emit CollectFee(address(targetAddr), collectedFee);
-
-        if (isReverted || fee > collectedFee) {
-            uint remainingFee = fee > collectedFee ? fee - collectedFee : 0;
-            bandReserve.borrowOnBehalf(remainingFee, address(targetAddr));
-
-            _deactivate(address(targetAddr));
-
-            collectedFee = collectedFee + remainingFee;
-        }
-
-        (bool ok, ) = payable(msg.sender).call{value: collectedFee}("");
+        (bool ok, ) = payable(msg.sender).call{value: fee}("");
         require(ok, "TunnelRouter: Fail to send fee");
     }
 
-    /// @dev reactivate the target contract by repaying the debt and set the nonce of the target contract.
-    /// @param latestNonce is the new latest nonce of the sender contract.
-    function reactivate(uint64 latestNonce) external payable {
-        require(isInactive[msg.sender], "TunnelRouter: !inactive");
+    /**
+     * @dev See {ITunnelRouter-activate}.
+     */
+    function activate(uint64 tunnelID, uint64 latestSeq) external payable {
+        require(!isActive[tunnelID][msg.sender], "TunnelRouter: !inactive");
+
+        vault.deposit{value: msg.value}(tunnelID, msg.sender);
+
         require(
-            msg.value >= bandReserve.debt(msg.sender),
-            "TunnelRouter: !debt"
+            vault.isBalanceOverThreshold(tunnelID, msg.sender),
+            "TunnelRouter: !threshold"
         );
-        if (msg.value > 0) {
-            bandReserve.repay{value: msg.value}(msg.sender);
-        }
 
-        isInactive[msg.sender] = false;
-        nonces[msg.sender] = latestNonce;
-        emit Reactivate(msg.sender, latestNonce);
+        isActive[tunnelID][msg.sender] = true;
+        sequence[tunnelID][msg.sender] = latestSeq;
+        emit Activate(tunnelID, msg.sender, latestSeq);
     }
 
-    /// @dev deactivate the sender contract.
-    function deactivate() external {
-        _deactivate(msg.sender);
+    /**
+     * @dev See {ITunnelRouter-deactivate}.
+     */
+    function deactivate(uint64 tunnelID) external {
+        require(isActive[tunnelID][msg.sender], "TunnelRouter: !active");
+        _deactivate(tunnelID, msg.sender);
+
+        // withdraw the remaining balance from vault contract.
+        vault.withdrawAll(tunnelID, msg.sender);
     }
 
-    /// @dev deactivate the given address.
-    function _deactivate(address addr) internal {
-        isInactive[addr] = true;
-        emit Deactivate(addr, nonces[addr]);
+    /// @dev deactivate the (contract address, tunnelID).
+    function _deactivate(uint64 tunnelID, address addr) internal {
+        isActive[tunnelID][addr] = false;
+        emit Deactivate(tunnelID, addr, sequence[tunnelID][addr]);
     }
 
     /// @dev calculate the fee for the router.

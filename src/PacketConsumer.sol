@@ -6,10 +6,13 @@ import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 import "./interfaces/IDataConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
-import "./PacketDecoder.sol";
+
+import "./libraries/PacketDecoder.sol";
 import "./TssVerifier.sol";
 
-contract PacketConsumer is IDataConsumer, PacketDecoder, Ownable2Step {
+contract PacketConsumer is IDataConsumer, Ownable2Step {
+    using PacketDecoder for bytes;
+
     // A price object that being stored for each signal ID.
     struct Price {
         uint64 price;
@@ -46,16 +49,17 @@ contract PacketConsumer is IDataConsumer, PacketDecoder, Ownable2Step {
         hashOriginator = hashOriginator_;
     }
 
-    /// @dev Process the feeds price data from the TunnelRouter.
-    /// @param message The encoded message that contains the feeds price data.
+    /**
+     * @dev See {IDataConsumer-process}.
+     */
     function process(bytes calldata message) external onlyTunnelRouter {
-        TssMessage memory tssMessage = _decodeTssMessage(message);
+        PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         require(
             tssMessage.hashOriginator == hashOriginator,
-            "PacketConsumer: Invalid hash originator"
+            "PacketConsumer: !hashOriginator"
         );
 
-        Packet memory packet = tssMessage.packet;
+        PacketDecoder.Packet memory packet = tssMessage.packet;
 
         for (uint i = 0; i < packet.signals.length; i++) {
             prices[packet.signals[i].signal] = Price({
@@ -71,37 +75,30 @@ contract PacketConsumer is IDataConsumer, PacketDecoder, Ownable2Step {
         }
     }
 
-    /// @dev transfer fee to the contract.
-    /// @param amount The amount of requested fee to be transferred to tunnelRouter contract.
-    function collectFee(uint amount) external onlyTunnelRouter {
-        require(
-            address(this).balance >= amount,
-            "PacketConsumer: insufficient balance"
+    /**
+     * @dev See {IDataConsumer-activate}.
+     */
+    function activate(
+        uint64 tunnelID,
+        uint64 latestSeq
+    ) external payable onlyOwner {
+        ITunnelRouter(tunnelRouter).activate{value: msg.value}(
+            tunnelID,
+            latestSeq
         );
-
-        (bool ok, bytes memory result) = tunnelRouter.call{value: amount}("");
-        if (!ok) {
-            // Next 5 lines from https://ethereum.stackexchange.com/a/83577
-            if (result.length < 68) revert("PacketConsumer: Fail to send fee");
-            assembly {
-                result := add(result, 0x04)
-            }
-            revert(abi.decode(result, (string)));
-        }
     }
 
-    /// @dev reactivate the target contract with the latest nonce.
-    /// @param latestNonce The new latest nonce of the target contract.
-    function reactivate(uint64 latestNonce) external payable onlyOwner {
-        ITunnelRouter(tunnelRouter).reactivate{value: msg.value}(latestNonce);
-    }
+    /**
+     * @dev See {IDataConsumer-deactivate}.
+     */
+    function deactivate(uint64 tunnelID) external onlyOwner {
+        ITunnelRouter(tunnelRouter).deactivate(tunnelID);
 
-    /// @dev deactivate the contract to the tunnelRouter.
-    function deactivate() external onlyOwner {
-        ITunnelRouter(tunnelRouter).deactivate();
+        // send the remaining balance to the caller.
+        uint balance = address(this).balance;
+        (bool ok, ) = payable(msg.sender).call{value: balance}("");
+        require(ok, "PacketConsumer: !send");
     }
 
     receive() external payable {}
-
-    fallback() external payable {}
 }

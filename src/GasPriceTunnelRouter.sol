@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.23;
 
+import "./interfaces/IVault.sol";
 import "./BaseTunnelRouter.sol";
 
 contract GasPriceTunnelRouter is BaseTunnelRouter {
@@ -15,7 +16,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
 
     function initialize(
         ITssVerifier tssVerifier_,
-        IBandReserve bandReserve_,
+        IVault vault_,
         string memory chainID_,
         address initialOwner,
         uint additionalGas_,
@@ -25,7 +26,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
     ) public initializer {
         __BaseRouter_init(
             tssVerifier_,
-            bandReserve_,
+            vault_,
             chainID_,
             initialOwner,
             additionalGas_,
@@ -33,12 +34,18 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
             maxGasUsedCollectFee_
         );
 
-        setGasFee(GasFeeInfo(gasPrice_));
+        _setGasFee(GasFeeInfo(gasPrice_));
     }
 
-    /// @dev Set the gas fee information.
-    /// @param gasFee_ is the new gas fee information.
-    function setGasFee(GasFeeInfo memory gasFee_) public virtual onlyOwner {
+    /**
+     * @dev Set the gas fee information.
+     * @param gasFee_ is the new gas fee information.
+     */
+    function setGasFee(GasFeeInfo memory gasFee_) public onlyOwner {
+        _setGasFee(gasFee_);
+    }
+
+    function _setGasFee(GasFeeInfo memory gasFee_) internal {
         gasFee = gasFee_;
         emit SetGasFee(gasFee_);
     }

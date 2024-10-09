@@ -6,11 +6,12 @@ import {console} from "forge-std/console.sol";
 import {Script} from "forge-std/script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/upgrades.sol";
 
+import {IVault} from "../src/interfaces/IVault.sol";
 import {ITssVerifier} from "../src/interfaces/ITssVerifier.sol";
-import {IBandReserve} from "../src/interfaces/IBandReserve.sol";
-import {BandReserve} from "../src/BandReserve.sol";
-import {TssVerifier} from "../src/TssVerifier.sol";
+
 import {GasPriceTunnelRouter} from "../src/GasPriceTunnelRouter.sol";
+import {TssVerifier} from "../src/TssVerifier.sol";
+import {Vault} from "../src/Vault.sol";
 
 contract DeployScript is Script {
     bytes32 constant _HASH_ORIGINATOR_REPLACEMENT =
@@ -21,14 +22,14 @@ contract DeployScript is Script {
 
         vm.startBroadcast(privKey);
 
-        // Deploy the upgradeable BandReserve contract
-        address proxyBandReserveAddr = Upgrades.deployTransparentProxy(
-            "BandReserve.sol",
+        // Deploy the proxy vault contract
+        address proxyVaultAddr = Upgrades.deployTransparentProxy(
+            "Vault.sol",
             msg.sender,
-            abi.encodeCall(BandReserve.initialize, (msg.sender))
+            abi.encodeCall(Vault.initialize, (msg.sender, 0, address(0x00)))
         );
-        address implBandReserveAddr = Upgrades.getImplementationAddress(
-            proxyBandReserveAddr
+        address implVaultddr = Upgrades.getImplementationAddress(
+            proxyVaultAddr
         );
 
         // Deploy the TssVerifier contract
@@ -37,15 +38,15 @@ contract DeployScript is Script {
             msg.sender
         );
 
-        // Deploy the upgradeable TunnelRouter contract
+        // Deploy the proxy TunnelRouter contract
         address proxyTunnelRouterAddr = Upgrades.deployTransparentProxy(
             "GasPriceTunnelRouter.sol",
             msg.sender,
             abi.encodeCall(
                 GasPriceTunnelRouter.initialize,
                 (
-                    ITssVerifier(tssVerifier),
-                    IBandReserve(proxyBandReserveAddr),
+                    tssVerifier,
+                    IVault(proxyVaultAddr),
                     "eth",
                     msg.sender,
                     0,
@@ -61,8 +62,8 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("BandReserve Proxy: ", proxyBandReserveAddr);
-        console.log("BandReserve Implementation: ", implBandReserveAddr);
+        console.log("Vault Proxy: ", proxyVaultAddr);
+        console.log("Vault Implementation: ", implVaultddr);
         console.log("TssVerifier: ", address(tssVerifier));
         console.log("GasPriceTunnelRouter Proxy: ", proxyTunnelRouterAddr);
         console.log(

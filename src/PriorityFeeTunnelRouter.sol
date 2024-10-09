@@ -16,7 +16,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
 
     function initialize(
         ITssVerifier tssVerifier_,
-        IBandReserve bandReserve_,
+        IVault vault_,
         string memory chainID_,
         address initialOwner,
         uint additionalGas_,
@@ -27,7 +27,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     ) public initializer {
         __BaseRouter_init(
             tssVerifier_,
-            bandReserve_,
+            vault_,
             chainID_,
             initialOwner,
             additionalGas_,
@@ -35,12 +35,18 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
             maxGasUsedCollectFee_
         );
 
-        setGasFee(GasFeeInfo(baseFee_, priorityFee_));
+        _setGasFee(GasFeeInfo(baseFee_, priorityFee_));
     }
 
-    /// @dev Set the gas fee information.
-    /// @param gasFee_ is the new gas fee information.
-    function setGasFee(GasFeeInfo memory gasFee_) public virtual onlyOwner {
+    /**
+     * @dev Set the gas fee information.
+     * @param gasFee_ is the new gas fee information.
+     */
+    function setGasFee(GasFeeInfo memory gasFee_) public onlyOwner {
+        _setGasFee(gasFee_);
+    }
+
+    function _setGasFee(GasFeeInfo memory gasFee_) internal {
         gasFee = gasFee_;
         emit SetGasFee(gasFee_);
     }

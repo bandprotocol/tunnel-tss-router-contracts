@@ -21,7 +21,6 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         address initialOwner,
         uint additionalGas_,
         uint maxGasUsedProcess_,
-        uint maxGasUsedCollectFee_,
         uint baseFee_,
         uint priorityFee_
     ) public initializer {
@@ -31,8 +30,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
             chainID_,
             initialOwner,
             additionalGas_,
-            maxGasUsedProcess_,
-            maxGasUsedCollectFee_
+            maxGasUsedProcess_
         );
 
         _setGasFee(GasFeeInfo(baseFee_, priorityFee_));

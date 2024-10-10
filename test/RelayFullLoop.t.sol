@@ -33,7 +33,6 @@ contract RelayFullLoopTest is Test, Constants {
             address(this),
             75000,
             50000,
-            50000,
             1
         );
 

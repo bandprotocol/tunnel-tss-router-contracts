@@ -37,7 +37,6 @@ abstract contract BaseTunnelRouter is
     uint[50] __gap;
 
     event SetMaxGasUsedProcess(uint maxGasUsedProcess);
-    event SetMaxGasUsedCollectFee(uint maxGasUsedCollectFee);
     event ProcessMessage(
         uint64 indexed tunnelID,
         address indexed targetAddr,
@@ -61,8 +60,7 @@ abstract contract BaseTunnelRouter is
         string memory chainID_,
         address initialOwner,
         uint additionalGas_,
-        uint maxGasUsedProcess_,
-        uint maxGasUsedCollectFee_
+        uint maxGasUsedProcess_
     ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -73,7 +71,6 @@ abstract contract BaseTunnelRouter is
         chainID = chainID_;
         additionalGas = additionalGas_;
         maxGasUsedProcess = maxGasUsedProcess_;
-        maxGasUsedCollectFee = maxGasUsedCollectFee_;
     }
 
     /**
@@ -91,17 +88,6 @@ abstract contract BaseTunnelRouter is
     function setMaxGasUsedProcess(uint maxGasUsedProcess_) external onlyOwner {
         maxGasUsedProcess = maxGasUsedProcess_;
         emit SetMaxGasUsedProcess(maxGasUsedProcess);
-    }
-
-    /**
-     * @dev Set the maximum gas used in calling collectFee.
-     * @param maxGasUsedCollectFee_ The maximum gas used in calling collectFee.
-     */
-    function setMaxGasUsedCollectFee(
-        uint maxGasUsedCollectFee_
-    ) external onlyOwner {
-        maxGasUsedCollectFee = maxGasUsedCollectFee_;
-        emit SetMaxGasUsedCollectFee(maxGasUsedCollectFee);
     }
 
     /**

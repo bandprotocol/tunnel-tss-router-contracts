@@ -21,7 +21,6 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         address initialOwner,
         uint additionalGas_,
         uint maxGasUsedProcess_,
-        uint maxGasUsedCollectFee_,
         uint gasPrice_
     ) public initializer {
         __BaseRouter_init(
@@ -30,8 +29,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
             chainID_,
             initialOwner,
             additionalGas_,
-            maxGasUsedProcess_,
-            maxGasUsedCollectFee_
+            maxGasUsedProcess_
         );
 
         _setGasFee(GasFeeInfo(gasPrice_));

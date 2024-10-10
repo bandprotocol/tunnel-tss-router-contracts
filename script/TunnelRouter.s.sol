@@ -51,7 +51,6 @@ contract DeployScript is Script {
                     msg.sender,
                     0,
                     0,
-                    0,
                     0
                 )
             )

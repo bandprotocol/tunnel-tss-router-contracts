@@ -47,10 +47,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         hashOriginatorReplacement = hashOriginatorReplacement_;
     }
 
-    /// @dev Add the new public key with proof from the current group.
-    /// @param message is the message being used for updating public key.
-    /// @param rAddress is the address form of the commitment R.
-    /// @param s represents the Schnorr signature.
+    /**
+     * @dev See {ITssVerifier-addPubKeyWithProof}.
+     */
     function addPubKeyWithProof(
         bytes calldata message,
         address rAddress,
@@ -77,9 +76,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         );
     }
 
-    /// @dev Add the new public key by the owner.
-    /// @param parity is the parity value of the new public key
-    /// @param px is the x-coordinate value of the new public key
+    /**
+     * @dev See {ITssVerifier-addPubKeyByOwner}.
+     */
     function addPubKeyByOwner(uint8 parity, uint256 px) external onlyOwner {
         PublicKey memory pubKey = PublicKey({
             timestamp: block.timestamp,
@@ -97,11 +96,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         );
     }
 
-    /// @dev Verify the signature of the message hash with the given public key.
-    /// @param message is the message to be verified.
-    /// @param rAddress is the address form of the commitment R.
-    /// @param signature represents the Schnorr signature.
-    /// @return result true if the signature is valid, false otherwise.
+    /**
+     * @dev See {ITssVerifier-verify}.
+     */
     function verify(
         bytes calldata message,
         address rAddress,

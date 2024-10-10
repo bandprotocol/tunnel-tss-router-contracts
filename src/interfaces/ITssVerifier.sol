@@ -16,4 +16,23 @@ interface ITssVerifier {
         address rAddr,
         uint256 signature
     ) external view returns (bool);
+
+    /**
+     * @dev Add the new public key with proof from the current group.
+     * @param message is the message being used for updating public key.
+     * @param rAddress is the address form of the commitment R.
+     * @param s represents the Schnorr signature.
+     */
+    function addPubKeyWithProof(
+        bytes calldata message,
+        address rAddress,
+        uint256 s
+    ) external;
+
+    /**
+     * @dev Add the new public key by the owner.
+     * @param parity is the parity value of the new public key
+     * @param px is the x-coordinate value of the new public key
+     */
+    function addPubKeyByOwner(uint8 parity, uint256 px) external;
 }

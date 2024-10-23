@@ -9,7 +9,7 @@ import {PacketConsumer} from "../src/PacketConsumer.sol";
 
 contract DeployScript is Script {
     function run() external {
-        uint privKey = vm.envUint("PRIVATE_KEY");
+        uint256 privKey = vm.envUint("PRIVATE_KEY");
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
         bytes32 hashOriginator = vm.envBytes32("HASH_ORIGINATOR");
 

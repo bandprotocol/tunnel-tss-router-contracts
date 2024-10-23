@@ -9,7 +9,7 @@ import "./interfaces/ITssVerifier.sol";
 
 contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     struct PublicKey {
-        uint timestamp; // The timestamp that the public key is activated.
+        uint256 timestamp; // The timestamp that the public key is activated.
         uint8 parity; // The parity value of the public key.
         uint256 px; // The x-coordinate value of the public key.
     }
@@ -34,7 +34,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
 
     event UpdateGroupPubKey(
         uint256 index,
-        uint timestamp,
+        uint256 timestamp,
         uint8 parity,
         uint256 px,
         bool isByAdmin
@@ -58,7 +58,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         require(this.verify(message, rAddress, s), "TssVerifier: !verify");
 
         uint8 parity = uint8(bytes1(message[88:89]));
-        uint px = uint(bytes32(message[89:121]));
+        uint256 px = uint(bytes32(message[89:121]));
 
         PublicKey memory pubKey = PublicKey({
             timestamp: block.timestamp,
@@ -161,7 +161,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
 
     /// @dev Retrieve the most recent public key that is no later than the specified timestamp.
     function _getPublicKey(
-        uint timestamp
+        uint256 timestamp
     ) internal view returns (PublicKey memory) {
         require(publicKeys.length > 0, "TssVerifier: !publicKeys");
 

@@ -10,19 +10,23 @@ import "./interfaces/IVault.sol";
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     mapping(uint64 => mapping(address => uint)) public balance; // tunnelID => account => amount.
 
-    uint public minimumActiveBalance;
+    uint256 public minimumActiveBalance;
     address public tunnelRouter;
 
     uint[50] __gap;
 
-    event SetMinimumActiveBalance(uint minimumActiveBalance);
+    event SetMinimumActiveBalance(uint256 minimumActiveBalance);
     event SetTunnelRouter(address tunnelRouter_);
-    event Deposit(uint indexed tunnelID, address indexed account, uint amount);
+    event Deposit(
+        uint256 indexed tunnelID,
+        address indexed account,
+        uint256 amount
+    );
     event Withdraw(
-        uint indexed tunnelID,
+        uint256 indexed tunnelID,
         address indexed account,
         address to,
-        uint amount
+        uint256 amount
     );
 
     modifier onlyTunnelRouter() {
@@ -32,7 +36,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
 
     function initialize(
         address initialOwner,
-        uint minimumActiveBalance_,
+        uint256 minimumActiveBalance_,
         address tunnelRouter_
     ) public initializer {
         __Ownable_init(initialOwner);
@@ -48,7 +52,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * to be considered as active
      */
     function setMinimumActiveBalance(
-        uint minimumActiveBalance_
+        uint256 minimumActiveBalance_
     ) external onlyOwner {
         _setMinimumActiveBalance(minimumActiveBalance_);
     }
@@ -72,8 +76,8 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     /**
      * @dev See {IVault-withdraw}.
      */
-    function withdraw(uint64 tunnelID, uint amount) external {
-        uint _balance = balance[tunnelID][msg.sender];
+    function withdraw(uint64 tunnelID, uint256 amount) external {
+        uint256 _balance = balance[tunnelID][msg.sender];
         require(
             _balance >= amount + minimumActiveBalance,
             "TunnelDepositor: !balance"
@@ -98,7 +102,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     function collectFee(
         uint64 tunnelID,
         address account,
-        uint amount
+        uint256 amount
     ) public onlyTunnelRouter {
         _withdraw(tunnelID, account, tunnelRouter, amount);
     }
@@ -117,7 +121,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         uint64 tunnelID,
         address account,
         address to,
-        uint amount
+        uint256 amount
     ) internal {
         balance[tunnelID][account] -= amount;
 
@@ -127,7 +131,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         emit Withdraw(tunnelID, account, to, amount);
     }
 
-    function _setMinimumActiveBalance(uint minimumActiveBalance_) internal {
+    function _setMinimumActiveBalance(uint256 minimumActiveBalance_) internal {
         minimumActiveBalance = minimumActiveBalance_;
         emit SetMinimumActiveBalance(minimumActiveBalance_);
     }

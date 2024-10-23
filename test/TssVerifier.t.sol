@@ -24,13 +24,16 @@ contract TssVerifierTest is Test, TssSignerHelper {
     }
 
     function cmpNewPubKey(
-        uint expectTimestamp,
+        uint256 expectTimestamp,
         uint8 expectParity,
-        uint expectPx
+        uint256 expectPx
     ) public view {
-        uint nPubKey = verifier.publicKeyLength();
-        (uint actualTimestamp, uint8 actualParity, uint actualPx) = verifier
-            .publicKeys(nPubKey - 1);
+        uint256 nPubKey = verifier.publicKeyLength();
+        (
+            uint256 actualTimestamp,
+            uint8 actualParity,
+            uint256 actualPx
+        ) = verifier.publicKeys(nPubKey - 1);
         assertEq(actualTimestamp, expectTimestamp);
         assertEq(actualParity, expectParity);
         assertEq(actualPx, expectPx);
@@ -54,7 +57,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
     }
 
     function testVerify() public {
-        uint privateKey = _privateKey;
+        uint256 privateKey = _privateKey;
         TemporaryStore memory tmp;
 
         for (uint256 i = 0; i < 100; i++) {

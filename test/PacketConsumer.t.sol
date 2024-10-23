@@ -39,7 +39,7 @@ contract PacketConsumerTest is Test, Constants {
     function testProcessInvalidHashOriginator() public {
         // fix originator hash.
         bytes memory message = TSS_RAW_MESSAGE;
-        for (uint i = 32; i < 64; i++) {
+        for (uint256 i = 32; i < 64; i++) {
             message[i] = 0x00;
         }
         vm.expectRevert("PacketConsumer: !hashOriginator");

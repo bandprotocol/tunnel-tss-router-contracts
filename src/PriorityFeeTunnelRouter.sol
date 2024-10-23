@@ -6,8 +6,8 @@ import "./BaseTunnelRouter.sol";
 
 contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     struct GasFeeInfo {
-        uint baseFee;
-        uint priorityFee;
+        uint256 baseFee;
+        uint256 priorityFee;
     }
 
     GasFeeInfo public gasFee;
@@ -19,10 +19,10 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         IVault vault_,
         string memory chainID_,
         address initialOwner,
-        uint additionalGas_,
-        uint maxGasUsedProcess_,
-        uint baseFee_,
-        uint priorityFee_
+        uint256 additionalGas_,
+        uint256 maxGasUsedProcess_,
+        uint256 baseFee_,
+        uint256 priorityFee_
     ) public initializer {
         __BaseRouter_init(
             tssVerifier_,
@@ -50,7 +50,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     }
 
     function _routerFee(
-        uint gasUsed
+        uint256 gasUsed
     ) internal view virtual override returns (uint) {
         GasFeeInfo memory _gasFee = gasFee;
         return (_gasFee.priorityFee + _gasFee.baseFee) * gasUsed;

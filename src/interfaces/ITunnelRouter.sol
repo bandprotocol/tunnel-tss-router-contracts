@@ -23,7 +23,7 @@ interface ITunnelRouter {
     function relay(
         bytes calldata message,
         address rAddr,
-        uint signature
+        uint256 signature
     ) external;
 
     /**

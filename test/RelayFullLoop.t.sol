@@ -57,21 +57,21 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerHasEnoughFund() public {
-        uint relayerBalance = address(this).balance;
-        uint currentGas = gasleft();
+        uint256 relayerBalance = address(this).balance;
+        uint256 currentGas = gasleft();
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
-        uint gasUsed = currentGas - gasleft();
+        uint256 gasUsed = currentGas - gasleft();
         assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), true);
 
-        uint feeGain = address(this).balance - relayerBalance;
+        uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint gasUsedDuringProcessMsg = feeGain /
+        uint256 gasUsedDuringProcessMsg = feeGain /
             tunnelRouter.gasFee() -
             tunnelRouter.additionalGas();
 
@@ -86,25 +86,25 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerUseReserve() public {
-        uint relayerBalance = address(this).balance;
+        uint256 relayerBalance = address(this).balance;
 
         vault.setMinimumActiveBalance(1 ether);
 
-        uint currentGas = gasleft();
+        uint256 currentGas = gasleft();
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
-        uint gasUsed = currentGas - gasleft();
+        uint256 gasUsed = currentGas - gasleft();
 
         assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), false);
 
-        uint feeGain = address(this).balance - relayerBalance;
+        uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint gasUsedDuringProcessMsg = feeGain /
+        uint256 gasUsedDuringProcessMsg = feeGain /
             tunnelRouter.gasFee() -
             tunnelRouter.additionalGas();
 

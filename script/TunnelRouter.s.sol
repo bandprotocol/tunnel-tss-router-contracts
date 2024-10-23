@@ -18,7 +18,7 @@ contract DeployScript is Script {
         0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
 
     function run() external {
-        uint privKey = vm.envUint("PRIVATE_KEY");
+        uint256 privKey = vm.envUint("PRIVATE_KEY");
 
         vm.startBroadcast(privKey);
 

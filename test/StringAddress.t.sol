@@ -23,7 +23,7 @@ contract StringAddressTest is Test {
         expectedAddrs[2] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         expectedAddrs[3] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
-        for (uint i = 0; i < addrs.length; i++) {
+        for (uint256 i = 0; i < addrs.length; i++) {
             assertEq(expectedAddrs[i], addrs[i].toAddress());
         }
     }

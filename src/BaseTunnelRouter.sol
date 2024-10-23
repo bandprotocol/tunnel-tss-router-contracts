@@ -27,16 +27,16 @@ abstract contract BaseTunnelRouter is
     IVault public vault;
 
     string public chainID;
-    uint public additionalGas;
-    uint public maxGasUsedProcess;
-    uint public maxGasUsedCollectFee;
+    uint256 public additionalGas;
+    uint256 public maxGasUsedProcess;
+    uint256 public maxGasUsedCollectFee;
 
     mapping(uint64 => mapping(address => bool)) public isActive;
     mapping(uint64 => mapping(address => uint64)) public sequence;
 
     uint[50] __gap;
 
-    event SetMaxGasUsedProcess(uint maxGasUsedProcess);
+    event SetMaxGasUsedProcess(uint256 maxGasUsedProcess);
     event ProcessMessage(
         uint64 indexed tunnelID,
         address indexed targetAddr,
@@ -59,8 +59,8 @@ abstract contract BaseTunnelRouter is
         IVault vault_,
         string memory chainID_,
         address initialOwner,
-        uint additionalGas_,
-        uint maxGasUsedProcess_
+        uint256 additionalGas_,
+        uint256 maxGasUsedProcess_
     ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -77,7 +77,7 @@ abstract contract BaseTunnelRouter is
      * @dev Set the additionalGas being used in relaying message.
      * @param additionalGas_ The new additional gas amount.
      */
-    function setBaseGasUsed(uint additionalGas_) external onlyOwner {
+    function setBaseGasUsed(uint256 additionalGas_) external onlyOwner {
         additionalGas = additionalGas_;
     }
 
@@ -85,7 +85,9 @@ abstract contract BaseTunnelRouter is
      * @dev Set the maximum gas used in calling process.
      * @param maxGasUsedProcess_ The maximum gas used in calling process.
      */
-    function setMaxGasUsedProcess(uint maxGasUsedProcess_) external onlyOwner {
+    function setMaxGasUsedProcess(
+        uint256 maxGasUsedProcess_
+    ) external onlyOwner {
         maxGasUsedProcess = maxGasUsedProcess_;
         emit SetMaxGasUsedProcess(maxGasUsedProcess);
     }
@@ -135,7 +137,7 @@ abstract contract BaseTunnelRouter is
         require(success, "TunnelRouter: !verify");
 
         // forward the message to the target contract.
-        uint gasLeft = gasleft();
+        uint256 gasLeft = gasleft();
         bool isReverted = false;
         try
             IDataConsumer(targetAddr).process{gas: maxGasUsedProcess}(message)
@@ -150,7 +152,7 @@ abstract contract BaseTunnelRouter is
         );
 
         // charge a fee from the target contract.
-        uint fee = _routerFee(gasLeft - gasleft() + additionalGas);
+        uint256 fee = _routerFee(gasLeft - gasleft() + additionalGas);
         vault.collectFee(packet.tunnelID, targetAddr, fee);
 
         if (!vault.isBalanceOverThreshold(packet.tunnelID, targetAddr)) {
@@ -197,7 +199,7 @@ abstract contract BaseTunnelRouter is
     }
 
     /// @dev calculate the fee for the router.
-    function _routerFee(uint gasUsed) internal view virtual returns (uint) {
+    function _routerFee(uint256 gasUsed) internal view virtual returns (uint) {
         gasUsed; // Shh
 
         return 0;

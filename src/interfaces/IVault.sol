@@ -20,7 +20,7 @@ interface IVault {
      * @param tunnelID the ID of the tunnel from which the sender is withdrawing tokens.
      * @param amount the amount of tokens to withdraw.
      */
-    function withdraw(uint64 tunnelID, uint amount) external;
+    function withdraw(uint64 tunnelID, uint256 amount) external;
 
     /**
      * @dev withdraws all native tokens from the given account associated with the given tunnelID
@@ -42,7 +42,11 @@ interface IVault {
      * @param account The account from which the caller is withdrawing tokens.
      * @param amount the amount of tokens to withdraw.
      */
-    function collectFee(uint64 tunnelID, address account, uint amount) external;
+    function collectFee(
+        uint64 tunnelID,
+        address account,
+        uint256 amount
+    ) external;
 
     /**
      * @dev checks the balance of the account associated with the given tunnelID is over a threshold.

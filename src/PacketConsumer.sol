@@ -61,7 +61,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
         PacketDecoder.Packet memory packet = tssMessage.packet;
 
-        for (uint i = 0; i < packet.signals.length; i++) {
+        for (uint256 i = 0; i < packet.signals.length; i++) {
             prices[packet.signals[i].signal] = Price({
                 price: packet.signals[i].price,
                 timestamp: packet.timestmap
@@ -95,7 +95,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         ITunnelRouter(tunnelRouter).deactivate(tunnelID);
 
         // send the remaining balance to the caller.
-        uint balance = address(this).balance;
+        uint256 balance = address(this).balance;
         (bool ok, ) = payable(msg.sender).call{value: balance}("");
         require(ok, "PacketConsumer: !send");
     }

@@ -12,9 +12,9 @@ contract BandTssVerifierTest is Test {
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     bytes32 constant HASH_ORIGINATOR_REPLACEMENT =
         0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
-
-    // The prefix for the key update message.
-    bytes8 UPDATE_KEY_PREFIX = 0x135e4b6353a9c808;
+    // The prefix for the key update message. It comes from
+    // abi.keccak("bandtss")[:4] | abi.keccak("transition")[:4].
+    bytes8 constant UPDATE_KEY_PREFIX = 0x135e4b63acc0e671;
     uint256 _privateKey =
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
     BandTssVerifier public verifier;

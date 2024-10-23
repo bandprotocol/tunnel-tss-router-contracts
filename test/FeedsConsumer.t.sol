@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import "../src/BandTssVerifier.sol";
 import "../src/interfaces/IBandTssVerifier.sol";
 import "../src/FeedsConsumer.sol";
-import "../src/SECP256k1.sol";
 
 contract FeedsConsumerTest is Test {
     BandTssVerifier bandTssVerifier;
@@ -59,7 +58,7 @@ contract FeedsConsumerTest is Test {
             input.signalPrices
         );
 
-        (uint actualPrice, uint64 actualTimestamp) = feedsConsumer.prices(
+        (uint256 actualPrice, uint64 actualTimestamp) = feedsConsumer.prices(
             signalPriceInfos[0].signalID
         );
         assertEq(actualPrice, signalPriceInfos[0].price);

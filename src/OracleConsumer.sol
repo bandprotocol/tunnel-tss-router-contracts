@@ -30,7 +30,7 @@ abstract contract OracleFullABIResultConsumer {
     }
 
     // requestID to oracle result
-    mapping(uint => OracleResult) public OracleResults;
+    mapping(uint256 => OracleResult) public OracleResults;
 
     event RelayOracleResult(
         uint64 indexed requestID,

@@ -12,8 +12,9 @@ contract BandTssVerifier is Pausable, Ownable2Step {
     // The group order of secp256k1.
     uint256 constant ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-    // The prefix for the key update message.
-    bytes8 constant UPDATE_KEY_PREFIX = 0x135e4b6353a9c808;
+    // The prefix for the key update message. It comes from
+    // abi.keccak("bandtss")[:4] | abi.keccak("transition")[:4].
+    bytes8 constant UPDATE_KEY_PREFIX = 0x135e4b63acc0e671;
     // The prefix for the hashing process in bandchain.
     string constant CONTEXT = "BAND-TSS-secp256k1-v0";
     // The prefix for the challenging hash message.
@@ -64,7 +65,7 @@ contract BandTssVerifier is Pausable, Ownable2Step {
         address rAddress,
         uint256 s
     ) external whenNotPaused {
-        uint nPubKey = publicKeys.length;
+        uint256 nPubKey = publicKeys.length;
         uint64 timestamp = uint64(block.timestamp);
         require(nPubKey > 0, "BandTssBridge: No public key available.");
 
@@ -100,7 +101,7 @@ contract BandTssVerifier is Pausable, Ownable2Step {
     /// @param parity is the parity value of the new public key
     /// @param px is the x-coordinate value of the new public key
     function addPubKeyByOwner(uint8 parity, uint256 px) external onlyOwner {
-        uint nPubKey = publicKeys.length;
+        uint256 nPubKey = publicKeys.length;
         uint64 timestamp = uint64(block.timestamp);
         if (nPubKey > 0) {
             PublicKey memory latestPubKey = publicKeys[nPubKey - 1];
@@ -189,10 +190,10 @@ contract BandTssVerifier is Pausable, Ownable2Step {
     function _getPublicKey(
         uint64 timestamp
     ) internal view returns (PublicKey memory) {
-        uint nPubKey = publicKeys.length;
+        uint256 nPubKey = publicKeys.length;
         require(nPubKey > 0, "BandTssBridge: No public key available.");
 
-        for (uint256 i = publicKeys.length - 1; i >= 0; i--) {
+        for (uint256 i = nPubKey - 1; i >= 0; i--) {
             if (publicKeys[i].timestamp <= timestamp) {
                 return publicKeys[i];
             }

@@ -79,11 +79,14 @@ contract BandTssVerifierTest is Test {
     function cmpPubKey(
         uint64 expectTimestamp,
         uint8 expectParity,
-        uint expectPx
+        uint256 expectPx
     ) public {
-        uint nPubKey = verifier.publicKeyLength();
-        (uint64 actualTimestamp, uint8 actualParity, uint actualPx) = verifier
-            .publicKeys(nPubKey - 1);
+        uint256 nPubKey = verifier.publicKeyLength();
+        (
+            uint64 actualTimestamp,
+            uint8 actualParity,
+            uint256 actualPx
+        ) = verifier.publicKeys(nPubKey - 1);
         assertEq(actualTimestamp, expectTimestamp);
         assertEq(actualParity, expectParity);
         assertEq(actualPx, expectPx);

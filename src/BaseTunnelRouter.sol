@@ -26,17 +26,20 @@ abstract contract BaseTunnelRouter is
     ITssVerifier public tssVerifier;
     IVault public vault;
 
-    string public chainID;
+    // the ID of the chain, will be used in validating message from the tunnel.
+    bytes32 public chainID;
+    // estimated additional gas used in relaying message, excluding the gas cost for calling the target contract.
     uint256 public additionalGas;
+    // the maximum gas used in calling the target contract.
     uint256 public maxGasUsedProcess;
-    uint256 public maxGasUsedCollectFee;
 
-    mapping(uint64 => mapping(address => bool)) public isActive;
-    mapping(uint64 => mapping(address => uint64)) public sequence;
+    mapping(uint64 => mapping(address => bool)) public isActive; // tunnelID => targetAddr => isActive
+    mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelID => targetAddr => sequence
 
     uint[50] __gap;
 
     event SetMaxGasUsedProcess(uint256 maxGasUsedProcess);
+    event SetAdditionalGas(uint256 additionalGas);
     event ProcessMessage(
         uint64 indexed tunnelID,
         address indexed targetAddr,
@@ -57,7 +60,7 @@ abstract contract BaseTunnelRouter is
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        string memory chainID_,
+        bytes32 chainID_,
         address initialOwner,
         uint256 additionalGas_,
         uint256 maxGasUsedProcess_
@@ -77,13 +80,14 @@ abstract contract BaseTunnelRouter is
      * @dev Set the additionalGas being used in relaying message.
      * @param additionalGas_ The new additional gas amount.
      */
-    function setBaseGasUsed(uint256 additionalGas_) external onlyOwner {
+    function setAdditionalGas(uint256 additionalGas_) external onlyOwner {
         additionalGas = additionalGas_;
+        emit SetAdditionalGas(additionalGas_);
     }
 
     /**
-     * @dev Set the maximum gas used in calling process.
-     * @param maxGasUsedProcess_ The maximum gas used in calling process.
+     * @dev Set the maximum gas used in calling targetAddr.process().
+     * @param maxGasUsedProcess_ The maximum gas used in calling targetAddr.process().
      */
     function setMaxGasUsedProcess(
         uint256 maxGasUsedProcess_
@@ -125,16 +129,16 @@ abstract contract BaseTunnelRouter is
             "TunnelRouter: !sequence"
         );
         require(
-            keccak256(bytes(packet.chainID)) == keccak256(bytes(chainID)),
+            keccak256(bytes(packet.chainID)) == chainID,
             "TunnelRouter: !chainID"
         );
-
-        // update the sequence.
-        sequence[packet.tunnelID][targetAddr] = packet.sequence;
 
         // verify signature.
         bool success = tssVerifier.verify(message, rAddr, signature);
         require(success, "TunnelRouter: !verify");
+
+        // update the sequence.
+        sequence[packet.tunnelID][targetAddr] = packet.sequence;
 
         // forward the message to the target contract.
         uint256 gasLeft = gasleft();

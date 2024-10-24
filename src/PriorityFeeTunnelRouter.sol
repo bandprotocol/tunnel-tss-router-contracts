@@ -17,7 +17,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     function initialize(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        string memory chainID_,
+        bytes32 chainID_,
         address initialOwner,
         uint256 additionalGas_,
         uint256 maxGasUsedProcess_,

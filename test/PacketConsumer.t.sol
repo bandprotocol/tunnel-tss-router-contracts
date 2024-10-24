@@ -18,6 +18,7 @@ contract PacketConsumerTest is Test, Constants {
         packetConsumer = new PacketConsumer(
             address(tunnelRouter),
             0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
+            uint64(1),
             address(this)
         );
     }

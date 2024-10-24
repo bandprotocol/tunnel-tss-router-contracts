@@ -42,6 +42,7 @@ contract RelayFullLoopTest is Test, Constants {
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
             0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
+            1,
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");
@@ -53,7 +54,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
 
         // set latest nonce.
-        packetConsumer.activate{value: 0.01 ether}(1, 1);
+        packetConsumer.activate{value: 0.01 ether}(1);
     }
 
     function testRelayMessageConsumerHasEnoughFund() public {
@@ -119,9 +120,9 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayInvalidSequence() public {
-        packetConsumer.deactivate(1);
+        packetConsumer.deactivate();
 
-        packetConsumer.activate{value: 0.01 ether}(1, 0);
+        packetConsumer.activate{value: 0.01 ether}(0);
 
         vm.expectRevert("TunnelRouter: !sequence");
         tunnelRouter.relay(
@@ -132,7 +133,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayInactiveTargetContract() public {
-        packetConsumer.deactivate(1);
+        packetConsumer.deactivate();
 
         vm.expectRevert("TunnelRouter: !active");
         tunnelRouter.relay(
@@ -155,7 +156,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testReactivateAlreadyActive() public {
         vm.expectRevert("TunnelRouter: !inactive");
-        packetConsumer.activate(1, 1);
+        packetConsumer.activate(1);
     }
 
     receive() external payable {}

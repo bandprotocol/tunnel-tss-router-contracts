@@ -19,7 +19,8 @@ interface IDataConsumer {
     function tunnelRouter() external view returns (address);
 
     /**
-     * @dev Activate the tunnelID on tunnelRouter contract.
+     * @dev Activate the tunnel and set the sequence on tunnelRouter contract.
+     *
      *
      * This also deposit tokens into the vault and set the latest sequence on the
      * tunnelRouter contract if the current deposit in the vault contract is over a threshold;
@@ -27,18 +28,15 @@ interface IDataConsumer {
      *
      * This function should be called by the owner of the contract only.
      *
-     * @param tunnelID The tunnelID that the sender contract is activating.
-     * @param latestSeq The new sequence of the tunnelID.
+     * @param latestSeq The new sequence of the tunnel.
      */
-    function activate(uint64 tunnelID, uint64 latestSeq) external payable;
+    function activate(uint64 latestSeq) external payable;
 
     /**
-     * @dev Deactivate the tunnelID on tunnelRouter contract.
+     * @dev Deactivate the tunnel on tunnelRouter contract.
      *
      * This also withdraws the tokens from the vault contract if there is existing deposit
      * in the contract.
-     *
-     * @param tunnelID is the tunnelID that the sender contract is deactivating.
      */
-    function deactivate(uint64 tunnelID) external;
+    function deactivate() external;
 }

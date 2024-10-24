@@ -23,6 +23,8 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     address public immutable tunnelRouter;
     // The hash originator of the feeds price data that this contract consumes.
     bytes32 public immutable hashOriginator;
+    // the tunnel ID that this contract is consuming.
+    uint64 public immutable tunnelID;
     // The mapping from signal ID to the latest price object.
     mapping(bytes32 => Price) public prices;
 
@@ -43,10 +45,12 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     constructor(
         address tunnelRouter_,
         bytes32 hashOriginator_,
+        uint64 tunnelID_,
         address initialOwner
     ) Ownable(initialOwner) {
         tunnelRouter = tunnelRouter_;
         hashOriginator = hashOriginator_;
+        tunnelID = tunnelID_;
     }
 
     /**
@@ -78,10 +82,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     /**
      * @dev See {IDataConsumer-activate}.
      */
-    function activate(
-        uint64 tunnelID,
-        uint64 latestSeq
-    ) external payable onlyOwner {
+    function activate(uint64 latestSeq) external payable onlyOwner {
         ITunnelRouter(tunnelRouter).activate{value: msg.value}(
             tunnelID,
             latestSeq
@@ -91,7 +92,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     /**
      * @dev See {IDataConsumer-deactivate}.
      */
-    function deactivate(uint64 tunnelID) external onlyOwner {
+    function deactivate() external onlyOwner {
         ITunnelRouter(tunnelRouter).deactivate(tunnelID);
 
         // send the remaining balance to the caller.

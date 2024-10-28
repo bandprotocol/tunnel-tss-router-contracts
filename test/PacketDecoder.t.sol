@@ -49,4 +49,9 @@ contract PacketDecoderTest is Test, Constants {
         assertEq(packet.signals[0].price, expectedPacket.signals[0].price);
         assertEq(packet.timestmap, expectedPacket.timestmap);
     }
+
+    function testDecodeTssMessageInvalidLength() public {
+        vm.expectRevert();
+        this.decodeTssMessage(hex"0000");
+    }
 }

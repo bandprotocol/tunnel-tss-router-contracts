@@ -196,6 +196,13 @@ abstract contract BaseTunnelRouter is
         vault.withdrawAll(tunnelID, msg.sender);
     }
 
+    /**
+     * @dev See {ITunnelRouter-deposit}.
+     */
+    function deposit(uint64 tunnelID, address account) external payable {
+        vault.deposit{value: msg.value}(tunnelID, account);
+    }
+
     /// @dev deactivate the (contract address, tunnelID).
     function _deactivate(uint64 tunnelID, address addr) internal {
         isActive[tunnelID][addr] = false;

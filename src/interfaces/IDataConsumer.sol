@@ -39,4 +39,12 @@ interface IDataConsumer {
      * in the contract.
      */
     function deactivate() external;
+
+    /**
+     * @dev Deposit the native tokens into the vault on behalf of the given account and tunnelID.
+     * The amount of tokens to be deposited is provided as msg.value in the transaction.
+     *
+     * The contract calls the tunnelRouter to deposit the tokens in vault contract.
+     */
+    function deposit() external payable;
 }

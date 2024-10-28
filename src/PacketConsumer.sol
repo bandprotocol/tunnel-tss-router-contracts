@@ -101,5 +101,15 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         require(ok, "PacketConsumer: !send");
     }
 
+    /**
+     * @dev See {IDataConsumer-deposit}.
+     */
+    function deposit() external payable {
+        ITunnelRouter(tunnelRouter).deposit{value: msg.value}(
+            tunnelID,
+            address(this)
+        );
+    }
+
     receive() external payable {}
 }

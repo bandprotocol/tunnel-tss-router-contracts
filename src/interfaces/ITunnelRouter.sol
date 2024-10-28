@@ -47,6 +47,17 @@ interface ITunnelRouter {
     function deactivate(uint64 tunnelID) external;
 
     /**
+     * @dev Deposit the native tokens into the vault on behalf of the given account and tunnelID.
+     * The amount of tokens to be deposited is provided as msg.value in the transaction.
+     *
+     * The contract calls the vault contract to deposit the tokens.
+     *
+     * @param tunnelID The ID of the tunnel into which the sender is depositing tokens.
+     * @param account The account into which the sender is depositing tokens.
+     */
+    function deposit(uint64 tunnelID, address account) external payable;
+
+    /**
      * @dev Returns the vault contract address.
      */
     function vault() external view returns (IVault);

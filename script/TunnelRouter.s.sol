@@ -33,10 +33,7 @@ contract DeployScript is Script {
         );
 
         // Deploy the TssVerifier contract
-        TssVerifier tssVerifier = new TssVerifier(
-            _HASH_ORIGINATOR_REPLACEMENT,
-            msg.sender
-        );
+        TssVerifier tssVerifier = new TssVerifier(msg.sender);
 
         // Deploy the proxy TunnelRouter contract
         address proxyTunnelRouterAddr = Upgrades.deployTransparentProxy(

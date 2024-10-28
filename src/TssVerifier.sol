@@ -28,17 +28,10 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The prefix for the challenging hash message.
     string constant _CHALLENGE_PREFIX = "challenge";
 
-    // the hashed originator of the replacement message.
-    bytes32 public immutable hashOriginatorReplacement;
     // The list of public keys that are used for the verification process.
     PublicKey[] public publicKeys;
 
-    constructor(
-        bytes32 hashOriginatorReplacement_,
-        address initialAddr
-    ) Ownable(initialAddr) {
-        hashOriginatorReplacement = hashOriginatorReplacement_;
-    }
+    constructor(address initialAddr) Ownable(initialAddr) {}
 
     /**
      * @dev See {ITssVerifier-addPubKeyWithProof}.

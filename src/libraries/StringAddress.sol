@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// ref: https://ethereum.stackexchange.com/questions/147944/convert-string-to-address-in-solidity
 
 pragma solidity ^0.8.23;
 

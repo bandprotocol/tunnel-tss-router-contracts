@@ -30,7 +30,7 @@ contract StringAddressTest is Test {
 
     function testStringRevertIncorrectLength() public {
         string memory test = "0x6D9b8Ec0D5982f918210A05724E17";
-        vm.expectRevert("StringAddress: !length");
+        vm.expectRevert(StringAddress.InvalidInput.selector);
         test.toAddress();
     }
 

@@ -15,22 +15,10 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
 
     uint[50] __gap;
 
-    event SetMinimumActiveBalance(uint256 minimumActiveBalance);
-    event SetTunnelRouter(address tunnelRouter_);
-    event Deposit(
-        uint256 indexed tunnelID,
-        address indexed account,
-        uint256 amount
-    );
-    event Withdraw(
-        uint256 indexed tunnelID,
-        address indexed account,
-        address to,
-        uint256 amount
-    );
-
     modifier onlyTunnelRouter() {
-        require(msg.sender == tunnelRouter, "TunnelDepositor: !tunnelRouter");
+        if (msg.sender != tunnelRouter) {
+            revert OnlyTunnelRouter();
+        }
         _;
     }
 
@@ -78,10 +66,9 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      */
     function withdraw(uint64 tunnelID, uint256 amount) external {
         uint256 _balance = balance[tunnelID][msg.sender];
-        require(
-            _balance >= amount + minimumActiveBalance,
-            "TunnelDepositor: !balance"
-        );
+        if (_balance < amount + minimumActiveBalance) {
+            revert InsufficientRemainingBalance();
+        }
 
         _withdraw(tunnelID, msg.sender, msg.sender, amount);
     }
@@ -126,7 +113,9 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         balance[tunnelID][account] -= amount;
 
         (bool ok, ) = payable(to).call{value: amount}("");
-        require(ok, "TunnelDepositor: !send");
+        if (!ok) {
+            revert FailSendTokens(to);
+        }
 
         emit Withdraw(tunnelID, account, to, amount);
     }

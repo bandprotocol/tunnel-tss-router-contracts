@@ -38,25 +38,6 @@ abstract contract BaseTunnelRouter is
 
     uint[50] __gap;
 
-    event SetMaxGasUsedProcess(uint256 maxGasUsedProcess);
-    event SetAdditionalGas(uint256 additionalGas);
-    event ProcessMessage(
-        uint64 indexed tunnelID,
-        address indexed targetAddr,
-        uint64 indexed sequence,
-        bool isReverted
-    );
-    event Activate(
-        uint64 indexed tunnelID,
-        address indexed targetAddr,
-        uint64 latestNonce
-    );
-    event Deactivate(
-        uint64 indexed tunnelID,
-        address indexed targetAddr,
-        uint64 latestNonce
-    );
-
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IVault vault_,
@@ -123,19 +104,24 @@ abstract contract BaseTunnelRouter is
         address targetAddr = packet.targetAddr.toAddress();
 
         // check if a message is valid.
-        require(isActive[packet.tunnelID][targetAddr], "TunnelRouter: !active");
-        require(
-            sequence[packet.tunnelID][targetAddr] + 1 == packet.sequence,
-            "TunnelRouter: !sequence"
-        );
-        require(
-            keccak256(bytes(packet.chainID)) == chainID,
-            "TunnelRouter: !chainID"
-        );
+        if (!isActive[packet.tunnelID][targetAddr]) {
+            revert Inactive(targetAddr);
+        }
+        if (sequence[packet.tunnelID][targetAddr] + 1 != packet.sequence) {
+            revert InvalidSequence(
+                sequence[packet.tunnelID][targetAddr] + 1,
+                packet.sequence
+            );
+        }
+        if (keccak256(bytes(packet.chainID)) != chainID) {
+            revert InvalidChain(packet.chainID);
+        }
 
-        // verify signature.
+        // verify signatuxwre.
         bool success = tssVerifier.verify(message, rAddr, signature);
-        require(success, "TunnelRouter: !verify");
+        if (!success) {
+            revert InvalidSignature();
+        }
 
         // update the sequence.
         sequence[packet.tunnelID][targetAddr] = packet.sequence;
@@ -166,21 +152,23 @@ abstract contract BaseTunnelRouter is
         }
 
         (bool ok, ) = payable(msg.sender).call{value: fee}("");
-        require(ok, "TunnelRouter: Fail to send fee");
+        if (!ok) {
+            revert FailSendTokens(msg.sender);
+        }
     }
 
     /**
      * @dev See {ITunnelRouter-activate}.
      */
     function activate(uint64 tunnelID, uint64 latestSeq) external payable {
-        require(!isActive[tunnelID][msg.sender], "TunnelRouter: !inactive");
+        if (isActive[tunnelID][msg.sender]) {
+            revert Active(msg.sender);
+        }
 
         vault.deposit{value: msg.value}(tunnelID, msg.sender);
-
-        require(
-            vault.isBalanceOverThreshold(tunnelID, msg.sender),
-            "TunnelRouter: !threshold"
-        );
+        if (!vault.isBalanceOverThreshold(tunnelID, msg.sender)) {
+            revert InsufficientBalance(tunnelID, msg.sender);
+        }
 
         isActive[tunnelID][msg.sender] = true;
         sequence[tunnelID][msg.sender] = latestSeq;
@@ -191,7 +179,10 @@ abstract contract BaseTunnelRouter is
      * @dev See {ITunnelRouter-deactivate}.
      */
     function deactivate(uint64 tunnelID) external {
-        require(isActive[tunnelID][msg.sender], "TunnelRouter: !active");
+        if (!isActive[tunnelID][msg.sender]) {
+            revert Inactive(msg.sender);
+        }
+
         _deactivate(tunnelID, msg.sender);
 
         // withdraw the remaining balance from vault contract.

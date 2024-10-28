@@ -49,4 +49,40 @@ interface IDataConsumer {
      * The contract calls the tunnelRouter to deposit the tokens in vault contract.
      */
     function deposit() external payable;
+
+    // ========================================
+    // Events
+    // ========================================
+
+    /**
+     * @notice Emitted when the signal price is updated.
+     *
+     * @param signalID The signal ID that the price is updated.
+     * @param price The new price of the signal.
+     * @param timestamp The timestamp of the update prices.
+     */
+    event UpdateSignalPrice(
+        bytes32 indexed signalID,
+        uint64 price,
+        int64 timestamp
+    );
+
+    // ========================================
+    // Custom Errors
+    // ========================================
+
+    /**
+     * @notice The caller is not the tunnelRouter contract.
+     */
+    error OnlyTunnelRouter();
+
+    /**
+     * @notice The hashOriginator is not matched.
+     */
+    error InvalidHashOriginator();
+
+    /**
+     * @notice Revert the transaction if contract cannot send fee to the specific address.
+     */
+    error FailSendTokens(address addr);
 }

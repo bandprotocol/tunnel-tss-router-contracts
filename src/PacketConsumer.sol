@@ -26,17 +26,10 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     // The mapping from signal ID to the latest price object.
     mapping(bytes32 => Price) public prices;
 
-    event UpdateSignalPrice(
-        bytes32 indexed signalID,
-        uint64 price,
-        int64 timestamp
-    );
-
     modifier onlyTunnelRouter() {
-        require(
-            msg.sender == tunnelRouter,
-            "PacketConsumer: only tunnelRouter"
-        );
+        if (msg.sender != tunnelRouter) {
+            revert OnlyTunnelRouter();
+        }
         _;
     }
 
@@ -57,10 +50,9 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     function process(
         PacketDecoder.TssMessage memory data
     ) external onlyTunnelRouter {
-        require(
-            data.hashOriginator == hashOriginator,
-            "PacketConsumer: !hashOriginator"
-        );
+        if (data.hashOriginator != hashOriginator) {
+            revert InvalidHashOriginator();
+        }
 
         PacketDecoder.Packet memory packet = data.packet;
         for (uint256 i = 0; i < packet.signals.length; i++) {
@@ -96,7 +88,9 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         // send the remaining balance to the caller.
         uint256 balance = address(this).balance;
         (bool ok, ) = payable(msg.sender).call{value: balance}("");
-        require(ok, "PacketConsumer: !send");
+        if (!ok) {
+            revert FailSendTokens(msg.sender);
+        }
     }
 
     /**

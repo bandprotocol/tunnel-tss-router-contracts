@@ -60,4 +60,66 @@ interface IVault {
      * @dev Returns the tunnel router contract address.
      */
     function tunnelRouter() external view returns (address);
+
+    // ========================================
+    // Events
+    // ========================================
+
+    /**
+     * @notice Emitted when the minimum active balance is set.
+     * @param minimumActiveBalance The new minimum active balance.
+     */
+    event SetMinimumActiveBalance(uint256 minimumActiveBalance);
+
+    /**
+     * @notice Emitted when the tunnel router contract address is set.
+     * @param tunnelRouter_ The new tunnel router contract address.
+     */
+    event SetTunnelRouter(address tunnelRouter_);
+
+    /**
+     * @notice Emitted when the caller deposit native token into the contract.
+     *
+     * @param tunnelID The ID of the tunnel into which the sender is depositing tokens.
+     * @param account The account into which the sender is depositing tokens.
+     * @param amount The amount of tokens deposited.
+     */
+    event Deposit(
+        uint256 indexed tunnelID,
+        address indexed account,
+        uint256 amount
+    );
+
+    /**
+     * @notice Emitted when the caller withdraw native token from the contract.
+     *
+     * @param tunnelID The ID of the tunnel from which the sender is withdrawing tokens.
+     * @param account The account from which the sender is withdrawing tokens.
+     * @param to The account to which the sender is sending tokens.
+     * @param amount The amount of tokens withdrawn.
+     */
+    event Withdraw(
+        uint256 indexed tunnelID,
+        address indexed account,
+        address to,
+        uint256 amount
+    );
+
+    // ========================================
+    // Custom Errors
+    // ========================================
+    /**
+     * @notice The caller is not the tunnelRouter contract.
+     */
+    error OnlyTunnelRouter();
+
+    /**
+     * @notice Revert the transaction if the remaining balance is insufficient.
+     */
+    error InsufficientRemainingBalance();
+
+    /**
+     * @notice Revert the transaction if contract cannot send fee to the specific address.
+     */
+    error FailSendTokens(address addr);
 }

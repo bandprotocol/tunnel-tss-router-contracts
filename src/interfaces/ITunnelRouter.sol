@@ -61,4 +61,113 @@ interface ITunnelRouter {
      * @dev Returns the vault contract address.
      */
     function vault() external view returns (IVault);
+
+    // ========================================
+    // Events
+    // ========================================
+
+    /**
+     * @notice Emitted when the maximum gas used in the process is set.
+     * @param maxGasUsedProcess The new maximum gas used in the process.
+     */
+    event SetMaxGasUsedProcess(uint256 maxGasUsedProcess);
+
+    /**
+     * @notice Emitted when the additional gas is set.
+     * @param additionalGas The new additional gas amount.
+     */
+    event SetAdditionalGas(uint256 additionalGas);
+
+    /**
+     * @notice Emitted after the message is relayed to the target contract
+     * to indicate the result of the process.
+     *
+     * @param tunnelID The tunnel ID that the message is relayed.
+     * @param targetAddr The target address that the message is relayed.
+     * @param sequence The sequence of the message.
+     * @param isReverted The flag indicating whether the message is reverted.
+     */
+    event ProcessMessage(
+        uint64 indexed tunnelID,
+        address indexed targetAddr,
+        uint64 indexed sequence,
+        bool isReverted
+    );
+
+    /**
+     * @notice Emitted when the target address is activated.
+     *
+     * @param tunnelID The tunnel ID that the sender is activating.
+     * @param targetAddr The target address that the sender is activating.
+     * @param latestNonce The latest nonce of the sender.
+     */
+    event Activate(
+        uint64 indexed tunnelID,
+        address indexed targetAddr,
+        uint64 latestNonce
+    );
+
+    /**
+     * @notice Emitted when the target address is deactivated.
+     *
+     * @param tunnelID The tunnel ID that the sender is deactivating.
+     * @param targetAddr The target address that the sender is deactivating.
+     * @param latestNonce The latest nonce of the sender.
+     */
+    event Deactivate(
+        uint64 indexed tunnelID,
+        address indexed targetAddr,
+        uint64 latestNonce
+    );
+
+    // ========================================
+    // Custom Errors
+    // ========================================
+
+    /**
+     * @notice Revert the transaction if the target contract is inactive.
+     *
+     * @param targetAddr The target address that is inactive.
+     */
+    error Inactive(address targetAddr);
+
+    /**
+     * @notice Revert the transaction if the target contract is active.
+     *
+     * @param targetAddr The target address that is inactive.
+     */
+    error Active(address targetAddr);
+
+    /**
+     * @notice Revert the transaction if the sequence is incorrect.
+     *
+     * @param expected The expected sequence of the tunnel.
+     * @param input The input sequence of the tunnel.
+     */
+    error InvalidSequence(uint64 expected, uint64 input);
+
+    /**
+     * @notice Revert the transaction if the chainID is incorrect.
+     *
+     * @param chainID The chainID of the tunnel.
+     */
+    error InvalidChain(string chainID);
+
+    /**
+     * @notice Revert the transaction if the message and its signature doesn't match.
+     */
+    error InvalidSignature();
+
+    /**
+     * @notice Revert the transaction if contract cannot send fee to the specific address.
+     */
+    error FailSendTokens(address addr);
+
+    /**
+     * @notice Revert the transaction if the balance is insufficient.
+     *
+     * @param tunnelID The tunnel ID that the sender is withdrawing tokens.
+     * @param addr The account from which the sender is withdrawing tokens.
+     */
+    error InsufficientBalance(uint64 tunnelID, address addr);
 }

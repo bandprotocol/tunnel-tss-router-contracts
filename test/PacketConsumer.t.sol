@@ -42,7 +42,10 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
 
         // fix originator hash.
         data.hashOriginator = 0x00;
-        vm.expectRevert("PacketConsumer: !hashOriginator");
+        bytes memory expectedErr = abi.encodeWithSelector(
+            IDataConsumer.InvalidHashOriginator.selector
+        );
+        vm.expectRevert(expectedErr);
         packetConsumer.process(data);
     }
 }

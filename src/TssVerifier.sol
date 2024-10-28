@@ -33,14 +33,6 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The list of public keys that are used for the verification process.
     PublicKey[] public publicKeys;
 
-    event UpdateGroupPubKey(
-        uint256 index,
-        uint256 timestamp,
-        uint8 parity,
-        uint256 px,
-        bool isByAdmin
-    );
-
     constructor(
         bytes32 hashOriginatorReplacement_,
         address initialAddr
@@ -56,7 +48,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         address rAddress,
         uint256 s
     ) external whenNotPaused {
-        require(this.verify(message, rAddress, s), "TssVerifier: !verify");
+        if (!this.verify(message, rAddress, s)) {
+            revert InvalidSignature();
+        }
 
         uint8 parity = uint8(bytes1(message[88:89]));
         uint256 px = uint(bytes32(message[89:121]));
@@ -105,11 +99,13 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         address rAddress,
         uint256 signature
     ) public view whenNotPaused returns (bool result) {
-        require(rAddress != address(0), "TssVerifier: !rAddress");
-        require(
-            bytes32(message[0:32]) == _HASH_CHAIN_ID,
-            "TssVerifier: !_HASH_CHAIN_ID"
-        );
+        // return false if the rAddress is zero or incorrect hash chainID.
+        if (rAddress == address(0)) {
+            return false;
+        }
+        if (bytes32(message[0:32]) != _HASH_CHAIN_ID) {
+            return false;
+        }
 
         PublicKey memory pubKey = _getPublicKey(block.timestamp);
 
@@ -134,7 +130,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // Because the ecrecover precompile implementation verifies that the 'r' and's'
         // input positions must be non-zero
         // So in this case, there is no need to verify them('px' > 0 and 'cpx' > 0).
-        require(spx != 0, "TssVerifier: Invalid value of s*px");
+        if (spx == 0) {
+            revert FailProcessingSignature();
+        }
 
         address addr = ecrecover(
             bytes32(spx),
@@ -164,7 +162,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     function _getPublicKey(
         uint256 timestamp
     ) internal view returns (PublicKey memory) {
-        require(publicKeys.length > 0, "TssVerifier: !publicKeys");
+        if (publicKeys.length == 0) {
+            revert PublicKeyNotFound(timestamp);
+        }
 
         for (uint256 i = publicKeys.length - 1; i >= 0; i--) {
             if (publicKeys[i].timestamp <= timestamp) {
@@ -172,6 +172,6 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             }
         }
 
-        revert("TssVerifier: !timestamp");
+        revert PublicKeyNotFound(timestamp);
     }
 }

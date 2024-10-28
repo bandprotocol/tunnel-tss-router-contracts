@@ -35,4 +35,44 @@ interface ITssVerifier {
      * @param px is the x-coordinate value of the new public key
      */
     function addPubKeyByOwner(uint8 parity, uint256 px) external;
+
+    // ========================================
+    // Events
+    // ========================================
+
+    /**
+     * @dev Emitted when the group public key is updated.
+     *
+     * @param index The index of the public key in the group.
+     * @param timestamp The timestamp of the update.
+     * @param parity The parity value of the public key.
+     * @param px The x-coordinate value of the public key.
+     * @param isByAdmin True if the public key is updated by the admin, false otherwise.
+     */
+    event UpdateGroupPubKey(
+        uint256 index,
+        uint256 timestamp,
+        uint8 parity,
+        uint256 px,
+        bool isByAdmin
+    );
+
+    // ========================================
+    // Custom Errors
+    // ========================================
+
+    /**
+     * @notice Revert the transaction if the message and its signature doesn't match.
+     */
+    error InvalidSignature();
+
+    /**
+     * @notice Revert the transaction if the contract fails to processes the signature.
+     */
+    error FailProcessingSignature();
+
+    /**
+     * @notice Revert the transaction if there is no valid public key.
+     */
+    error PublicKeyNotFound(uint256 timestamp);
 }

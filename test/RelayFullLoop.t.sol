@@ -124,7 +124,12 @@ contract RelayFullLoopTest is Test, Constants {
 
         packetConsumer.activate{value: 0.01 ether}(0);
 
-        vm.expectRevert("TunnelRouter: !sequence");
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.InvalidSequence.selector,
+            1,
+            2
+        );
+        vm.expectRevert(expectedErr);
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
@@ -135,7 +140,11 @@ contract RelayFullLoopTest is Test, Constants {
     function testRelayInactiveTargetContract() public {
         packetConsumer.deactivate();
 
-        vm.expectRevert("TunnelRouter: !active");
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.Inactive.selector,
+            address(packetConsumer)
+        );
+        vm.expectRevert(expectedErr);
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
@@ -155,7 +164,11 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testReactivateAlreadyActive() public {
-        vm.expectRevert("TunnelRouter: !inactive");
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.Active.selector,
+            address(packetConsumer)
+        );
+        vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
     }
 

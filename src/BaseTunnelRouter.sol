@@ -99,9 +99,11 @@ abstract contract BaseTunnelRouter is
      * @dev See {ITunnelRouter-relay}.
      */
     function relay(
-        bytes calldata message,
+        uint8 parity,
+        uint64 timestamp,
         address randomAddr,
-        uint256 signature
+        uint256 s,
+        bytes calldata message
     ) external whenNotPaused {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
@@ -122,7 +124,7 @@ abstract contract BaseTunnelRouter is
         }
 
         // verify signature.
-        bool isValid = tssVerifier.verify(message, randomAddr, signature);
+        bool isValid = tssVerifier.verify(parity, timestamp, randomAddr, s, keccak256(message));
         if (!isValid) {
             revert InvalidSignature();
         }

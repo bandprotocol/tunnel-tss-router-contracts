@@ -131,14 +131,18 @@ interface ITunnelRouter {
      * consumed when calling dataConsumer to process the message, plus an predefined amount of
      * additional estimated gas used by the others in the relaying process.
      *
-     * @param message is the message to be relayed.
-     * @param randomAddr is the random address of the signature.
-     * @param signature is the signature of the message.
+     * @param parity is the y part of the current public key
+     * @param timestamp is the creation timestamp of the current public key
+     * @param randomAddr is the address form of the commitment R.
+     * @param s is the integer part of the signature.
+     * @param message is the message being used for updating public key.
      */
     function relay(
-        bytes calldata message,
+        uint8 parity,
+        uint64 timestamp,
         address randomAddr,
-        uint256 signature
+        uint256 s,
+        bytes calldata message
     ) external;
 
     /**

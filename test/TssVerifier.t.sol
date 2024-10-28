@@ -13,131 +13,185 @@ contract TssVerifierTest is Test, TssSignerHelper {
 
     // abi.keccak("bandtss")[:4] | abi.keccak("transition")[:4].
     bytes8 constant _UPDATE_KEY_PREFIX = 0x135e4b63acc0e671;
-    uint256 _privateKey =
+    uint256 constant _privateKey =
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
     TssVerifier public verifier;
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
         verifier = new TssVerifier(address(this));
-        verifier.addPubKeyByOwner(parity - 25, px);
+        verifier.addPubKeyByOwner(parity - 25, CURRENT_PUBKEY_TIMESTAMP, px);
     }
 
     function cmpNewPubKey(
         uint256 expectTimestamp,
         uint8 expectParity,
         uint256 expectPx
-    ) public view {
-        uint256 nPubKey = verifier.publicKeyLength();
-        (
-            uint256 actualTimestamp,
-            uint8 actualParity,
-            uint256 actualPx
-        ) = verifier.publicKeys(nPubKey - 1);
-        assertEq(actualTimestamp, expectTimestamp);
-        assertEq(actualParity, expectParity);
-        assertEq(actualPx, expectPx);
-    }
-
-    struct TemporaryStore {
-        uint256 nextPrivateKey;
-        uint64 signingID;
-        uint64 timestamp;
-        bytes32 hashOriginator;
-        uint8 parity;
-        uint256 px;
-        uint8 newParity;
-        uint256 newPx;
-        bytes32 messageHash;
-        address randomAddr;
-        uint256 s;
-        uint256 start;
-        uint256 gasUsedVerifyAcc;
-        uint256 gasUsedUpdateAcc;
+    ) private view returns(bool) {
+        return verifier.getPublicKey(expectParity, uint64(expectTimestamp)) == expectPx;
     }
 
     function testVerify() public {
-        uint256 privateKey = _privateKey;
-        TemporaryStore memory tmp;
+        // -------------------------------------------------------------------------------- initial
+        
+        uint64 signingID = uint64(0);
+        bytes32 hashOriginator = 0x00;
+        uint64 timestamp = CURRENT_PUBKEY_TIMESTAMP;
 
-        for (uint256 i = 0; i < 100; i++) {
-            tmp.signingID = uint64(i + 1);
-            tmp.hashOriginator = 0x00;
-            tmp.timestamp = uint64(block.timestamp + 1);
-            vm.warp(tmp.timestamp);
+        vm.warp(timestamp);
 
-            // generate data and message to be signed.
-            bytes memory data = abi.encodePacked(i, "any message to be sign");
-            bytes memory message = this.getSigningMessage(
-                tmp.hashOriginator,
-                tmp.signingID,
-                tmp.timestamp,
-                data
-            );
-            tmp.messageHash = keccak256(message);
+        // generate data and message to be signed.
+        bytes memory data = abi.encodePacked("any message to be sign ------------  (1)");
+        bytes memory message = this.getSigningMessage(
+            hashOriginator,
+            timestamp,
+            signingID,
+            data
+        );
+        bytes32 messageHash = keccak256(message);
 
-            (tmp.parity, tmp.px) = getPubkey(privateKey);
-            (tmp.randomAddr, tmp.s) = schnorrSign(
-                tmp.parity,
-                tmp.px,
-                getRandomNonce(privateKey),
-                tmp.messageHash,
-                privateKey
-            );
+        (uint8 parity, uint256 px) = getPubkey(_privateKey);
+        (address randomAddr, uint256 s) = sign(
+            parity,
+            px,
+            getRandomNonce(_privateKey),
+            keccak256(abi.encode(_HASHED_CHAIN_ID, messageHash)),
+            _privateKey
+        );
 
-            // verify signature
-            tmp.start = gasleft();
-            bool result = verifier.verify(message, tmp.randomAddr, tmp.s);
-            tmp.gasUsedVerifyAcc += tmp.start - gasleft();
-            assertEq(result, true);
+        // verify signature
+        uint256 gasDiff = gasleft();
+        bool result = verifier.verify(parity, timestamp, randomAddr, s, messageHash);
+        gasDiff = gasDiff - gasleft();
+        assertEq(result, true);
 
-            // prepare data for add new public key
-            tmp.nextPrivateKey = uint256(
-                keccak256(abi.encodePacked(i, privateKey, "next privateKey"))
-            );
-            (tmp.newParity, tmp.newPx) = getPubkey(tmp.nextPrivateKey);
+        console.log("initial verify gas = ", gasDiff);
 
-            // generate new replacement signing message
-            data = abi.encodePacked(
-                _UPDATE_KEY_PREFIX,
-                tmp.newParity - 25,
-                tmp.newPx
-            );
-            message = this.getSigningMessage(
-                _HASH_ORIGINATOR_REPLACEMENT,
-                tmp.signingID,
-                tmp.timestamp,
-                data
-            );
-            tmp.messageHash = keccak256(message);
+        // -------------------------------------------------------------------------------- next
 
-            // sign a message
-            (tmp.randomAddr, tmp.s) = schnorrSign(
-                tmp.parity,
-                tmp.px,
-                getRandomNonce(privateKey),
-                tmp.messageHash,
-                privateKey
-            );
+        signingID++;
 
-            // add new public key
-            tmp.start = gasleft();
-            verifier.addPubKeyWithProof(message, tmp.randomAddr, tmp.s);
-            tmp.gasUsedUpdateAcc += tmp.start - gasleft();
+        vm.warp(timestamp + 1);
 
-            // compare result and replace existing private key.
-            cmpNewPubKey(tmp.timestamp, tmp.newParity, tmp.newPx);
-            privateKey = tmp.nextPrivateKey;
+        // generate data and message to be signed.
+        data = abi.encodePacked("any message to be sign ------------  (2)");
+        message = this.getSigningMessage(
+            hashOriginator,
+            timestamp,
+            signingID,
+            data
+        );
+        messageHash = keccak256(message);
 
-            if (i == 0) {
-                console.log("initial verify gas avg = ", tmp.gasUsedVerifyAcc);
-                console.log(
-                    "initial update pubkey gas avg = ",
-                    tmp.gasUsedUpdateAcc
-                );
-            }
-        }
-        console.log("verify gas avg = ", tmp.gasUsedVerifyAcc / 100);
-        console.log("update pubkey gas avg = ", tmp.gasUsedUpdateAcc / 100);
+        (parity, px) = getPubkey(_privateKey);
+        (randomAddr, s) = sign(
+            parity,
+            px,
+            getRandomNonce(_privateKey + 1),
+            keccak256(abi.encode(_HASHED_CHAIN_ID, messageHash)),
+            _privateKey
+        );
+
+        // verify signature
+        gasDiff = gasleft();
+        result = verifier.verify(parity, timestamp, randomAddr, s, messageHash);
+        gasDiff = gasDiff - gasleft();
+        assertEq(result, true);
+
+        console.log("next verify gas = ", gasDiff);
+    }
+
+    function testAddPubKeyWithProof() public {
+        // -------------------------------------------------------------------------------- initial
+
+        uint64 signingID = uint64(0);
+        uint64 timestamp = CURRENT_PUBKEY_TIMESTAMP;
+
+        // the current public key
+        (uint8 parity, uint256 px) = getPubkey(_privateKey + 0);
+        // prepare data for add new public key
+        (uint8 newParity, uint256 newPx) = getPubkey(_privateKey + 1);
+
+        vm.warp(timestamp);
+
+        // generate new replacement signing message
+        bytes memory data = abi.encodePacked(
+            _UPDATE_KEY_PREFIX,
+            newParity - 25,
+            timestamp + 1,
+            newPx
+        );
+        bytes memory message = this.getSigningMessage(
+            _HASH_ORIGINATOR_REPLACEMENT,
+            signingID,
+            timestamp,
+            data
+        );
+        bytes32 messageHash = keccak256(abi.encode(_HASHED_CHAIN_ID, keccak256(message)));
+
+        // sign a message
+        (address randomAddr, uint256 s) = sign(
+            parity,
+            px,
+            getRandomNonce(_privateKey),
+            messageHash,
+            _privateKey + 0
+        );
+
+        // add new public key
+        uint256 gasDiff = gasleft();
+        verifier.addPubKeyWithProof(parity, timestamp, randomAddr, s, message);
+        gasDiff = gasDiff - gasleft();
+
+        // compare result and replace existing private key.
+        assert(cmpNewPubKey(timestamp + 1, newParity, newPx));
+
+        console.log("initial update pubkey gas = ", gasDiff);
+
+        // -------------------------------------------------------------------------------- next
+
+        signingID++;
+        timestamp++;
+
+        // the current public key
+        (parity, px) = getPubkey(_privateKey + 1);
+        // prepare data for add new public key
+        (newParity, newPx) = getPubkey(_privateKey + 2);
+
+        vm.warp(timestamp);
+
+        // generate new replacement signing message
+        data = abi.encodePacked(
+            _UPDATE_KEY_PREFIX,
+            newParity - 25,
+            timestamp + 1,
+            newPx
+        );
+        message = this.getSigningMessage(
+            _HASH_ORIGINATOR_REPLACEMENT,
+            signingID,
+            timestamp,
+            data
+        );
+        messageHash = keccak256(abi.encode(_HASHED_CHAIN_ID, keccak256(message)));
+
+        // sign a message
+        (randomAddr, s) = sign(
+            parity,
+            px,
+            getRandomNonce(_privateKey + 1),
+            messageHash,
+            _privateKey + 1
+        );
+
+        // add new public key
+        gasDiff = gasleft();
+        verifier.addPubKeyWithProof(parity, timestamp, randomAddr, s, message);
+        gasDiff = gasDiff - gasleft();
+
+        // compare result and replace existing private key.
+        assert(cmpNewPubKey(timestamp + 1, newParity, newPx));
+
+        console.log("next update pubkey gas = ", gasDiff);
     }
 }

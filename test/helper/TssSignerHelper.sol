@@ -6,25 +6,19 @@ import "forge-std/Test.sol";
 
 import "../../src/TssVerifier.sol";
 import "./SECP256k1.sol";
+import "./Constants.sol";
 
-contract TssSignerHelper is Test {
-    // secp256k1 group order
-    uint256 public constant ORDER =
-        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-    // The hashed chain ID identified in the tss module.
-    bytes32 public constant HASHED_CHAIN_ID =
-        0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6;
+contract TssSignerHelper is Test, Constants {
 
     /// @dev Gets the signing message that will be used in signing of the tss module.
     function getSigningMessage(
         bytes32 hashOriginator,
-        uint64 signingID,
         uint64 timestamp,
+        uint64 signingID,
         bytes calldata rawMessage
     ) public pure returns (bytes memory) {
         return
             abi.encodePacked(
-                HASHED_CHAIN_ID,
                 hashOriginator,
                 timestamp,
                 signingID,
@@ -55,7 +49,7 @@ contract TssSignerHelper is Test {
             keccak256(
                 abi.encodePacked(
                     bytes32(
-                        0x42414e442d5453532d736563703235366b312d7630006368616c6c656e676500
+                        0x70dc541b29ea443932337070a89efa82095f5e6d1fd9845d0357be1f54ea4ec1
                     ),
                     randomAddr,
                     _parity,
@@ -74,7 +68,7 @@ contract TssSignerHelper is Test {
     }
 
     /// @dev Generates schnorr signature on the given message.
-    function Sign(
+    function sign(
         uint8 parity,
         uint256 px,
         uint256 randomNonce,

@@ -17,14 +17,14 @@ contract RelayFullLoopTest is Test, Constants {
     GasPriceTunnelRouter tunnelRouter;
     TssVerifier tssVerifier;
     Vault vault;
+    TssSignerHelper helper;
 
     function setUp() public {
+        helper = new TssSignerHelper();
         tssVerifier = new TssVerifier(address(this));
-        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
-
+        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY - 25, CURRENT_PUBKEY_TIMESTAMP, CURRENT_GROUP_PX);
         vault = new Vault();
         vault.initialize(address(this), 0, address(0x00));
-
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
             tssVerifier,
@@ -59,11 +59,15 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testRelayMessageConsumerHasEnoughFund() public {
         uint256 relayerBalance = address(this).balance;
+        vm.warp(CURRENT_PUBKEY_TIMESTAMP);
+
         uint256 currentGas = gasleft();
         tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
+            CURRENT_GROUP_PARITY,
+            CURRENT_PUBKEY_TIMESTAMP,
             SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
+            MESSAGE_SIGNATURE,
+            TSS_RAW_MESSAGE
         );
         uint256 gasUsed = currentGas - gasleft();
         assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
@@ -90,12 +94,15 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 relayerBalance = address(this).balance;
 
         vault.setMinimumActiveBalance(1 ether);
+        vm.warp(CURRENT_PUBKEY_TIMESTAMP);
 
         uint256 currentGas = gasleft();
         tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
+            CURRENT_GROUP_PARITY,
+            CURRENT_PUBKEY_TIMESTAMP,
             SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
+            MESSAGE_SIGNATURE,
+            TSS_RAW_MESSAGE
         );
         uint256 gasUsed = currentGas - gasleft();
 
@@ -131,9 +138,11 @@ contract RelayFullLoopTest is Test, Constants {
         );
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
+            CURRENT_GROUP_PARITY,
+            CURRENT_PUBKEY_TIMESTAMP,
             SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
+            MESSAGE_SIGNATURE,
+            TSS_RAW_MESSAGE
         );
     }
 
@@ -146,9 +155,11 @@ contract RelayFullLoopTest is Test, Constants {
         );
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
+            CURRENT_GROUP_PARITY,
+            CURRENT_PUBKEY_TIMESTAMP,
             SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
+            MESSAGE_SIGNATURE,
+            TSS_RAW_MESSAGE
         );
     }
 
@@ -157,9 +168,11 @@ contract RelayFullLoopTest is Test, Constants {
 
         vm.expectRevert(); // underflow error
         tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
+            CURRENT_GROUP_PARITY,
+            CURRENT_PUBKEY_TIMESTAMP,
             SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
+            MESSAGE_SIGNATURE,
+            TSS_RAW_MESSAGE
         );
     }
 

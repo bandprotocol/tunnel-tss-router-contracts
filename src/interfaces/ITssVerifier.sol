@@ -29,6 +29,27 @@ interface ITssVerifier {
     // ========================================
 
     /**
+    * @notice Thrown when there is no initial group of public keys set.
+    */
+    error NoInitialGroup();
+
+    /**
+    * @notice Thrown when the approver is not the previous group in the key update process.
+    */
+    error ApproverIsNotThePreviousGroup();
+
+    /**
+    * @notice Thrown when the new timestamp is not greater than the previous timestamp.
+    */
+    error NonIncreasingTimestamp();
+
+    /**
+    * @notice Thrown when an invalid key index is provided.
+    */
+    error InvalidKeyIndex();
+
+
+    /**
      * @notice Revert the transaction if the message and its signature doesn't match.
      */
     error InvalidSignature();
@@ -49,34 +70,48 @@ interface ITssVerifier {
 
     /**
      * @dev verify the signature of the message against the given signature.
-     *
-     * @param message is the message to be verified.
-     * @param randomAddr is the random address that is generated during the processing tss signature.
-     * @param signature is the tss signature.
+     * @param parity is the y part of the current public key
+     * @param timestamp is the creation timestamp of the current public key
+     * @param randomAddr is the address form of the commitment R.
+     * @param s is the integer part of the signature.
+     * @param messageHash is the hash of the message to be verified.
      * @return true if the signature is valid, false otherwise.
      */
     function verify(
-        bytes calldata message,
+        uint8 parity,
+        uint64 timestamp,
         address randomAddr,
-        uint256 signature
+        uint256 s,
+        bytes32 messageHash
     ) external view returns (bool);
 
     /**
      * @dev Add the new public key with proof from the current group.
-     * @param message is the message being used for updating public key.
+     * @param parity is the y part of the current public key
+     * @param timestamp is the creation timestamp of the current public key
      * @param randomAddr is the address form of the commitment R.
-     * @param s represents the Schnorr signature.
+     * @param s is the integer part of the signature.
+     * @param message is the message being used for updating public key.
      */
     function addPubKeyWithProof(
-        bytes calldata message,
+        uint8 parity,
+        uint64 timestamp,
         address randomAddr,
-        uint256 s
+        uint256 s,
+        bytes calldata message
     ) external;
 
     /**
      * @dev Add the new public key by the owner.
-     * @param parity is the parity value of the new public key
+     * @param parity is the y part of the new public key
+     * @param timestamp is the creation timestamp of the new public key
      * @param px is the x-coordinate value of the new public key
      */
-    function addPubKeyByOwner(uint8 parity, uint256 px) external;
+    function addPubKeyByOwner(uint8 parity, uint64 timestamp, uint256 px) external;
+
+    /**
+     * @dev Inactive the groups based on the given indexes.
+     * @param indexes is a list of indexes of keys that the owner wishes to make inactive.
+     */
+    function voidKeysByOwner(uint256[] calldata indexes) external;
 }

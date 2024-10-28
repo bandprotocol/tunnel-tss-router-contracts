@@ -58,7 +58,7 @@ contract PacketConsumerTest is Test, Constants {
 
     function setUp() public {
         tssVerifier = new TssVerifier(address(this));
-        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
+        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_PUBKEY_TIMESTAMP, CURRENT_GROUP_PX);
 
         vault = new Vault();
         vault.initialize(address(this), 0, address(0x00));

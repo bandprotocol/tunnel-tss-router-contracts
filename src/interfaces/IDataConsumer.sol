@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.23;
 
+import "../libraries/PacketDecoder.sol";
+
 interface IDataConsumer {
     /**
      * @dev Process the relayed message.
@@ -9,9 +11,9 @@ interface IDataConsumer {
      * The relayed message should be evaluated from the tunnelRouter contract and
      * should be verified from the tssVerifier contract before forwarding to the contract.
      *
-     * @param message The tss message that is relayed from the tunnelRouter contract.
+     * @param data The decoded tss message that is relayed from the tunnelRouter contract.
      */
-    function process(bytes calldata message) external;
+    function process(PacketDecoder.TssMessage memory data) external;
 
     /**
      * @dev The tunnelRouter contract address.

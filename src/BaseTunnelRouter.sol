@@ -144,7 +144,9 @@ abstract contract BaseTunnelRouter is
         uint256 gasLeft = gasleft();
         bool isReverted = false;
         try
-            IDataConsumer(targetAddr).process{gas: maxGasUsedProcess}(message)
+            IDataConsumer(targetAddr).process{gas: maxGasUsedProcess}(
+                tssMessage
+            )
         {} catch {
             isReverted = true;
         }

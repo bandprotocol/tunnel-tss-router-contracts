@@ -11,8 +11,6 @@ import "./libraries/PacketDecoder.sol";
 import "./TssVerifier.sol";
 
 contract PacketConsumer is IDataConsumer, Ownable2Step {
-    using PacketDecoder for bytes;
-
     // A price object that being stored for each signal ID.
     struct Price {
         uint64 price;
@@ -56,15 +54,15 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     /**
      * @dev See {IDataConsumer-process}.
      */
-    function process(bytes calldata message) external onlyTunnelRouter {
-        PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
+    function process(
+        PacketDecoder.TssMessage memory data
+    ) external onlyTunnelRouter {
         require(
-            tssMessage.hashOriginator == hashOriginator,
+            data.hashOriginator == hashOriginator,
             "PacketConsumer: !hashOriginator"
         );
 
-        PacketDecoder.Packet memory packet = tssMessage.packet;
-
+        PacketDecoder.Packet memory packet = data.packet;
         for (uint256 i = 0; i < packet.signals.length; i++) {
             prices[packet.signals[i].signal] = Price({
                 price: packet.signals[i].price,

@@ -35,8 +35,8 @@ contract PacketDecoderTest is Test, Constants {
         assertEq(tssMessage.hashChainID, expectedMsg.hashChainID);
         assertEq(tssMessage.hashOriginator, expectedMsg.hashOriginator);
         assertEq(
-            tssMessage.sourceBlockTimestmap,
-            expectedMsg.sourceBlockTimestmap
+            tssMessage.sourceBlocktimestamp,
+            expectedMsg.sourceBlocktimestamp
         );
         assertEq(tssMessage.signingID, expectedMsg.signingID);
 
@@ -47,7 +47,7 @@ contract PacketDecoderTest is Test, Constants {
         assertEq(packet.targetAddr, expectedPacket.targetAddr);
         assertEq(packet.signals[0].signal, expectedPacket.signals[0].signal);
         assertEq(packet.signals[0].price, expectedPacket.signals[0].price);
-        assertEq(packet.timestmap, expectedPacket.timestmap);
+        assertEq(packet.timestamp, expectedPacket.timestamp);
     }
 
     function testDecodeTssMessageInvalidLength() public {

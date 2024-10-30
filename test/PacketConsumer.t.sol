@@ -34,7 +34,7 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
             packet.signals[0].signal
         );
         assertEq(price, packet.signals[0].price);
-        assertEq(timestamp, packet.timestmap);
+        assertEq(timestamp, packet.timestamp);
     }
 
     function testProcessInvalidHashOriginator() public {

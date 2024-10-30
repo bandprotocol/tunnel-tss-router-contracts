@@ -6,7 +6,6 @@ import "./BaseTunnelRouter.sol";
 
 contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     struct GasFeeInfo {
-        uint256 baseFee;
         uint256 priorityFee;
     }
 
@@ -21,7 +20,6 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         address initialOwner,
         uint256 additionalGas_,
         uint256 maxGasUsedProcess_,
-        uint256 baseFee_,
         uint256 priorityFee_
     ) public initializer {
         __BaseRouter_init(
@@ -33,7 +31,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
             maxGasUsedProcess_
         );
 
-        _setGasFee(GasFeeInfo(baseFee_, priorityFee_));
+        _setGasFee(GasFeeInfo(priorityFee_));
     }
 
     /**
@@ -53,6 +51,6 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         uint256 gasUsed
     ) internal view virtual override returns (uint) {
         GasFeeInfo memory _gasFee = gasFee;
-        return (_gasFee.priorityFee + _gasFee.baseFee) * gasUsed;
+        return (_gasFee.priorityFee + block.basefee) * gasUsed;
     }
 }

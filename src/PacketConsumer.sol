@@ -58,13 +58,13 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         for (uint256 i = 0; i < packet.signals.length; i++) {
             prices[packet.signals[i].signal] = Price({
                 price: packet.signals[i].price,
-                timestamp: packet.timestmap
+                timestamp: packet.timestamp
             });
 
             emit UpdateSignalPrice(
                 packet.signals[i].signal,
                 packet.signals[i].price,
-                packet.timestmap
+                packet.timestamp
             );
         }
     }

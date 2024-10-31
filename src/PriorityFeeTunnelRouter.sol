@@ -35,8 +35,8 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     }
 
     /**
-     * @dev Set the gas fee information.
-     * @param gasFee_ is the new gas fee information.
+     * @dev Sets the gas fee information.
+     * @param gasFee_ The new gas fee information.
      */
     function setGasFee(GasFeeInfo memory gasFee_) public onlyOwner {
         _setGasFee(gasFee_);

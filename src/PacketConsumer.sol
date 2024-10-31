@@ -11,7 +11,7 @@ import "./libraries/PacketDecoder.sol";
 import "./TssVerifier.sol";
 
 contract PacketConsumer is IDataConsumer, Ownable2Step {
-    // A price object that being stored for each signal ID.
+    // An object that contains the price of a signal ID.
     struct Price {
         uint64 price;
         int64 timestamp;
@@ -21,9 +21,9 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     address public immutable tunnelRouter;
     // The hash originator of the feeds price data that this contract consumes.
     bytes32 public immutable hashOriginator;
-    // the tunnel ID that this contract is consuming.
+    // The tunnel ID that this contract is consuming.
     uint64 public immutable tunnelID;
-    // The mapping from signal ID to the latest price object.
+    // Mapping between a signal ID and its corresponding latest price object.
     mapping(bytes32 => Price) public prices;
 
     modifier onlyTunnelRouter() {

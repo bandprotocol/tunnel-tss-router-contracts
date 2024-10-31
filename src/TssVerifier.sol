@@ -15,7 +15,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     }
 
     // hashed chain ID of the TSS process;
-    bytes32 constant _HASH_CHAIN_ID =
+    bytes32 constant _HASHED_CHAIN_ID =
         0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6;
     // The group order of secp256k1.
     uint256 constant _ORDER =
@@ -48,6 +48,8 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         uint8 parity = uint8(bytes1(message[88:89]));
         uint256 px = uint(bytes32(message[89:121]));
 
+        // Note: Offset parity by 25 to match with the calculation in TSS module
+        // In etheruem, the parity is typically 27 or 28.
         PublicKey memory pubKey = PublicKey({
             timestamp: block.timestamp,
             parity: parity + 25,
@@ -68,6 +70,8 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
      * @dev See {ITssVerifier-addPubKeyByOwner}.
      */
     function addPubKeyByOwner(uint8 parity, uint256 px) external onlyOwner {
+        // Note: Offset parity by 25 to match with the calculation in TSS module
+        // In etheruem, the parity is typically 27 or 28.
         PublicKey memory pubKey = PublicKey({
             timestamp: block.timestamp,
             parity: parity + 25,
@@ -96,11 +100,12 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         if (randomAddr == address(0)) {
             return false;
         }
-        if (bytes32(message[0:32]) != _HASH_CHAIN_ID) {
+
+        if (bytes32(message[0:32]) != _HASHED_CHAIN_ID) {
             return false;
         }
 
-        PublicKey memory pubKey = _getPublicKey(block.timestamp);
+        PublicKey memory pubKey = _getLatestPublicKeyBefore(block.timestamp);
 
         uint256 content = uint256(
             keccak256(
@@ -136,23 +141,23 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         return randomAddr == addr;
     }
 
-    /// @dev pause the contract to prevent any further updates.
+    /// @dev Pauses the contract to prevent any further updates.
     function pause() external onlyOwner {
         _pause();
     }
 
-    /// @dev unpause the contract to prevent any further updates.
+    /// @dev Unpauses the contract to prevent any further updates.
     function unpause() external onlyOwner {
         _unpause();
     }
 
-    /// @notice Returns the number of public keys.
-    function publicKeyLength() public view returns (uint256 length) {
+    /// @dev Returns the number of public keys.
+    function publicKeysLength() public view returns (uint256 length) {
         length = publicKeys.length;
     }
 
-    /// @dev Retrieve the most recent public key that is no later than the specified timestamp.
-    function _getPublicKey(
+    /// @dev Retrieves the most recent public key that is no later than the specified timestamp.
+    function _getLatestPublicKeyBefore(
         uint256 timestamp
     ) internal view returns (PublicKey memory) {
         if (publicKeys.length == 0) {

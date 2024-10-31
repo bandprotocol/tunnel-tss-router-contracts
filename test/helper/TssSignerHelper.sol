@@ -12,10 +12,10 @@ contract TssSignerHelper is Test {
     uint256 public constant ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     // The hashed chain ID identified in the tss module.
-    bytes32 public constant HASH_CHAIN_ID =
+    bytes32 public constant HASHED_CHAIN_ID =
         0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6;
 
-    /// @dev Get the signing message that will be used in signing of the tss module.
+    /// @dev Gets the signing message that will be used in signing of the tss module.
     function getSigningMessage(
         bytes32 hashOriginator,
         uint64 signingID,
@@ -24,7 +24,7 @@ contract TssSignerHelper is Test {
     ) public pure returns (bytes memory) {
         return
             abi.encodePacked(
-                HASH_CHAIN_ID,
+                HASHED_CHAIN_ID,
                 hashOriginator,
                 timestamp,
                 signingID,
@@ -32,7 +32,7 @@ contract TssSignerHelper is Test {
             );
     }
 
-    /// @dev generate new public key.
+    /// @dev Generates new public key.
     function getPubkey(
         uint256 privateKey
     ) public pure returns (uint8 parity, uint256 px) {
@@ -44,7 +44,7 @@ contract TssSignerHelper is Test {
         }
     }
 
-    /// @dev generate the challenge context that will be used in checking verifying signature.
+    /// @dev Generates the challenge context that will be used in checking verifying signature.
     function challenge(
         uint8 _parity,
         address randomAddr,
@@ -66,15 +66,15 @@ contract TssSignerHelper is Test {
         );
     }
 
-    /// @dev generate a nonce for that private key; this is not an rng function.
+    /// @dev Generates a nonce for that private key; this is not an rng function.
     function getRandomNonce(
         uint256 privateKey
     ) public pure returns (uint256 k) {
         k = uint256(keccak256(abi.encodePacked("salt", privateKey)));
     }
 
-    /// @dev generate schnorr signature.
-    function schnorrSign(
+    /// @dev Generates schnorr signature on the given message.
+    function Sign(
         uint8 parity,
         uint256 px,
         uint256 randomNonce,

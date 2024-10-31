@@ -55,12 +55,15 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("Vault Proxy: ", proxyVaultAddr);
-        console.log("Vault Implementation: ", implVaultAddr);
-        console.log("TssVerifier: ", address(tssVerifier));
-        console.log("GasPriceTunnelRouter Proxy: ", proxyTunnelRouterAddr);
+        console.log("Vault Proxy deployed at :", proxyVaultAddr);
+        console.log("Vault Implementation deployed at :", implVaultAddr);
+        console.log("TssVerifier deployed at :", address(tssVerifier));
         console.log(
-            "GasPriceTunnelRouter Implementation: ",
+            "GasPriceTunnelRouter Proxy deployed at :",
+            proxyTunnelRouterAddr
+        );
+        console.log(
+            "GasPriceTunnelRouter Implementation deployed at :",
             implTunnelRouterAddr
         );
     }

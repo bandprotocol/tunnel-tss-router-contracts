@@ -11,21 +11,21 @@ contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
-        bytes32 hashOriginator = vm.envBytes32("HASH_ORIGINATOR");
-        uint64 tunnelID = uint64(vm.envUint("TUNNEL_ID"));
+        bytes32 originatorHash = vm.envBytes32("ORIGINATOR_HASH");
+        uint64 tunnelId = uint64(vm.envUint("TUNNEL_ID"));
 
         vm.startBroadcast(privKey);
 
         // Deploy the PacketConsumer contract
         PacketConsumer packetConsumer = new PacketConsumer(
             tunnelRouterAddr,
-            hashOriginator,
-            tunnelID,
+            originatorHash,
+            tunnelId,
             msg.sender
         );
 
         vm.stopBroadcast();
 
-        console.log("PacketConsumer: ", address(packetConsumer));
+        console.log("PacketConsumer deployed at:", address(packetConsumer));
     }
 }

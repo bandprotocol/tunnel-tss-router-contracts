@@ -59,7 +59,7 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev Set the additionalGasUsed being used in relaying message.
+     * @dev Sets the additionalGasUsed being used in relaying message.
      * @param additionalGasUsed_ The new additional gas used amount.
      */
     function setAdditionalGasUsed(
@@ -70,8 +70,8 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev Set the maximum gas used in calling targetAddr.process().
-     * @param maxAllowableCallbackGasLimit_  The maximum allowable gas to be used when
+     * @dev Sets the maximum gas used in calling targetAddr.process().
+     * @param maxAllowableCallbackGasLimit_ The maximum allowable gas to be used when
      * calling the target contract.
      */
     function setMaxAllowableCallbackGasLimit(
@@ -82,14 +82,14 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev pause the contract.
+     * @dev Pauses the contract.
      */
     function pause() external onlyOwner {
         _pause();
     }
 
     /**
-     * @dev unpause the contract.
+     * @dev Unpauses the contract.
      */
     function unpause() external onlyOwner {
         _unpause();
@@ -200,13 +200,13 @@ abstract contract BaseTunnelRouter is
         vault.deposit{value: msg.value}(tunnelID, account);
     }
 
-    /// @dev deactivate the (contract address, tunnelID).
+    /// @dev Deactivates the (contract address, tunnelID).
     function _deactivate(uint64 tunnelID, address addr) internal {
         isActive[tunnelID][addr] = false;
         emit Deactivate(tunnelID, addr, sequence[tunnelID][addr]);
     }
 
-    /// @dev calculate the fee for the router.
+    /// @dev Calculates the fee for the router.
     function _routerFee(uint256 gasUsed) internal view virtual returns (uint) {
         gasUsed; // Shh
 

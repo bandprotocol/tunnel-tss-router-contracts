@@ -47,7 +47,7 @@ contract TssSignerHelper is Test {
     /// @dev generate the challenge context that will be used in checking verifying signature.
     function challenge(
         uint8 _parity,
-        address rAddress,
+        address randomAddr,
         uint256 _px,
         bytes32 messageHash
     ) public pure returns (uint256 c) {
@@ -57,7 +57,7 @@ contract TssSignerHelper is Test {
                     bytes32(
                         0x42414e442d5453532d736563703235366b312d7630006368616c6c656e676500
                     ),
-                    rAddress,
+                    randomAddr,
                     _parity,
                     _px,
                     messageHash
@@ -80,10 +80,10 @@ contract TssSignerHelper is Test {
         uint256 randomNonce,
         bytes32 messageHash,
         uint256 privateKey
-    ) public pure returns (address rAddress, uint256 s) {
-        rAddress = vm.addr(randomNonce);
+    ) public pure returns (address randomAddr, uint256 s) {
+        randomAddr = vm.addr(randomNonce);
         // c = h(address(R) || compressed pubkey || m)
-        uint256 c = challenge(parity, rAddress, px, messageHash);
+        uint256 c = challenge(parity, randomAddr, px, messageHash);
         // cx = c*x
         uint256 cx = mulmod(c, privateKey, ORDER);
         // s = k + cx

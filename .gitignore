@@ -10,4 +10,5 @@ out/
 # Dotenv file
 .env
 
+# IDE
 .vscode/

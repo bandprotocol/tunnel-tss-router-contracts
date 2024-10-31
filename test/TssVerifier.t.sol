@@ -49,7 +49,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
         uint8 newParity;
         uint256 newPx;
         bytes32 messageHash;
-        address rAddress;
+        address randomAddr;
         uint256 s;
         uint256 start;
         uint256 gasUsedVerifyAcc;
@@ -77,7 +77,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
             tmp.messageHash = keccak256(message);
 
             (tmp.parity, tmp.px) = getPubkey(privateKey);
-            (tmp.rAddress, tmp.s) = schnorrSign(
+            (tmp.randomAddr, tmp.s) = schnorrSign(
                 tmp.parity,
                 tmp.px,
                 getRandomNonce(privateKey),
@@ -87,7 +87,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
 
             // verify signature
             tmp.start = gasleft();
-            bool result = verifier.verify(message, tmp.rAddress, tmp.s);
+            bool result = verifier.verify(message, tmp.randomAddr, tmp.s);
             tmp.gasUsedVerifyAcc += tmp.start - gasleft();
             assertEq(result, true);
 
@@ -112,7 +112,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
             tmp.messageHash = keccak256(message);
 
             // sign a message
-            (tmp.rAddress, tmp.s) = schnorrSign(
+            (tmp.randomAddr, tmp.s) = schnorrSign(
                 tmp.parity,
                 tmp.px,
                 getRandomNonce(privateKey),
@@ -122,7 +122,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
 
             // add new public key
             tmp.start = gasleft();
-            verifier.addPubKeyWithProof(message, tmp.rAddress, tmp.s);
+            verifier.addPubKeyWithProof(message, tmp.randomAddr, tmp.s);
             tmp.gasUsedUpdateAcc += tmp.start - gasleft();
 
             // compare result and replace existing private key.

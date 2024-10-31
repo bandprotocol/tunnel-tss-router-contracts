@@ -14,9 +14,6 @@ import {TssVerifier} from "../src/TssVerifier.sol";
 import {Vault} from "../src/Vault.sol";
 
 contract DeployScript is Script {
-    bytes32 constant _HASH_ORIGINATOR_REPLACEMENT =
-        0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
-
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
 
@@ -28,7 +25,7 @@ contract DeployScript is Script {
             msg.sender,
             abi.encodeCall(Vault.initialize, (msg.sender, 0, address(0x00)))
         );
-        address implVaultddr = Upgrades.getImplementationAddress(
+        address implVaultAddr = Upgrades.getImplementationAddress(
             proxyVaultAddr
         );
 
@@ -59,7 +56,7 @@ contract DeployScript is Script {
         vm.stopBroadcast();
 
         console.log("Vault Proxy: ", proxyVaultAddr);
-        console.log("Vault Implementation: ", implVaultddr);
+        console.log("Vault Implementation: ", implVaultAddr);
         console.log("TssVerifier: ", address(tssVerifier));
         console.log("GasPriceTunnelRouter Proxy: ", proxyTunnelRouterAddr);
         console.log(

@@ -77,7 +77,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
     function testSchnorrSign() public pure {
         uint256 secret = 0x383b4a7a98c26e381cf5149dade39a61b3f43e1af4ff1f78d17daf9ffaf35177;
         (uint8 parity, uint256 px) = getPubkey(secret);
-        (address rAddress, uint256 s) = schnorrSign(
+        (address randomAddr, uint256 s) = schnorrSign(
             parity,
             px,
             0x427d0cfec0deb6332e7961cf387a8668730cda6f5b99c2821128dab11a5c362e,
@@ -89,14 +89,17 @@ contract TssVerifierTest is Test, TssSignerHelper {
             px,
             0xa6ffbcd81f51883fd64cda2bdc3150fe50ccbe27f482201467d4e7a7f1a5212e
         );
-        assertEq(rAddress, address(0x4991030Be950BE3dD902612585Ff64a1e5d017ec));
+        assertEq(
+            randomAddr,
+            address(0x4991030Be950BE3dD902612585Ff64a1e5d017ec)
+        );
         assertEq(
             s,
             0xc8727773e662c4c23db072ce0ce27b1ffe3f4ee8a93460efdf61b5a9af5edffd
         );
         secret = 0x05cff511ca26b944fb22285c8a56595baeefe399d49e5aeef27233701b59b8ad;
         (parity, px) = getPubkey(secret);
-        (rAddress, s) = schnorrSign(
+        (randomAddr, s) = schnorrSign(
             parity,
             px,
             0x419d15a75ccf9809027431b7b42cf1e0b2403eeca686fdca8497f8309b62d363,
@@ -108,7 +111,10 @@ contract TssVerifierTest is Test, TssSignerHelper {
             px,
             0xa221bfe76ca3ae50df876afda2701cb1cad0527e28d0680f8af00ce14e6b079a
         );
-        assertEq(rAddress, address(0x2F7f7613Ab95bff1a6B23F3AFD3fA6dd80F04461));
+        assertEq(
+            randomAddr,
+            address(0x2F7f7613Ab95bff1a6B23F3AFD3fA6dd80F04461)
+        );
         assertEq(
             s,
             0xefb10cb564c33dca7d57a697941f4d182f5e80fa351a20ed5538453d6d8c2393

@@ -38,10 +38,10 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
      */
     function addPubKeyWithProof(
         bytes calldata message,
-        address rAddress,
+        address randomAddr,
         uint256 s
     ) external whenNotPaused {
-        if (!verify(message, rAddress, s)) {
+        if (!verify(message, randomAddr, s)) {
             revert InvalidSignature();
         }
 
@@ -89,11 +89,11 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
      */
     function verify(
         bytes calldata message,
-        address rAddress,
+        address randomAddr,
         uint256 signature
     ) public view whenNotPaused returns (bool result) {
-        // return false if the rAddress is zero or incorrect hash chainID.
-        if (rAddress == address(0)) {
+        // return false if the randomAddr is zero or incorrect hash chainID.
+        if (randomAddr == address(0)) {
             return false;
         }
         if (bytes32(message[0:32]) != _HASH_CHAIN_ID) {
@@ -109,7 +109,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
                     bytes1(0x00),
                     _CHALLENGE_PREFIX,
                     bytes1(0x00),
-                    rAddress,
+                    randomAddr,
                     pubKey.parity,
                     pubKey.px,
                     keccak256(message)
@@ -133,7 +133,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             bytes32(pubKey.px),
             bytes32(cpx)
         );
-        return rAddress == addr;
+        return randomAddr == addr;
     }
 
     /// @dev pause the contract to prevent any further updates.

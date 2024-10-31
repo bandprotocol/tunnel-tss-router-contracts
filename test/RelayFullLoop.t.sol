@@ -74,7 +74,7 @@ contract RelayFullLoopTest is Test, Constants {
 
         uint256 gasUsedDuringProcessMsg = feeGain /
             tunnelRouter.gasFee() -
-            tunnelRouter.additionalGas();
+            tunnelRouter.additionalGasUsed();
 
         console.log(
             "gas used during process message: ",
@@ -107,7 +107,7 @@ contract RelayFullLoopTest is Test, Constants {
 
         uint256 gasUsedDuringProcessMsg = feeGain /
             tunnelRouter.gasFee() -
-            tunnelRouter.additionalGas();
+            tunnelRouter.additionalGasUsed();
 
         console.log(
             "gas used during process message: ",

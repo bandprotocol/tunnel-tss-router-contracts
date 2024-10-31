@@ -26,12 +26,13 @@ abstract contract BaseTunnelRouter is
     ITssVerifier public tssVerifier;
     IVault public vault;
 
-    // the ID of the chain, will be used in validating message from the tunnel.
+    // The ID of the chain. Used to validate messages received from the tunnel.
     bytes32 public chainID;
-    // estimated additional gas used in relaying message, excluding the gas cost for calling the target contract.
-    uint256 public additionalGas;
-    // the maximum gas used in calling the target contract.
-    uint256 public maxGasUsedProcess;
+    // Additional gas estimated for relaying the message;
+    // does not include the gas cost for executing the target contract.
+    uint256 public additionalGasUsed;
+    // The maximum allowable gas to be used when calling the target contract.
+    uint256 public maxAllowableCallbackGasLimit;
 
     mapping(uint64 => mapping(address => bool)) public isActive; // tunnelID => targetAddr => isActive
     mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelID => targetAddr => sequence
@@ -43,8 +44,8 @@ abstract contract BaseTunnelRouter is
         IVault vault_,
         bytes32 chainID_,
         address initialOwner,
-        uint256 additionalGas_,
-        uint256 maxGasUsedProcess_
+        uint256 additionalGasUsed_,
+        uint256 maxAllowableCallbackGasLimit_
     ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -53,28 +54,31 @@ abstract contract BaseTunnelRouter is
         tssVerifier = tssVerifier_;
         vault = vault_;
         chainID = chainID_;
-        additionalGas = additionalGas_;
-        maxGasUsedProcess = maxGasUsedProcess_;
+        additionalGasUsed = additionalGasUsed_;
+        maxAllowableCallbackGasLimit = maxAllowableCallbackGasLimit_;
     }
 
     /**
-     * @dev Set the additionalGas being used in relaying message.
-     * @param additionalGas_ The new additional gas amount.
+     * @dev Set the additionalGasUsed being used in relaying message.
+     * @param additionalGasUsed_ The new additional gas used amount.
      */
-    function setAdditionalGas(uint256 additionalGas_) external onlyOwner {
-        additionalGas = additionalGas_;
-        emit SetAdditionalGas(additionalGas_);
+    function setAdditionalGasUsed(
+        uint256 additionalGasUsed_
+    ) external onlyOwner {
+        additionalGasUsed = additionalGasUsed_;
+        emit SetAdditionalGas(additionalGasUsed_);
     }
 
     /**
      * @dev Set the maximum gas used in calling targetAddr.process().
-     * @param maxGasUsedProcess_ The maximum gas used in calling targetAddr.process().
+     * @param maxAllowableCallbackGasLimit_  The maximum allowable gas to be used when
+     * calling the target contract.
      */
-    function setMaxGasUsedProcess(
-        uint256 maxGasUsedProcess_
+    function setMaxAllowableCallbackGasLimit(
+        uint256 maxAllowableCallbackGasLimit_
     ) external onlyOwner {
-        maxGasUsedProcess = maxGasUsedProcess_;
-        emit SetMaxGasUsedProcess(maxGasUsedProcess);
+        maxAllowableCallbackGasLimit = maxAllowableCallbackGasLimit_;
+        emit SetMaxAllowableCallbackGasLimit(maxAllowableCallbackGasLimit);
     }
 
     /**
@@ -96,14 +100,14 @@ abstract contract BaseTunnelRouter is
      */
     function relay(
         bytes calldata message,
-        address rAddr,
+        address randomAddr,
         uint256 signature
     ) external whenNotPaused {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         address targetAddr = packet.targetAddr.toAddress();
 
-        // check if a message is valid.
+        // check if the message is valid.
         if (!isActive[packet.tunnelID][targetAddr]) {
             revert Inactive(targetAddr);
         }
@@ -117,9 +121,9 @@ abstract contract BaseTunnelRouter is
             revert InvalidChain(packet.chainID);
         }
 
-        // verify signatuxwre.
-        bool success = tssVerifier.verify(message, rAddr, signature);
-        if (!success) {
+        // verify signature.
+        bool isValid = tssVerifier.verify(message, randomAddr, signature);
+        if (!isValid) {
             revert InvalidSignature();
         }
 
@@ -130,9 +134,9 @@ abstract contract BaseTunnelRouter is
         uint256 gasLeft = gasleft();
         bool isReverted = false;
         try
-            IDataConsumer(targetAddr).process{gas: maxGasUsedProcess}(
-                tssMessage
-            )
+            IDataConsumer(targetAddr).process{
+                gas: maxAllowableCallbackGasLimit
+            }(tssMessage)
         {} catch {
             isReverted = true;
         }
@@ -144,7 +148,7 @@ abstract contract BaseTunnelRouter is
         );
 
         // charge a fee from the target contract.
-        uint256 fee = _routerFee(gasLeft - gasleft() + additionalGas);
+        uint256 fee = _routerFee(gasLeft - gasleft() + additionalGasUsed);
         vault.collectFee(packet.tunnelID, targetAddr, fee);
 
         if (!vault.isBalanceOverThreshold(packet.tunnelID, targetAddr)) {

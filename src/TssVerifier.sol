@@ -41,7 +41,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         address rAddress,
         uint256 s
     ) external whenNotPaused {
-        if (!this.verify(message, rAddress, s)) {
+        if (!verify(message, rAddress, s)) {
             revert InvalidSignature();
         }
 

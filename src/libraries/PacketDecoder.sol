@@ -7,7 +7,7 @@ library PacketDecoder {
     bytes4 private constant _TICK_ENCODER_SELECTOR = 0xdb99b2b3; // keccak256("TickABI");
 
     enum EncoderType {
-        UnIdentified,
+        Unidentified,
         FixedPoint,
         Tick
     }
@@ -87,7 +87,7 @@ library PacketDecoder {
         } else if (selector == _TICK_ENCODER_SELECTOR) {
             return EncoderType.Tick;
         } else {
-            return EncoderType.UnIdentified;
+            return EncoderType.Unidentified;
         }
     }
 }

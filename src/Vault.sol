@@ -34,8 +34,8 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     }
 
     /**
-     * @dev set the tunnel router contract address
-     * @param tunnelRouter_ the tunnel router contract address
+     * @dev Sets the tunnel router contract address
+     * @param tunnelRouter_ The tunnel router contract address
      */
     function setTunnelRouter(address tunnelRouter_) external onlyOwner {
         _setTunnelRouter(tunnelRouter_);

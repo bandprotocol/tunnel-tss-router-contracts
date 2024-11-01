@@ -89,8 +89,12 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         address account,
         uint256 amount
     ) internal view returns (bool) {
-        uint256 minBalance = ITunnelRouter(tunnelRouter)
-            .minimumBalanceThreshold(tunnelId, account);
+        uint256 minBalance;
+        ITunnelRouter router = ITunnelRouter(tunnelRouter);
+
+        if (router.isActive(tunnelId, account)) {
+            minBalance = router.minimumBalanceThreshold();
+        }
 
         uint256 current = balance[tunnelId][account];
         return current < minBalance + amount;

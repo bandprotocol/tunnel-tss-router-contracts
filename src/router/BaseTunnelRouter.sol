@@ -201,14 +201,7 @@ abstract contract BaseTunnelRouter is
     /**
      * @dev See {ITunnelRouter-minimumBalanceThreshold}.
      */
-    function minimumBalanceThreshold(
-        uint64 tunnelId,
-        address targetAddr
-    ) public view override returns (uint256) {
-        if (!isActive[tunnelId][targetAddr]) {
-            return 0;
-        }
-
+    function minimumBalanceThreshold() public view override returns (uint256) {
         return _routerFee(additionalGasUsed + maxAllowableCallbackGasLimit);
     }
 
@@ -217,8 +210,7 @@ abstract contract BaseTunnelRouter is
         address addr
     ) internal view returns (bool) {
         uint256 remainingBalance = vault.balance(tunnelId, addr);
-        uint256 minBalance = minimumBalanceThreshold(tunnelId, addr);
-        return remainingBalance < minBalance;
+        return remainingBalance < minimumBalanceThreshold();
     }
 
     /// @dev Deactivates the (contract address, tunnelId).

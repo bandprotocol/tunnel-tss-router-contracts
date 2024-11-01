@@ -158,15 +158,23 @@ interface ITunnelRouter {
 
     /**
      * @dev Returns the minimum balance required to keep the tunnel active.
-     * If the tunnel is inactive, the function returns 0.
+     *
+     * @return uint256 The minimum balance threshold.
+     */
+    function minimumBalanceThreshold() external view returns (uint256);
+
+    /**
+     * @dev Returns whether the tunnel is active or not.
      *
      * @param tunnelId The ID of the tunnel.
      * @param addr The target contract address.
+     *
+     * @return bool True if the tunnel is active, false otherwise.
      */
-    function minimumBalanceThreshold(
+    function isActive(
         uint64 tunnelId,
         address addr
-    ) external view returns (uint256);
+    ) external view returns (bool);
 
     /**
      * @dev Returns the vault contract address.

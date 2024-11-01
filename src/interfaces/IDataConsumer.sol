@@ -86,13 +86,18 @@ interface IDataConsumer {
     function deposit() external payable;
 
     /**
-     * @dev Withdraws the native tokens from the vault contract.
-     *
-     * The contract calls the vault to deposit the tokens.
+     * @dev Withdraws the native tokens from the vault contract with specific amount.
      *
      * This function should be called by the contract owner.
      */
     function withdraw(uint256 amount) external;
+
+    /**
+     * @dev Withdraws all native tokens from the vault contract.
+     *
+     * This function should be called by the contract owner.
+     */
+    function withdrawAll() external;
 
     /**
      * @dev Returns The tunnelRouter contract address.

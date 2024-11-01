@@ -199,13 +199,6 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev See {ITunnelRouter-deposit}.
-     */
-    function deposit(uint64 tunnelId, address account) external payable {
-        vault.deposit{value: msg.value}(tunnelId, account);
-    }
-
-    /**
      * @dev See {ITunnelRouter-minimumBalanceThreshold}.
      */
     function minimumBalanceThreshold(

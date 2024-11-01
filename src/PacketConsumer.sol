@@ -85,13 +85,6 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
      */
     function deactivate() external onlyOwner {
         ITunnelRouter(tunnelRouter).deactivate(tunnelId);
-
-        // send the remaining balance to the caller.
-        uint256 balance = address(this).balance;
-        (bool ok, ) = payable(msg.sender).call{value: balance}("");
-        if (!ok) {
-            revert TokenTransferFailed(msg.sender);
-        }
     }
 
     /**
@@ -110,6 +103,22 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.withdraw(tunnelId, amount);
+
+        // send the remaining balance to the caller.
+        uint256 balance = address(this).balance;
+        (bool ok, ) = payable(msg.sender).call{value: balance}("");
+        if (!ok) {
+            revert TokenTransferFailed(msg.sender);
+        }
+    }
+
+    /**
+     * @dev See {IDataConsumer-withdrawAll}.
+     */
+    function withdrawAll() external onlyOwner {
+        IVault vault = ITunnelRouter(tunnelRouter).vault();
+
+        vault.withdrawAll(tunnelId);
 
         // send the remaining balance to the caller.
         uint256 balance = address(this).balance;

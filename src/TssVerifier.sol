@@ -20,9 +20,6 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The group order of secp256k1.
     uint256 constant _ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-    // The prefix for the key update message. It comes from
-    // abi.keccak("bandtss")[:4] | abi.keccak("transition")[:4].
-    bytes8 constant _UPDATE_KEY_PREFIX = 0x135e4b63acc0e671;
     // The prefix for the hashing process in bandchain.
     string constant _CONTEXT = "BAND-TSS-secp256k1-v0";
     // The prefix for the challenging hash message.

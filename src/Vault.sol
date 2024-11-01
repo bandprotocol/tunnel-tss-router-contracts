@@ -11,7 +11,6 @@ import "./interfaces/ITunnelRouter.sol";
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     mapping(uint64 => mapping(address => uint)) public balance; // tunnelId => account => amount.
 
-    uint256 public minimumActiveBalance;
     address public tunnelRouter;
 
     uint[50] __gap;

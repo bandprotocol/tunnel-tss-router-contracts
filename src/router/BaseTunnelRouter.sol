@@ -240,5 +240,6 @@ abstract contract BaseTunnelRouter is
         emit AdditionalGasUsedSet(additionalGasUsed_);
     }
 
+    /// @dev the vault contract send fees to the contract when relayer relays a message.
     receive() external payable {}
 }

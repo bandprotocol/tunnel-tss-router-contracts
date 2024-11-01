@@ -128,5 +128,6 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         }
     }
 
+    ///@dev the contract receive eth from the vault contract when user call withdraw.
     receive() external payable {}
 }

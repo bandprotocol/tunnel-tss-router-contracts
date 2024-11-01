@@ -9,7 +9,7 @@ import {Upgrades} from "openzeppelin-foundry-upgrades/upgrades.sol";
 import {IVault} from "../src/interfaces/IVault.sol";
 import {ITssVerifier} from "../src/interfaces/ITssVerifier.sol";
 
-import {GasPriceTunnelRouter} from "../src/GasPriceTunnelRouter.sol";
+import {GasPriceTunnelRouter} from "../src/router/GasPriceTunnelRouter.sol";
 import {TssVerifier} from "../src/TssVerifier.sol";
 import {Vault} from "../src/Vault.sol";
 

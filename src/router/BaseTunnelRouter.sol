@@ -6,13 +6,13 @@ import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
-import "./interfaces/IDataConsumer.sol";
-import "./interfaces/ITssVerifier.sol";
-import "./interfaces/ITunnelRouter.sol";
-import "./interfaces/IVault.sol";
+import "../interfaces/IDataConsumer.sol";
+import "../interfaces/ITssVerifier.sol";
+import "../interfaces/ITunnelRouter.sol";
+import "../interfaces/IVault.sol";
 
-import "./libraries/PacketDecoder.sol";
-import "./libraries/StringAddress.sol";
+import "../libraries/PacketDecoder.sol";
+import "../libraries/StringAddress.sol";
 
 abstract contract BaseTunnelRouter is
     Initializable,

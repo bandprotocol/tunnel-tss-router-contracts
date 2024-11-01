@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.23;
 
-import "./interfaces/IVault.sol";
+import "../interfaces/IVault.sol";
 import "./BaseTunnelRouter.sol";
 
 contract GasPriceTunnelRouter is BaseTunnelRouter {

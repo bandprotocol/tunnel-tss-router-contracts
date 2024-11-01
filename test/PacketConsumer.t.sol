@@ -5,7 +5,7 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 
 import "../src/libraries/PacketDecoder.sol";
-import "../src/GasPriceTunnelRouter.sol";
+import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/PacketConsumer.sol";
 import "../src/TssVerifier.sol";
 import "../src/Vault.sol";

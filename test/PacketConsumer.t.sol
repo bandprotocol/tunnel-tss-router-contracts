@@ -61,7 +61,7 @@ contract PacketConsumerTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), 0, address(0x00));
+        vault.initialize(address(this), address(0x00));
 
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
@@ -97,7 +97,7 @@ contract PacketConsumerTest is Test, Constants {
 
     function testDeposit() public {
         uint depositedAmtBefore = vault.balance(
-            packetConsumer.tunnelID(),
+            packetConsumer.tunnelId(),
             address(packetConsumer)
         );
         uint balanceVaultBefore = address(vault).balance;
@@ -105,7 +105,7 @@ contract PacketConsumerTest is Test, Constants {
         packetConsumer.deposit{value: 0.01 ether}();
 
         assertEq(
-            vault.balance(packetConsumer.tunnelID(), address(packetConsumer)),
+            vault.balance(packetConsumer.tunnelId(), address(packetConsumer)),
             depositedAmtBefore + 0.01 ether
         );
 

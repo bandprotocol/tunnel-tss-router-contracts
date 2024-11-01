@@ -10,30 +10,32 @@ interface ITunnelRouter {
     // ========================================
 
     /**
-     * @notice Emitted when the maximum gas used in the process is set.
-     * @param maxAllowableCallbackGasLimit The maximum allowable gas to be used
+     * @notice Emitted when the maximum allowable callback gas limit is set.
+     *
+     * @param maxAllowableCallbackGasLimit The maximum gas limit to be used
      * when calling the target contract.
      */
-    event SetMaxAllowableCallbackGasLimit(uint256 maxAllowableCallbackGasLimit);
+    event MaxAllowableCallbackGasLimitSet(uint256 maxAllowableCallbackGasLimit);
 
     /**
-     * @notice Emitted when the additional gas is set.
-     * @param additionalGas The additional gas estimated for relaying the message;
+     * @notice Emitted when the additional gas used is set.
+     *
+     * @param additionalGasUsed The additional gas estimated for relaying the message;
      * does not include the gas cost for executing the target contract.
      */
-    event SetAdditionalGas(uint256 additionalGas);
+    event AdditionalGasUsedSet(uint256 additionalGasUsed);
 
     /**
      * @notice Emitted after the message is relayed to the target contract
      * to indicate the result of the process.
      *
-     * @param tunnelID The tunnel ID that the message is relayed.
+     * @param tunnelId The tunnel ID that the message is relayed.
      * @param targetAddr The target address that the message is relayed.
      * @param sequence The sequence of the message.
      * @param isReverted The flag indicating whether the message is reverted.
      */
-    event ProcessMessage(
-        uint64 indexed tunnelID,
+    event MessageProcessed(
+        uint64 indexed tunnelId,
         address indexed targetAddr,
         uint64 indexed sequence,
         bool isReverted
@@ -42,12 +44,12 @@ interface ITunnelRouter {
     /**
      * @notice Emitted when the target address is activated.
      *
-     * @param tunnelID The tunnel ID that the sender is activating.
+     * @param tunnelId The tunnel ID that the sender is activating.
      * @param targetAddr The target address that the sender is activating.
      * @param latestNonce The latest nonce of the sender.
      */
-    event Activate(
-        uint64 indexed tunnelID,
+    event Activated(
+        uint64 indexed tunnelId,
         address indexed targetAddr,
         uint64 latestNonce
     );
@@ -55,12 +57,12 @@ interface ITunnelRouter {
     /**
      * @notice Emitted when the target address is deactivated.
      *
-     * @param tunnelID The tunnel ID that the sender is deactivating.
+     * @param tunnelId The tunnel ID that the sender is deactivating.
      * @param targetAddr The target address that the sender is deactivating.
      * @param latestNonce The latest nonce of the sender.
      */
-    event Deactivate(
-        uint64 indexed tunnelID,
+    event Deactivated(
+        uint64 indexed tunnelId,
         address indexed targetAddr,
         uint64 latestNonce
     );
@@ -70,21 +72,21 @@ interface ITunnelRouter {
     // ========================================
 
     /**
-     * @notice Revert the transaction if the target contract is inactive.
+     * @notice Reverts if the target contract is inactive.
      *
      * @param targetAddr The target address that is inactive.
      */
-    error Inactive(address targetAddr);
+    error InactiveTargetContract(address targetAddr);
 
     /**
-     * @notice Revert the transaction if the target contract is active.
+     * @notice Reverts if the target contract is active.
      *
-     * @param targetAddr The target address that is inactive.
+     * @param targetAddr The target address that is active.
      */
-    error Active(address targetAddr);
+    error ActiveTargetContract(address targetAddr);
 
     /**
-     * @notice Revert the transaction if the sequence is incorrect.
+     * @notice Reverts if the sequence is incorrect.
      *
      * @param expected The expected sequence of the tunnel.
      * @param input The input sequence of the tunnel.
@@ -92,48 +94,46 @@ interface ITunnelRouter {
     error InvalidSequence(uint64 expected, uint64 input);
 
     /**
-     * @notice Revert the transaction if the chainID is incorrect.
+     * @notice Reverts if the chain ID is incorrect.
      *
-     * @param chainID The chainID of the tunnel.
+     * @param chainId The chain ID of the tunnel.
      */
-    error InvalidChain(string chainID);
+    error InvalidChain(string chainId);
 
     /**
-     * @notice Revert the transaction if the message and its signature doesn't match.
+     * @notice Reverts if the message and its signature doesn't match.
      */
     error InvalidSignature();
 
     /**
-     * @notice Revert the transaction if contract cannot send fee to the specific address.
+     * @notice Reverts if the contract cannot send fee to the specific address.
      */
-    error FailSendTokens(address addr);
+    error TokenTransferFailed(address addr);
 
     /**
-     * @notice Revert the transaction if the balance is insufficient.
+     * @notice Reverts if the remaining balance is insufficient to withdraw.
      *
-     * @param tunnelID The tunnel ID that the sender is withdrawing tokens.
+     * @param tunnelId The tunnel ID that the sender is withdrawing tokens.
      * @param addr The account from which the sender is withdrawing tokens.
      */
-    error InsufficientBalance(uint64 tunnelID, address addr);
+    error InsufficientRemainingBalance(uint64 tunnelId, address addr);
 
     // ========================================
     // Functions
     // ========================================
 
     /**
-     * @dev relay the message to the target contract.
+     * @dev Relays the message to the target contract.
      *
-     * The contract verify the message's sequence and the signature before forwarding to
-     * the dataConsumer contract.
+     * Verifies the message's sequence and signature before forwarding it to
+     * the data consumer contract. The sender is entitled to a reward from the
+     * vault contract, even if the data consumer contract fails to process the
+     * message. The reward is based on the gas consumed during processing plus
+     * a predefined additional gas estimate.
      *
-     * The sender is entitled to a reward from the vault contract, even if the dataConsumer
-     * contract fails to process the message. The reward is calculated based on the gas
-     * consumed when calling dataConsumer to process the message, plus an predefined amount of
-     * additional estimated gas used by the others in the relaying process.
-     *
-     * @param message is the message to be relayed.
-     * @param randomAddr is the random address of the signature.
-     * @param signature is the signature of the message.
+     * @param message The message to be relayed.
+     * @param randomAddr The random address used in signature.
+     * @param signature The signature of the message.
      */
     function relay(
         bytes calldata message,
@@ -142,35 +142,31 @@ interface ITunnelRouter {
     ) external;
 
     /**
-     * @dev activate the sender and associated tunnelID.
+     * @dev Activates the sender and associated tunnel ID.
      *
-     * This also deposit into the vault and set the latest sequence if the existing deposit
-     * is above the threshold.
-     *
-     * @param tunnelID is the tunnelID that the sender contract is activating.
-     * @param latestSeq is the new sequence of the tunnelID.
+     * @param tunnelId The tunnel ID that the sender contract is activating.
+     * @param latestSeq The new sequence of the tunnelID.
      */
-    function activate(uint64 tunnelID, uint64 latestSeq) external payable;
+    function activate(uint64 tunnelId, uint64 latestSeq) external payable;
 
     /**
-     * @dev deactivate the pair of the sender address and the tunnelID.
+     * @dev Deactivates the sender and associated tunnel ID.
      *
-     * This also withdraws the tokens from the vault contract if there is an existing deposit.
-     *
-     * @param tunnelID is the tunnelID that the sender contract is deactivating.
+     * @param tunnelId The tunnel ID being deactivated.
      */
-    function deactivate(uint64 tunnelID) external;
+    function deactivate(uint64 tunnelId) external;
 
     /**
-     * @dev Deposit the native tokens into the vault on behalf of the given account and tunnelID.
-     * The amount of tokens to be deposited is provided as msg.value in the transaction.
+     * @dev Returns the minimum balance required to keep the tunnel active.
+     * If the tunnel is inactive, the function returns 0.
      *
-     * The contract calls the vault contract to deposit the tokens.
-     *
-     * @param tunnelID The ID of the tunnel into which the sender is depositing tokens.
-     * @param account The account into which the sender is depositing tokens.
+     * @param tunnelId The ID of the tunnel.
+     * @param addr The target contract address.
      */
-    function deposit(uint64 tunnelID, address account) external payable;
+    function minimumBalanceThreshold(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (uint256);
 
     /**
      * @dev Returns the vault contract address.

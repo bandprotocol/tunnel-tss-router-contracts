@@ -28,7 +28,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
         uint8 expectParity,
         uint256 expectPx
     ) public view {
-        uint256 nPubKey = verifier.publicKeyLength();
+        uint256 nPubKey = verifier.publicKeysLength();
         (
             uint256 actualTimestamp,
             uint8 actualParity,
@@ -77,7 +77,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
             tmp.messageHash = keccak256(message);
 
             (tmp.parity, tmp.px) = getPubkey(privateKey);
-            (tmp.randomAddr, tmp.s) = schnorrSign(
+            (tmp.randomAddr, tmp.s) = sign(
                 tmp.parity,
                 tmp.px,
                 getRandomNonce(privateKey),
@@ -87,7 +87,12 @@ contract TssVerifierTest is Test, TssSignerHelper {
 
             // verify signature
             tmp.start = gasleft();
-            bool result = verifier.verify(message, tmp.randomAddr, tmp.s);
+            bool result = verifier.verify(
+                message,
+                tmp.randomAddr,
+                tmp.s,
+                tmp.timestamp
+            );
             tmp.gasUsedVerifyAcc += tmp.start - gasleft();
             assertEq(result, true);
 
@@ -112,7 +117,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
             tmp.messageHash = keccak256(message);
 
             // sign a message
-            (tmp.randomAddr, tmp.s) = schnorrSign(
+            (tmp.randomAddr, tmp.s) = sign(
                 tmp.parity,
                 tmp.px,
                 getRandomNonce(privateKey),

@@ -5,14 +5,6 @@ pragma solidity ^0.8.23;
 import "../libraries/PacketDecoder.sol";
 
 interface IDataConsumer {
-    /**
-     * @dev Deposit the native tokens into the vault on behalf of the given account and tunnelID.
-     * The amount of tokens to be deposited is provided as msg.value in the transaction.
-     *
-     * The contract calls the tunnelRouter to deposit the tokens in vault contract.
-     */
-    function deposit() external payable;
-
     // ========================================
     // Events
     // ========================================
@@ -20,12 +12,12 @@ interface IDataConsumer {
     /**
      * @notice Emitted when the signal price is updated.
      *
-     * @param signalID The signal ID that the price is updated.
+     * @param signalId The Id of the signal whose price is updated.
      * @param price The new price of the signal.
-     * @param timestamp The timestamp of the update prices.
+     * @param timestamp The timestamp of the updated prices.
      */
-    event UpdateSignalPrice(
-        bytes32 indexed signalID,
+    event SignalPriceUpdated(
+        bytes32 indexed signalId,
         uint64 price,
         int64 timestamp
     );
@@ -35,58 +27,80 @@ interface IDataConsumer {
     // ========================================
 
     /**
-     * @notice The caller is not the tunnelRouter contract.
+     * @notice Reverts if the caller is not the tunnelRouter contract.
      */
-    error OnlyTunnelRouter();
+    error UnauthorizedTunnelRouter();
 
     /**
-     * @notice The hashOriginator is not matched.
+     * @notice Reverts if the hashed originator is not matched.
      */
     error InvalidHashOriginator();
 
     /**
-     * @notice Revert the transaction if contract cannot send fee to the specific address.
+     * @notice Reverts if the program fails to send tokens to the specified address.
+     *
+     * @param addr The address to which the token transfer failed.
      */
-    error FailSendTokens(address addr);
+    error TokenTransferFailed(address addr);
 
     // ========================================
     // Functions
     // ========================================
 
     /**
-     * @dev Process the relayed message.
+     * @dev Processes the relayed message.
      *
-     * The relayed message should be evaluated from the tunnelRouter contract and
-     * should be verified from the tssVerifier contract before forwarding to the contract.
+     * The relayed message must be evaluated from the tunnelRouter contract and
+     * verified by the tssVerifier contract before forwarding to the target contract.
      *
      * @param data The decoded tss message that is relayed from the tunnelRouter contract.
      */
     function process(PacketDecoder.TssMessage memory data) external;
 
     /**
-     * @dev The tunnelRouter contract address.
-     */
-    function tunnelRouter() external view returns (address);
-
-    /**
-     * @dev Activate the tunnel and set the sequence on tunnelRouter contract.
+     * @dev Activates the tunnel and set the sequence on tunnelRouter contract.
      *
+     * This function deposits tokens into the vault and sets the latest sequence on the
+     * tunnelRouter contract if the current deposit in the vault contract exceeds a threshold.
+     * The transaction is reverted if the threshold is not met.
      *
-     * This also deposit tokens into the vault and set the latest sequence on the
-     * tunnelRouter contract if the current deposit in the vault contract is over a threshold;
-     * otherwise, the transaction is reverted.
-     *
-     * This function should be called by the owner of the contract only.
+     * This function should be called by the contract owner.
      *
      * @param latestSeq The new sequence of the tunnel.
      */
     function activate(uint64 latestSeq) external payable;
 
     /**
-     * @dev Deactivate the tunnel on tunnelRouter contract.
+     * @dev Deactivates the tunnel on tunnelRouter contract.
      *
-     * This also withdraws the tokens from the vault contract if there is existing deposit
-     * in the contract.
+     * This function should be called by the contract owner.
      */
     function deactivate() external;
+
+    /**
+     * @dev Deposits the native tokens into the vault on behalf of the given account and tunnelId.
+     * The amount of tokens to be deposited is provided as msg.value in the transaction.
+     *
+     * The contract calls the vault to deposit the tokens.
+     */
+    function deposit() external payable;
+
+    /**
+     * @dev Withdraws the native tokens from the vault contract.
+     *
+     * The contract calls the vault to deposit the tokens.
+     *
+     * This function should be called by the contract owner.
+     */
+    function withdraw(uint256 amount) external;
+
+    /**
+     * @dev Returns The tunnelRouter contract address.
+     */
+    function tunnelRouter() external view returns (address);
+
+    /**
+     * @dev Returns The tunnelId of the contract address.
+     */
+    function tunnelId() external view returns (uint64);
 }

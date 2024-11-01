@@ -8,42 +8,39 @@ interface IVault {
     // ========================================
 
     /**
-     * @notice Emitted when the minimum active balance is set.
-     * @param minimumActiveBalance The new minimum active balance.
-     */
-    event SetMinimumActiveBalance(uint256 minimumActiveBalance);
-
-    /**
      * @notice Emitted when the tunnel router contract address is set.
-     * @param tunnelRouter_ The new tunnel router contract address.
+     *
+     * @param tunnelRouter The new tunnel router contract address.
      */
-    event SetTunnelRouter(address tunnelRouter_);
+    event TunnelRouterSet(address tunnelRouter);
 
     /**
      * @notice Emitted when the caller deposit native token into the contract.
      *
-     * @param tunnelID The ID of the tunnel into which the sender is depositing tokens.
-     * @param account The account into which the sender is depositing tokens.
+     * @param tunnelId The ID of the tunnel into which the sender is depositing tokens..
+     * @param from The account from which the token is deposited.
+     * @param to The account into which the token is deposited.
      * @param amount The amount of tokens deposited.
      */
-    event Deposit(
-        uint256 indexed tunnelID,
-        address indexed account,
+    event Deposited(
+        uint256 indexed tunnelId,
+        address indexed from,
+        address indexed to,
         uint256 amount
     );
 
     /**
      * @notice Emitted when the caller withdraw native token from the contract.
      *
-     * @param tunnelID The ID of the tunnel from which the sender is withdrawing tokens.
-     * @param account The account from which the sender is withdrawing tokens.
-     * @param to The account to which the sender is sending tokens.
+     * @param tunnelId The ID of the tunnel from which the sender is withdrawing tokens.
+     * @param from The account from which the token is withdrawn.
+     * @param to The account to which the token is withdrawn.
      * @param amount The amount of tokens withdrawn.
      */
-    event Withdraw(
-        uint256 indexed tunnelID,
-        address indexed account,
-        address to,
+    event Withdrawn(
+        uint256 indexed tunnelId,
+        address indexed from,
+        address indexed to,
         uint256 amount
     );
 
@@ -54,74 +51,73 @@ interface IVault {
     /**
      * @notice The caller is not the tunnelRouter contract.
      */
-    error OnlyTunnelRouter();
+    error UnauthorizedTunnelRouter();
 
     /**
-     * @notice Revert the transaction if the remaining balance is insufficient.
+     * @notice Reverts if the remaining balance is insufficient.
      */
     error InsufficientRemainingBalance();
 
     /**
-     * @notice Revert the transaction if contract cannot send fee to the specific address.
+     * @notice Reverts if contract cannot send fee to the specific address.
+     *
+     * @param addr The address to which the token transfer failed.
      */
-    error FailSendTokens(address addr);
+    error TokenTransferFailed(address addr);
 
     // ========================================
     // Functions
     // ========================================
 
     /**
-     * @dev Deposit the native tokens into the vault on behalf of the given account and tunnelID.
-     * The amount of tokens to be deposited is provided as msg.value in the transaction.
+     * @dev Deposits the native tokens into the vault on behalf of the given account and tunnelID.
+     * The deposit amount is provided via `msg.value`.
      *
-     * @param tunnelID The ID of the tunnel into which the sender is depositing tokens.
+     * @param tunnelId The ID of the tunnel into which the sender is depositing tokens.
      * @param account The account into which the sender is depositing tokens.
      */
-    function deposit(uint64 tunnelID, address account) external payable;
+    function deposit(uint64 tunnelId, address account) external payable;
 
     /**
-     * @dev withdraws native tokens from the sender's account associated with the given tunnelID.
+     * @dev Withdraws native tokens from the sender's account associated with the given tunnelID.
      *
-     * Sender cannot withdraw the tokens if the balance is less than the threshold.
-     *
-     * @param tunnelID the ID of the tunnel from which the sender is withdrawing tokens.
+     * @param tunnelId the ID of the tunnel from which the sender is withdrawing tokens.
      * @param amount the amount of tokens to withdraw.
      */
-    function withdraw(uint64 tunnelID, uint256 amount) external;
+    function withdraw(uint64 tunnelId, uint256 amount) external;
 
     /**
-     * @dev withdraws all native tokens from the given account associated with the given tunnelID
-     * and send to the account address.
+     * @dev Withdraws the entire deposit from the sender's account for the specified tunnel ID.
      *
-     * Sender should be the tunnelRouter contract.
-     *
-     * @param tunnelID the ID of the tunnel from which the sender is withdrawing tokens.
-     * @param account the account from which the sender withdraw tokens.
+     * @param tunnelId the ID of the tunnel from which the sender is withdrawing tokens.
      */
-    function withdrawAll(uint64 tunnelID, address account) external;
+    function withdrawAll(uint64 tunnelId) external;
 
     /**
-     * @dev collect the fee from the account and the given tunnelID.
+     * @dev Collects the fee from the account and the given tunnel ID.
      *
      * This function should be called by the tunnelRouter contract only.
      *
-     * @param tunnelID the ID of the tunnel from which the caller is withdrawing tokens.
+     * @param tunnelId the ID of the tunnel from which the caller is withdrawing tokens.
      * @param account The account from which the caller is withdrawing tokens.
      * @param amount the amount of tokens to withdraw.
      */
     function collectFee(
-        uint64 tunnelID,
+        uint64 tunnelId,
         address account,
         uint256 amount
     ) external;
 
     /**
-     * @dev checks the balance of the account associated with the given tunnelID is over a threshold.
+     * @dev Returns the balance of the account.
+     *
+     * @param tunnelId The ID of the tunnel to check the balance.
+     * @param account The account to check the balance.
      */
-    function isBalanceOverThreshold(
-        uint64 tunnelID,
+    function balance(
+        uint64 tunnelId,
         address account
-    ) external view returns (bool);
+    ) external view returns (uint256);
 
     /**
      * @dev Returns the tunnel router contract address.

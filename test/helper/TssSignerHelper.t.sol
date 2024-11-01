@@ -77,7 +77,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
     function testSchnorrSign() public pure {
         uint256 secret = 0x383b4a7a98c26e381cf5149dade39a61b3f43e1af4ff1f78d17daf9ffaf35177;
         (uint8 parity, uint256 px) = getPubkey(secret);
-        (address randomAddr, uint256 s) = schnorrSign(
+        (address randomAddr, uint256 s) = sign(
             parity,
             px,
             0x427d0cfec0deb6332e7961cf387a8668730cda6f5b99c2821128dab11a5c362e,
@@ -99,7 +99,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
         );
         secret = 0x05cff511ca26b944fb22285c8a56595baeefe399d49e5aeef27233701b59b8ad;
         (parity, px) = getPubkey(secret);
-        (randomAddr, s) = schnorrSign(
+        (randomAddr, s) = sign(
             parity,
             px,
             0x419d15a75ccf9809027431b7b42cf1e0b2403eeca686fdca8497f8309b62d363,

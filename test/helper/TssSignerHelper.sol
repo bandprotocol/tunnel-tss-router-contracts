@@ -74,7 +74,7 @@ contract TssSignerHelper is Test {
     }
 
     /// @dev Generates schnorr signature on the given message.
-    function Sign(
+    function sign(
         uint8 parity,
         uint256 px,
         uint256 randomNonce,

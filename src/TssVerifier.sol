@@ -41,51 +41,21 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         address randomAddr,
         uint256 s
     ) external whenNotPaused {
-        if (!verify(message, randomAddr, s)) {
+        if (!verify(message, randomAddr, s, block.timestamp)) {
             revert InvalidSignature();
         }
 
         uint8 parity = uint8(bytes1(message[88:89]));
         uint256 px = uint(bytes32(message[89:121]));
 
-        // Note: Offset parity by 25 to match with the calculation in TSS module
-        // In etheruem, the parity is typically 27 or 28.
-        PublicKey memory pubKey = PublicKey({
-            timestamp: block.timestamp,
-            parity: parity + 25,
-            px: px
-        });
-        publicKeys.push(pubKey);
-
-        emit UpdateGroupPubKey(
-            publicKeys.length,
-            block.timestamp,
-            parity,
-            px,
-            false
-        );
+        _updatePublicKey(parity, px);
     }
 
     /**
      * @dev See {ITssVerifier-addPubKeyByOwner}.
      */
     function addPubKeyByOwner(uint8 parity, uint256 px) external onlyOwner {
-        // Note: Offset parity by 25 to match with the calculation in TSS module
-        // In etheruem, the parity is typically 27 or 28.
-        PublicKey memory pubKey = PublicKey({
-            timestamp: block.timestamp,
-            parity: parity + 25,
-            px: px
-        });
-        publicKeys.push(pubKey);
-
-        emit UpdateGroupPubKey(
-            publicKeys.length,
-            block.timestamp,
-            parity,
-            px,
-            true
-        );
+        _updatePublicKey(parity, px);
     }
 
     /**
@@ -94,9 +64,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     function verify(
         bytes calldata message,
         address randomAddr,
-        uint256 signature
+        uint256 signature,
+        uint256 timestamp
     ) public view whenNotPaused returns (bool result) {
-        // return false if the randomAddr is zero or incorrect hash chainID.
         if (randomAddr == address(0)) {
             return false;
         }
@@ -105,7 +75,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             return false;
         }
 
-        PublicKey memory pubKey = _getLatestPublicKeyBefore(block.timestamp);
+        PublicKey memory pubKey = _getLatestPublicKeyBefore(timestamp);
 
         uint256 content = uint256(
             keccak256(
@@ -129,7 +99,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // input positions must be non-zero
         // So in this case, there is no need to verify them('px' > 0 and 'cpx' > 0).
         if (spx == 0) {
-            revert FailProcessingSignature();
+            revert ProcessingSignatureFailed();
         }
 
         address addr = ecrecover(
@@ -154,6 +124,26 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     /// @dev Returns the number of public keys.
     function publicKeysLength() public view returns (uint256 length) {
         length = publicKeys.length;
+    }
+
+    /// @dev push the public key to the list.
+    function _updatePublicKey(uint8 parity, uint256 px) internal {
+        // Note: Offset parity by 25 to match with the calculation in TSS module
+        // In etheruem, the parity is typically 27 or 28.
+        PublicKey memory pubKey = PublicKey({
+            timestamp: block.timestamp,
+            parity: parity + 25,
+            px: px
+        });
+        publicKeys.push(pubKey);
+
+        emit GroupPubKeyUpdated(
+            publicKeys.length,
+            block.timestamp,
+            parity,
+            px,
+            true
+        );
     }
 
     /// @dev Retrieves the most recent public key that is no later than the specified timestamp.

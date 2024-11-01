@@ -23,7 +23,7 @@ contract RelayFullLoopTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), 0, address(0x00));
+        vault.initialize(address(this), address(0x00));
 
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
@@ -32,7 +32,7 @@ contract RelayFullLoopTest is Test, Constants {
             0x4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0, // keccak256("eth")
             address(this),
             75000,
-            50000,
+            75000,
             1
         );
 
@@ -57,7 +57,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer.activate{value: 0.01 ether}(1);
     }
 
-    function testRelayMessageConsumerHasEnoughFund() public {
+    function testRelayMessageConsumerNotDeactivate() public {
         uint256 relayerBalance = address(this).balance;
         uint256 currentGas = gasleft();
         tunnelRouter.relay(
@@ -86,10 +86,9 @@ contract RelayFullLoopTest is Test, Constants {
         );
     }
 
-    function testRelayMessageConsumerUseReserve() public {
+    function testRelayMessageConsumerWithDeactivate() public {
         uint256 relayerBalance = address(this).balance;
-
-        vault.setMinimumActiveBalance(1 ether);
+        tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
 
         uint256 currentGas = gasleft();
         tunnelRouter.relay(
@@ -141,7 +140,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer.deactivate();
 
         bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.Inactive.selector,
+            ITunnelRouter.InactiveTargetContract.selector,
             address(packetConsumer)
         );
         vm.expectRevert(expectedErr);
@@ -165,7 +164,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testReactivateAlreadyActive() public {
         bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.Active.selector,
+            ITunnelRouter.ActiveTargetContract.selector,
             address(packetConsumer)
         );
         vm.expectRevert(expectedErr);

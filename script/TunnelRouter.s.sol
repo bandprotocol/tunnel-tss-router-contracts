@@ -23,7 +23,7 @@ contract DeployScript is Script {
         address proxyVaultAddr = Upgrades.deployTransparentProxy(
             "Vault.sol",
             msg.sender,
-            abi.encodeCall(Vault.initialize, (msg.sender, 0, address(0x00)))
+            abi.encodeCall(Vault.initialize, (msg.sender, address(0x00)))
         );
         address implVaultAddr = Upgrades.getImplementationAddress(
             proxyVaultAddr

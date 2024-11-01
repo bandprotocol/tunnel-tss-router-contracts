@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.13;
 
-import "../../src/interfaces/IDataConsumer.sol";
-
 import "../../src/libraries/PacketDecoder.sol";
 
 contract Constants {

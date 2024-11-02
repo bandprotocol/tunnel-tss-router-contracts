@@ -205,6 +205,21 @@ abstract contract BaseTunnelRouter is
         return _routerFee(additionalGasUsed + maxAllowableCallbackGasLimit);
     }
 
+    /**
+     * @dev See {ITunnelRouter-tunnelInfo}.
+     */
+    function tunnelInfo(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (TunnelInfo memory) {
+        return
+            TunnelInfo({
+                isActive: isActive[tunnelId][addr],
+                latestSequence: sequence[tunnelId][addr],
+                balance: vault.balance(tunnelId, addr)
+            });
+    }
+
     function _isBalanceUnderThreshold(
         uint64 tunnelId,
         address addr

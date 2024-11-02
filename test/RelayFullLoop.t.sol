@@ -20,7 +20,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function setUp() public {
         tssVerifier = new TssVerifier(address(this));
-        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
+        tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
         vault.initialize(address(this), address(0x00));

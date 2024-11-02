@@ -9,7 +9,7 @@ import "./interfaces/ITssVerifier.sol";
 
 contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     struct PublicKey {
-        uint256 timestamp; // The timestamp that the public key is activated.
+        uint64 timestamp; // The timestamp that the public key is activated.
         uint8 parity; // The parity value of the public key.
         uint256 px; // The x-coordinate value of the public key.
     }
@@ -45,14 +45,18 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         uint8 parity = uint8(bytes1(message[88:89]));
         uint256 px = uint(bytes32(message[89:121]));
 
-        _updatePublicKey(parity, px);
+        _updatePublicKey(uint64(block.timestamp), parity, px);
     }
 
     /**
      * @dev See {ITssVerifier-addPubKeyByOwner}.
      */
-    function addPubKeyByOwner(uint8 parity, uint256 px) external onlyOwner {
-        _updatePublicKey(parity, px);
+    function addPubKeyByOwner(
+        uint64 timestamp,
+        uint8 parity,
+        uint256 px
+    ) external onlyOwner {
+        _updatePublicKey(timestamp, parity, px);
     }
 
     /**
@@ -124,23 +128,21 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     }
 
     /// @dev push the public key to the list.
-    function _updatePublicKey(uint8 parity, uint256 px) internal {
+    function _updatePublicKey(
+        uint64 timestamp,
+        uint8 parity,
+        uint256 px
+    ) internal {
         // Note: Offset parity by 25 to match with the calculation in TSS module
         // In etheruem, the parity is typically 27 or 28.
         PublicKey memory pubKey = PublicKey({
-            timestamp: block.timestamp,
+            timestamp: timestamp,
             parity: parity + 25,
             px: px
         });
         publicKeys.push(pubKey);
 
-        emit GroupPubKeyUpdated(
-            publicKeys.length,
-            block.timestamp,
-            parity,
-            px,
-            true
-        );
+        emit GroupPubKeyUpdated(publicKeys.length, timestamp, parity, px, true);
     }
 
     /// @dev Retrieves the most recent public key that is no later than the specified timestamp.
@@ -151,10 +153,14 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             revert PublicKeyNotFound(timestamp);
         }
 
-        for (uint256 i = publicKeys.length - 1; i >= 0; i--) {
+        for (uint256 i = publicKeys.length - 1; i > 0; i--) {
             if (publicKeys[i].timestamp <= timestamp) {
                 return publicKeys[i];
             }
+        }
+
+        if (publicKeys[0].timestamp <= timestamp) {
+            return publicKeys[0];
         }
 
         revert PublicKeyNotFound(timestamp);

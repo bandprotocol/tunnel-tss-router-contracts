@@ -122,6 +122,13 @@ interface ITunnelRouter {
     // Functions
     // ========================================
 
+    ///@dev Tunnel information
+    struct TunnelInfo {
+        bool isActive; // whether the tunnel is active or not
+        uint64 latestSequence; // the latest sequence of the tunnel
+        uint256 balance; // the remaining balance of the tunnel
+    }
+
     /**
      * @dev Relays the message to the target contract.
      *
@@ -175,6 +182,19 @@ interface ITunnelRouter {
         uint64 tunnelId,
         address addr
     ) external view returns (bool);
+
+    /**
+     * @dev Returns the tunnel information.
+     *
+     * @param tunnelId The ID of the tunnel.
+     * @param addr The target contract address.
+     *
+     * @return bool True if the tunnel is active, false otherwise.
+     */
+    function tunnelInfo(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (TunnelInfo memory);
 
     /**
      * @dev Returns the vault contract address.

@@ -80,8 +80,13 @@ interface ITssVerifier {
     /**
      * @dev Adds the new public key by the owner.
      *
+     * @param timestamp The timestamp of the new public key.
      * @param parity The parity value of the new public key.
      * @param px The x-coordinate value of the new public key.
      */
-    function addPubKeyByOwner(uint8 parity, uint256 px) external;
+    function addPubKeyByOwner(
+        uint64 timestamp,
+        uint8 parity,
+        uint256 px
+    ) external;
 }

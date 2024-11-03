@@ -12,15 +12,26 @@ import "../src/Vault.sol";
 import "./helper/Constants.sol";
 
 contract PacketConsumerMockTunnelRouterTest is Test, Constants {
-    PacketConsumer packetConsumer;
+    PacketConsumer public packetConsumer;
+
+    function chainId() public pure returns (string memory) {
+        return "eth";
+    }
 
     function setUp() public {
-        packetConsumer = new PacketConsumer(
+        // deploy packet Consumer with specific address.
+        bytes memory packetConsumerArgs = abi.encode(
             address(this),
-            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
-            uint64(1),
+            1,
             address(this)
         );
+        address packetConsumerAddr = makeAddr("PacketConsumer");
+        deployCodeTo(
+            "PacketConsumer.sol:PacketConsumer",
+            packetConsumerArgs,
+            packetConsumerAddr
+        );
+        packetConsumer = PacketConsumer(payable(packetConsumerAddr));
     }
 
     function testProcess() public {
@@ -67,7 +78,7 @@ contract PacketConsumerTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            0x4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0, // keccak256("eth")
+            "eth",
             address(this),
             75000,
             50000,
@@ -79,7 +90,6 @@ contract PacketConsumerTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
             1,
             address(this)
         );

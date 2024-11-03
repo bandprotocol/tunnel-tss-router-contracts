@@ -5,7 +5,6 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 
 import "../src/libraries/StringAddress.sol";
-import "../src/PacketConsumer.sol";
 
 contract StringAddressTest is Test {
     using StringAddress for string;

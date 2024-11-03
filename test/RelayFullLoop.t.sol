@@ -29,7 +29,7 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            0x4f5b812789fc606be1b3b16908db13fc7a9adf7ca72641f84d75b47069d3d7f0, // keccak256("eth")
+            "eth",
             address(this),
             75000,
             75000,
@@ -41,7 +41,6 @@ contract RelayFullLoopTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
             1,
             address(this)
         );

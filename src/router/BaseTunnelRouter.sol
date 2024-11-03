@@ -27,7 +27,7 @@ abstract contract BaseTunnelRouter is
     IVault public vault;
 
     // The Id of the chain. Used to validate messages received from the tunnel.
-    bytes32 public chainId;
+    string public chainId;
     // Additional gas estimated for relaying the message;
     // does not include the gas cost for executing the target contract.
     uint256 public additionalGasUsed;
@@ -42,7 +42,7 @@ abstract contract BaseTunnelRouter is
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        bytes32 chainId_,
+        string memory chainId_,
         address initialOwner,
         uint256 additionalGasUsed_,
         uint256 maxAllowableCallbackGasLimit_
@@ -116,7 +116,7 @@ abstract contract BaseTunnelRouter is
                 packet.sequence
             );
         }
-        if (keccak256(bytes(packet.chainId)) != chainId) {
+        if (keccak256(bytes(packet.chainId)) != keccak256(bytes(chainId))) {
             revert InvalidChain(packet.chainId);
         }
 

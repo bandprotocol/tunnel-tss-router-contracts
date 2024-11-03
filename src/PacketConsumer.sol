@@ -9,6 +9,7 @@ import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
 
 import "./libraries/PacketDecoder.sol";
+import "./libraries/Address.sol";
 import "./TssVerifier.sol";
 
 contract PacketConsumer is IDataConsumer, Ownable2Step {
@@ -36,12 +37,23 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
     constructor(
         address tunnelRouter_,
-        bytes32 hashOriginator_,
         uint64 tunnelId_,
         address initialOwner
     ) Ownable(initialOwner) {
+        string memory chainId = ITunnelRouter(tunnelRouter_).chainId();
+
+        hashOriginator = keccak256(
+            abi.encodePacked(
+                bytes4(0xa466d313), // keccak("tunnelOriginatorPrefix")[:4]
+                tunnelId_,
+                uint64(42), // length of string 0x-prefix address
+                Address.toChecksumString(address(this)),
+                uint64(bytes(chainId).length),
+                bytes(chainId)
+            )
+        );
+
         tunnelRouter = tunnelRouter_;
-        hashOriginator = hashOriginator_;
         tunnelId = tunnelId_;
     }
 

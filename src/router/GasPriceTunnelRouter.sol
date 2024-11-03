@@ -17,7 +17,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
     function initialize(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        bytes32 chainId_,
+        string memory chainId_,
         address initialOwner,
         uint256 additionalGas_,
         uint256 maxAllowableCallbackGasLimit_,

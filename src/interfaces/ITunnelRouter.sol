@@ -200,4 +200,9 @@ interface ITunnelRouter {
      * @dev Returns the vault contract address.
      */
     function vault() external view returns (IVault);
+
+    /**
+     * @dev Returns the chain ID of the contract.
+     */
+    function chainId() external view returns (string memory);
 }

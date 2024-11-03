@@ -11,7 +11,6 @@ contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
-        bytes32 originatorHash = vm.envBytes32("ORIGINATOR_HASH");
         uint64 tunnelId = uint64(vm.envUint("TUNNEL_ID"));
 
         vm.startBroadcast(privKey);
@@ -19,7 +18,6 @@ contract DeployScript is Script {
         // Deploy the PacketConsumer contract
         PacketConsumer packetConsumer = new PacketConsumer(
             tunnelRouterAddr,
-            originatorHash,
             tunnelId,
             msg.sender
         );

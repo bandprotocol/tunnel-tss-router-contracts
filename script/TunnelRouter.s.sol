@@ -53,6 +53,9 @@ contract DeployScript is Script {
             proxyTunnelRouterAddr
         );
 
+        // Set the tunnel router address in the vault
+        Vault(payable(proxyVaultAddr)).setTunnelRouter(proxyTunnelRouterAddr);
+
         vm.stopBroadcast();
 
         console.log("Vault Proxy deployed at :", proxyVaultAddr);

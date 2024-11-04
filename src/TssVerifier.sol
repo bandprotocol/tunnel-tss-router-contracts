@@ -42,6 +42,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             revert InvalidSignature();
         }
 
+        // Extract the public key from the message. The message is in the form of
+        // hashedChainID (32 bytes) || hashedOrignator (32 bytes) || timestamp (uint64; 8-bytes)
+        // || signingId (uint64; 8 bytes) || modulePrefix (8 bytes) || parity (1 byte) || px (32 bytes)
         uint8 parity = uint8(bytes1(message[88:89]));
         uint256 px = uint(bytes32(message[89:121]));
 
@@ -153,14 +156,10 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             revert PublicKeyNotFound(timestamp);
         }
 
-        for (uint256 i = publicKeys.length - 1; i > 0; i--) {
-            if (publicKeys[i].timestamp <= timestamp) {
-                return publicKeys[i];
+        for (int i = int256(publicKeys.length) - 1; i >= 0; i--) {
+            if (publicKeys[uint256(i)].timestamp <= timestamp) {
+                return publicKeys[uint256(i)];
             }
-        }
-
-        if (publicKeys[0].timestamp <= timestamp) {
-            return publicKeys[0];
         }
 
         revert PublicKeyNotFound(timestamp);

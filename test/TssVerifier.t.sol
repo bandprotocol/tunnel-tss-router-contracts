@@ -106,7 +106,8 @@ contract TssVerifierTest is Test, TssSignerHelper {
             data = abi.encodePacked(
                 _UPDATE_KEY_PREFIX,
                 tmp.newParity - 25,
-                tmp.newPx
+                tmp.newPx,
+                tmp.timestamp
             );
             message = this.getSigningMessage(
                 _HASH_ORIGINATOR_REPLACEMENT,

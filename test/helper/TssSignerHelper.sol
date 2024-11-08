@@ -11,9 +11,6 @@ contract TssSignerHelper is Test {
     // secp256k1 group order
     uint256 public constant ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
-    // The hashed chain ID identified in the tss module.
-    bytes32 public constant HASHED_CHAIN_ID =
-        0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6;
 
     /// @dev Gets the signing message that will be used in signing of the tss module.
     function getSigningMessage(
@@ -23,13 +20,7 @@ contract TssSignerHelper is Test {
         bytes calldata rawMessage
     ) public pure returns (bytes memory) {
         return
-            abi.encodePacked(
-                HASHED_CHAIN_ID,
-                hashOriginator,
-                timestamp,
-                signingID,
-                rawMessage
-            );
+            abi.encodePacked(hashOriginator, timestamp, signingID, rawMessage);
     }
 
     /// @dev Generates new public key.

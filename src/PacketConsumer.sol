@@ -38,18 +38,17 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     constructor(
         address tunnelRouter_,
         uint64 tunnelId_,
+        bytes32 hashedSourceChainId_,
+        bytes32 hashedTargetChainId_,
         address initialOwner
     ) Ownable(initialOwner) {
-        string memory chainId = ITunnelRouter(tunnelRouter_).chainId();
-
         hashOriginator = keccak256(
             abi.encodePacked(
                 bytes4(0xa466d313), // keccak("tunnelOriginatorPrefix")[:4]
+                hashedSourceChainId_,
                 tunnelId_,
-                uint64(42), // length of string 0x-prefix address
-                Address.toChecksumString(address(this)),
-                uint64(bytes(chainId).length),
-                bytes(chainId)
+                keccak256(bytes(Address.toChecksumString(address(this)))),
+                hashedTargetChainId_
             )
         );
 

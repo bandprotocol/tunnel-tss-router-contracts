@@ -12,6 +12,8 @@ contract DeployScript is Script {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
         uint64 tunnelId = uint64(vm.envUint("TUNNEL_ID"));
+        string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
+        string memory destinationChainId = vm.envString("DESTINATION_CHAIN_ID");
 
         vm.startBroadcast(privKey);
 
@@ -19,6 +21,8 @@ contract DeployScript is Script {
         PacketConsumer packetConsumer = new PacketConsumer(
             tunnelRouterAddr,
             tunnelId,
+            keccak256(bytes(sourceChainId)),
+            keccak256(bytes(destinationChainId)),
             msg.sender
         );
 

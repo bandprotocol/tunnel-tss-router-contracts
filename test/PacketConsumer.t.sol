@@ -23,6 +23,8 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         bytes memory packetConsumerArgs = abi.encode(
             address(this),
             1,
+            keccak256("bandchain"),
+            keccak256("testnet-evm"),
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");
@@ -78,7 +80,6 @@ contract PacketConsumerTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            "eth",
             address(this),
             75000,
             50000,
@@ -91,6 +92,8 @@ contract PacketConsumerTest is Test, Constants {
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
             1,
+            keccak256("bandchain"),
+            keccak256("testnet-evm"),
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");

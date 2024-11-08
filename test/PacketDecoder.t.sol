@@ -32,7 +32,6 @@ contract PacketDecoderTest is Test, Constants {
             uint8(tssMessage.encoderType),
             uint8(PacketDecoder.EncoderType.FixedPoint)
         );
-        assertEq(tssMessage.hashChainId, expectedMsg.hashChainId);
         assertEq(tssMessage.hashOriginator, expectedMsg.hashOriginator);
         assertEq(
             tssMessage.sourceBlocktimestamp,

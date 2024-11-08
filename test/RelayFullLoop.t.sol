@@ -29,7 +29,6 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            "eth",
             address(this),
             75000,
             75000,
@@ -42,6 +41,8 @@ contract RelayFullLoopTest is Test, Constants {
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
             1,
+            keccak256("bandchain"),
+            keccak256("testnet-evm"),
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");
@@ -53,7 +54,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
 
         // set latest nonce.
-        packetConsumer.activate{value: 0.01 ether}(1);
+        packetConsumer.activate{value: 0.01 ether}(0);
     }
 
     function testRelayMessageConsumerNotDeactivate() public {
@@ -65,7 +66,7 @@ contract RelayFullLoopTest is Test, Constants {
             MESSAGE_SIGNATURE
         );
         uint256 gasUsed = currentGas - gasleft();
-        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
+        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), true);
 
         uint256 feeGain = address(this).balance - relayerBalance;
@@ -97,7 +98,7 @@ contract RelayFullLoopTest is Test, Constants {
         );
         uint256 gasUsed = currentGas - gasleft();
 
-        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
+        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), false);
 
         uint256 feeGain = address(this).balance - relayerBalance;
@@ -120,12 +121,12 @@ contract RelayFullLoopTest is Test, Constants {
     function testRelayInvalidSequence() public {
         packetConsumer.deactivate();
 
-        packetConsumer.activate{value: 0.01 ether}(0);
+        packetConsumer.activate{value: 0.01 ether}(3);
 
         bytes memory expectedErr = abi.encodeWithSelector(
             ITunnelRouter.InvalidSequence.selector,
-            1,
-            2
+            4,
+            1
         );
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(

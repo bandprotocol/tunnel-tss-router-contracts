@@ -14,9 +14,6 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         uint256 px; // The x-coordinate value of the public key.
     }
 
-    // hashed chain ID of the TSS process;
-    bytes32 constant _HASHED_CHAIN_ID =
-        0x0E1AC2C4A50A82AA49717691FC1AE2E5FA68EFF45BD8576B0F2BE7A0850FA7C6;
     // The group order of secp256k1.
     uint256 constant _ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
@@ -43,12 +40,13 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         }
 
         // Extract the public key from the message. The message is in the form of
-        // hashedChainID (32 bytes) || hashedOrignator (32 bytes) || timestamp (uint64; 8-bytes)
-        // || signingId (uint64; 8 bytes) || modulePrefix (8 bytes) || parity (1 byte) || px (32 bytes)
-        uint8 parity = uint8(bytes1(message[88:89]));
-        uint256 px = uint(bytes32(message[89:121]));
+        // hashedOrignator (32 bytes) || timestamp (uint64; 8-bytes) || signingId (uint64; 8 bytes)
+        // || modulePrefix (8 bytes) || parity (1 byte) || px (32 bytes) || timestamp (8 bytes)
+        uint8 parity = uint8(bytes1(message[56:57]));
+        uint256 px = uint(bytes32(message[57:89]));
+        uint64 timestamp = uint64(bytes8(message[89:97]));
 
-        _updatePublicKey(uint64(block.timestamp), parity, px);
+        _updatePublicKey(timestamp, parity, px);
     }
 
     /**
@@ -72,10 +70,6 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         uint256 timestamp
     ) public view whenNotPaused returns (bool result) {
         if (randomAddr == address(0)) {
-            return false;
-        }
-
-        if (bytes32(message[0:32]) != _HASHED_CHAIN_ID) {
             return false;
         }
 

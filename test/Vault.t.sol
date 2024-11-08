@@ -29,7 +29,6 @@ contract VaultTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            "eth",
             address(this),
             75000,
             75000,
@@ -42,6 +41,8 @@ contract VaultTest is Test, Constants {
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
             1,
+            keccak256("bandchain"),
+            keccak256("eth"),
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");

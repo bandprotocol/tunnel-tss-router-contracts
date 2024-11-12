@@ -16,6 +16,7 @@ import {Vault} from "../src/Vault.sol";
 contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
+        uint64 transitionPeriod = uint64(vm.envUint("TRANSITION_PERIOD"));
 
         vm.startBroadcast(privKey);
 
@@ -30,7 +31,7 @@ contract DeployScript is Script {
         );
 
         // Deploy the TssVerifier contract
-        TssVerifier tssVerifier = new TssVerifier(msg.sender);
+        TssVerifier tssVerifier = new TssVerifier(transitionPeriod, msg.sender);
 
         // Deploy the proxy TunnelRouter contract
         address proxyTunnelRouterAddr = Upgrades.deployTransparentProxy(

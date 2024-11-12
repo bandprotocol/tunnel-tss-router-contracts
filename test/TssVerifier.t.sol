@@ -7,7 +7,7 @@ import "forge-std/Test.sol";
 import "../src/TssVerifier.sol";
 import "./helper/TssSignerHelper.sol";
 
-contract TssVerifierTest is Test, TssSignerHelper {
+contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
     bytes32 constant _HASH_ORIGINATOR_REPLACEMENT =
         0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
 
@@ -19,7 +19,7 @@ contract TssVerifierTest is Test, TssSignerHelper {
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
-        verifier = new TssVerifier(address(this));
+        verifier = new TssVerifier(0, address(this));
         verifier.addPubKeyByOwner(0, parity - 25, px);
     }
 
@@ -88,10 +88,9 @@ contract TssVerifierTest is Test, TssSignerHelper {
             // verify signature
             tmp.start = gasleft();
             bool result = verifier.verify(
-                message,
+                tmp.messageHash,
                 tmp.randomAddr,
-                tmp.s,
-                tmp.timestamp
+                tmp.s
             );
             tmp.gasUsedVerifyAcc += tmp.start - gasleft();
             assertEq(result, true);
@@ -145,5 +144,134 @@ contract TssVerifierTest is Test, TssSignerHelper {
         }
         console.log("verify gas avg = ", tmp.gasUsedVerifyAcc / 100);
         console.log("update pubkey gas avg = ", tmp.gasUsedUpdateAcc / 100);
+    }
+}
+
+contract TssVerifierWithTransitioPeriodTest is Test, TssSignerHelper {
+    uint256[3] _privateKeys = [
+        uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY_1"))),
+        uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY_2"))),
+        uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY_3")))
+    ];
+
+    uint64[3] activeTimes = [100, 300, 500];
+
+    TssVerifier public verifier;
+
+    function setUp() public {
+        verifier = new TssVerifier(100, address(this));
+
+        for (uint256 i = 0; i < 3; i++) {
+            (uint8 parity, uint256 px) = getPubkey(_privateKeys[i]);
+            verifier.addPubKeyByOwner(activeTimes[i], parity - 25, px);
+        }
+    }
+
+    struct TemporaryStore {
+        uint8 parity;
+        uint256 px;
+        bytes32 messageHash;
+        address randomAddr;
+        uint256 s;
+    }
+
+    function testValidSignatureOutsideTransitionPeriod() public {
+        TemporaryStore memory tmp;
+
+        // generate data and message to be signed.
+        tmp.messageHash = keccak256(bytes("any message to be sign"));
+
+        // sign a message
+        (tmp.parity, tmp.px) = getPubkey(_privateKeys[2]);
+        (tmp.randomAddr, tmp.s) = sign(
+            tmp.parity,
+            tmp.px,
+            getRandomNonce(_privateKeys[2]),
+            tmp.messageHash,
+            _privateKeys[2]
+        );
+
+        vm.warp(700);
+        assertTrue(verifier.verify(tmp.messageHash, tmp.randomAddr, tmp.s));
+    }
+
+    function testInvalidSignatureOutsideTransitionPeriod() public {
+        TemporaryStore memory tmp;
+
+        // generate data and message to be signed.
+        tmp.messageHash = keccak256(bytes("any message to be sign"));
+
+        // sign a message
+        (tmp.parity, tmp.px) = getPubkey(_privateKeys[1]);
+        (tmp.randomAddr, tmp.s) = sign(
+            tmp.parity,
+            tmp.px,
+            getRandomNonce(_privateKeys[1]),
+            tmp.messageHash,
+            _privateKeys[1]
+        );
+
+        vm.warp(700);
+        assertFalse(verifier.verify(tmp.messageHash, tmp.randomAddr, tmp.s));
+    }
+
+    function testValidSignatureInsideTransitionPeriod() public {
+        TemporaryStore memory tmp;
+
+        // generate data and message to be signed.
+        tmp.messageHash = keccak256(bytes("any message to be sign"));
+
+        // sign a message
+        (tmp.parity, tmp.px) = getPubkey(_privateKeys[1]);
+        (tmp.randomAddr, tmp.s) = sign(
+            tmp.parity,
+            tmp.px,
+            getRandomNonce(_privateKeys[1]),
+            tmp.messageHash,
+            _privateKeys[1]
+        );
+
+        vm.warp(600);
+        assertTrue(verifier.verify(tmp.messageHash, tmp.randomAddr, tmp.s));
+    }
+
+    function testInValidSignatureInsideTransitionPeriod() public {
+        TemporaryStore memory tmp;
+
+        // generate data and message to be signed.
+        tmp.messageHash = keccak256(bytes("any message to be sign"));
+
+        // sign a message
+        (tmp.parity, tmp.px) = getPubkey(_privateKeys[0]);
+        (tmp.randomAddr, tmp.s) = sign(
+            tmp.parity,
+            tmp.px,
+            getRandomNonce(_privateKeys[0]),
+            tmp.messageHash,
+            _privateKeys[0]
+        );
+
+        vm.warp(600);
+        assertFalse(verifier.verify(tmp.messageHash, tmp.randomAddr, tmp.s));
+    }
+
+    function testValidSignatureFirstItem() public {
+        TemporaryStore memory tmp;
+
+        // generate data and message to be signed.
+        tmp.messageHash = keccak256(bytes("any message to be sign"));
+
+        // sign a message
+        (tmp.parity, tmp.px) = getPubkey(_privateKeys[0]);
+        (tmp.randomAddr, tmp.s) = sign(
+            tmp.parity,
+            tmp.px,
+            getRandomNonce(_privateKeys[0]),
+            tmp.messageHash,
+            _privateKeys[0]
+        );
+
+        vm.warp(150);
+        assertTrue(verifier.verify(tmp.messageHash, tmp.randomAddr, tmp.s));
     }
 }

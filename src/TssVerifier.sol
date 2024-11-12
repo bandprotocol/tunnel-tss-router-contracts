@@ -9,7 +9,7 @@ import "./interfaces/ITssVerifier.sol";
 
 contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     struct PublicKey {
-        uint64 timestamp; // The timestamp that the public key is activated.
+        uint64 activeTime; // The timestamp that the public key is activated.
         uint8 parity; // The parity value of the public key.
         uint256 px; // The x-coordinate value of the public key.
     }
@@ -17,6 +17,8 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The group order of secp256k1.
     uint256 constant _ORDER =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+    // The grace period for the public key.
+    uint64 immutable transitionPeriod;
     // The prefix for the hashing process in bandchain.
     string constant _CONTEXT = "BAND-TSS-secp256k1-v0";
     // The prefix for the challenging hash message.
@@ -25,7 +27,12 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The list of public keys that are used for the verification process.
     PublicKey[] public publicKeys;
 
-    constructor(address initialAddr) Ownable(initialAddr) {}
+    constructor(
+        uint64 transitionPeriod_,
+        address initialAddr
+    ) Ownable(initialAddr) {
+        transitionPeriod = transitionPeriod_;
+    }
 
     /**
      * @dev See {ITssVerifier-addPubKeyWithProof}.
@@ -35,7 +42,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         address randomAddr,
         uint256 s
     ) external whenNotPaused {
-        if (!verify(message, randomAddr, s, block.timestamp)) {
+        if (!verify(keccak256(message), randomAddr, s)) {
             revert InvalidSignature();
         }
 
@@ -64,49 +71,43 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
      * @dev See {ITssVerifier-verify}.
      */
     function verify(
-        bytes calldata message,
+        bytes32 hashedMessage,
         address randomAddr,
-        uint256 signature,
-        uint256 timestamp
+        uint256 signature
     ) public view whenNotPaused returns (bool result) {
         if (randomAddr == address(0)) {
             return false;
         }
 
-        PublicKey memory pubKey = _getLatestPublicKeyBefore(timestamp);
+        // Get the public key that is valid at the given timestamp.
+        uint256 pubKeyIdx = _getPubKeyIndexByTimestamp(uint64(block.timestamp));
 
-        uint256 content = uint256(
-            keccak256(
-                abi.encodePacked(
-                    _CONTEXT,
-                    bytes1(0x00),
-                    _CHALLENGE_PREFIX,
-                    bytes1(0x00),
-                    randomAddr,
-                    pubKey.parity,
-                    pubKey.px,
-                    keccak256(message)
-                )
+        // if the active time of the public key is in the transition period, then
+        // we need to check the previous public key as it may be the signature from
+        // the previous group.
+        bool isInTransitionPeriod = publicKeys[pubKeyIdx].activeTime +
+            transitionPeriod >=
+            block.timestamp;
+        if (
+            pubKeyIdx > 0 &&
+            isInTransitionPeriod &&
+            _verifyWithPublickKey(
+                hashedMessage,
+                randomAddr,
+                signature,
+                publicKeys[pubKeyIdx - 1]
             )
-        );
-
-        uint256 spx = _ORDER - mulmod(signature, pubKey.px, _ORDER);
-        uint256 cpx = _ORDER - mulmod(content, pubKey.px, _ORDER);
-
-        // Because the ecrecover precompile implementation verifies that the 'r' and's'
-        // input positions must be non-zero
-        // So in this case, there is no need to verify them('px' > 0 and 'cpx' > 0).
-        if (spx == 0) {
-            revert ProcessingSignatureFailed();
+        ) {
+            return true;
         }
 
-        address addr = ecrecover(
-            bytes32(spx),
-            pubKey.parity,
-            bytes32(pubKey.px),
-            bytes32(cpx)
-        );
-        return randomAddr == addr;
+        return
+            _verifyWithPublickKey(
+                hashedMessage,
+                randomAddr,
+                signature,
+                publicKeys[pubKeyIdx]
+            );
     }
 
     /// @dev Pauses the contract to prevent any further updates.
@@ -124,6 +125,47 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         length = publicKeys.length;
     }
 
+    /// @dev returns true if the signature is valid against the given public key.
+    function _verifyWithPublickKey(
+        bytes32 hashedMessage,
+        address randomAddr,
+        uint256 signature,
+        PublicKey memory publicKey
+    ) internal pure returns (bool) {
+        uint256 content = uint256(
+            keccak256(
+                abi.encodePacked(
+                    _CONTEXT,
+                    bytes1(0x00),
+                    _CHALLENGE_PREFIX,
+                    bytes1(0x00),
+                    randomAddr,
+                    publicKey.parity,
+                    publicKey.px,
+                    hashedMessage
+                )
+            )
+        );
+
+        uint256 spx = _ORDER - mulmod(signature, publicKey.px, _ORDER);
+        uint256 cpx = _ORDER - mulmod(content, publicKey.px, _ORDER);
+
+        // Because the ecrecover precompile implementation verifies that the 'r' and's'
+        // input positions must be non-zero
+        // So in this case, there is no need to verify them('px' > 0 and 'cpx' > 0).
+        if (spx == 0) {
+            revert ProcessingSignatureFailed();
+        }
+
+        address addr = ecrecover(
+            bytes32(spx),
+            publicKey.parity,
+            bytes32(publicKey.px),
+            bytes32(cpx)
+        );
+        return randomAddr == addr;
+    }
+
     /// @dev push the public key to the list.
     function _updatePublicKey(
         uint64 timestamp,
@@ -133,7 +175,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // Note: Offset parity by 25 to match with the calculation in TSS module
         // In etheruem, the parity is typically 27 or 28.
         PublicKey memory pubKey = PublicKey({
-            timestamp: timestamp,
+            activeTime: timestamp,
             parity: parity + 25,
             px: px
         });
@@ -142,17 +184,13 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         emit GroupPubKeyUpdated(publicKeys.length, timestamp, parity, px, true);
     }
 
-    /// @dev Retrieves the most recent public key that is no later than the specified timestamp.
-    function _getLatestPublicKeyBefore(
-        uint256 timestamp
-    ) internal view returns (PublicKey memory) {
-        if (publicKeys.length == 0) {
-            revert PublicKeyNotFound(timestamp);
-        }
-
-        for (int i = int256(publicKeys.length) - 1; i >= 0; i--) {
-            if (publicKeys[uint256(i)].timestamp <= timestamp) {
-                return publicKeys[uint256(i)];
+    ///@dev get the public key index that is valid at th given timestamp.
+    function _getPubKeyIndexByTimestamp(
+        uint64 timestamp
+    ) internal view returns (uint256) {
+        for (uint256 i = publicKeys.length; i > 0; i--) {
+            if (publicKeys[i - 1].activeTime <= timestamp) {
+                return i - 1;
             }
         }
 

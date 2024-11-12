@@ -115,10 +115,9 @@ abstract contract BaseTunnelRouter is
 
         // verify signature.
         bool isValid = tssVerifier.verify(
-            message,
+            keccak256(message),
             randomAddr,
-            signature,
-            tssMessage.sourceBlocktimestamp
+            signature
         );
         if (!isValid) {
             revert InvalidSignature();

@@ -51,17 +51,17 @@ interface ITssVerifier {
     /**
      * @dev Verifies the signature of the message against the given signature.
      *
-     * @param message The message to be verified.
+     * The contract is not allowed to verify the message with obsolete public key.
+     *
+     * @param hashedMessage The hashed message to be verified.
      * @param randomAddr The random address that is generated during the processing tss signature.
      * @param signature The tss signature.
-     * @param timestamp The timestamp of the message.
      * @return true If the signature is valid, false otherwise.
      */
     function verify(
-        bytes calldata message,
+        bytes32 hashedMessage,
         address randomAddr,
-        uint256 signature,
-        uint256 timestamp
+        uint256 signature
     ) external view returns (bool);
 
     /**

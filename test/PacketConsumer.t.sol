@@ -22,7 +22,7 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(this),
-            1,
+            address(this),
             keccak256("bandchain"),
             keccak256("testnet-evm"),
             address(this)
@@ -34,6 +34,7 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
             packetConsumerAddr
         );
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
+        packetConsumer.setTunnelId(1);
     }
 
     function testProcess() public {
@@ -91,7 +92,7 @@ contract PacketConsumerTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            1,
+            address(this),
             keccak256("bandchain"),
             keccak256("testnet-evm"),
             address(this)
@@ -103,6 +104,7 @@ contract PacketConsumerTest is Test, Constants {
             packetConsumerAddr
         );
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
+        packetConsumer.setTunnelId(1);
 
         // set latest nonce.
         packetConsumer.activate{value: 0.01 ether}(1);

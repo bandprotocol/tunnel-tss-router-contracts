@@ -40,7 +40,7 @@ contract RelayFullLoopTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            1,
+            address(this),
             keccak256("bandchain"),
             keccak256("testnet-evm"),
             address(this)
@@ -51,7 +51,9 @@ contract RelayFullLoopTest is Test, Constants {
             packetConsumerArgs,
             packetConsumerAddr
         );
+
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
+        packetConsumer.setTunnelId(1);
 
         // set latest nonce.
         packetConsumer.activate{value: 0.01 ether}(0);

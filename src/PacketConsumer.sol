@@ -21,10 +21,16 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
     // The tunnel router contract.
     address public immutable tunnelRouter;
-    // The hash originator of the feeds price data that this contract consumes.
-    bytes32 public immutable hashOriginator;
-    // The tunnel Id that this contract is consuming.
-    uint64 public immutable tunnelId;
+    // The address of the factory contract that created this contract.
+    address public immutable packetConsumerFactory;
+    // The hashed source chain Id that this contract is consuming from.
+    bytes32 public immutable hashedSourceChainId;
+    // The hashed target chain Id that this contract is at.
+    bytes32 public immutable hashedTargetChainId;
+
+    // The tunnel Id that this contract is consuming; cannot be immutable or else the create2
+    // will result in different address.
+    uint64 public tunnelId;
     // Mapping between a signal Id and its corresponding latest price object.
     mapping(bytes32 => Price) public prices;
 
@@ -37,23 +43,16 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
     constructor(
         address tunnelRouter_,
-        uint64 tunnelId_,
+        address packetConsumerFactory_,
         bytes32 hashedSourceChainId_,
         bytes32 hashedTargetChainId_,
         address initialOwner
     ) Ownable(initialOwner) {
-        hashOriginator = keccak256(
-            abi.encodePacked(
-                bytes4(0xa466d313), // keccak("tunnelOriginatorPrefix")[:4]
-                hashedSourceChainId_,
-                tunnelId_,
-                keccak256(bytes(Address.toChecksumString(address(this)))),
-                hashedTargetChainId_
-            )
-        );
+        hashedSourceChainId = hashedSourceChainId_;
+        hashedTargetChainId = hashedTargetChainId_;
 
         tunnelRouter = tunnelRouter_;
-        tunnelId = tunnelId_;
+        packetConsumerFactory = packetConsumerFactory_;
     }
 
     /**
@@ -62,7 +61,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     function process(
         PacketDecoder.TssMessage memory data
     ) external onlyTunnelRouter {
-        if (data.hashOriginator != hashOriginator) {
+        if (data.hashOriginator != hashOriginator()) {
             revert InvalidHashOriginator();
         }
 
@@ -139,6 +138,29 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         }
     }
 
-    ///@dev the contract receive eth from the vault contract when user call withdraw.
+    ///@dev Sets the tunnel Id of the contract.
+    function setTunnelId(uint64 tunnelId_) external {
+        if (msg.sender != packetConsumerFactory) {
+            revert UnauthorizedFactory(msg.sender);
+        }
+
+        tunnelId = tunnelId_;
+    }
+
+    ///@dev Returns the hash of the originator of the packet.
+    function hashOriginator() public view returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    bytes4(0xa466d313), // keccak("tunnelOriginatorPrefix")[:4]
+                    hashedSourceChainId,
+                    tunnelId,
+                    keccak256(bytes(Address.toChecksumString(address(this)))),
+                    hashedTargetChainId
+                )
+            );
+    }
+
+    ///@dev The contract receive eth from the vault contract when user call withdraw.
     receive() external payable {}
 }

@@ -43,6 +43,11 @@ interface IDataConsumer {
      */
     error TokenTransferFailed(address addr);
 
+    /**
+     * @notice Reverts if the caller is not the factory contract.
+     */
+    error UnauthorizedFactory(address addr);
+
     // ========================================
     // Functions
     // ========================================

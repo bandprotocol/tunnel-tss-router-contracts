@@ -25,8 +25,10 @@ contract DeployScript is Script {
         // Deploy the PacketConsumer contract
         PacketConsumer packetConsumer = factory.createPacketConsumer(
             tunnelId,
-            "salt"
+            "new_salt"
         );
+
+        packetConsumer.activate{value: 0.01 ether}(0);
 
         vm.stopBroadcast();
 

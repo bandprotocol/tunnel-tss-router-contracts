@@ -42,7 +42,14 @@ contract DeployScript is Script {
             msg.sender,
             abi.encodeCall(
                 GasPriceTunnelRouter.initialize,
-                (tssVerifier, IVault(proxyVaultAddr), msg.sender, 0, 0, 0)
+                (
+                    tssVerifier,
+                    IVault(proxyVaultAddr),
+                    msg.sender,
+                    100000,
+                    300000,
+                    0.11 gwei
+                )
             )
         );
         address implTunnelRouterAddr = Upgrades.getImplementationAddress(

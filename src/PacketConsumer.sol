@@ -21,8 +21,6 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
     // The tunnel router contract.
     address public immutable tunnelRouter;
-    // The address of the factory contract that created this contract.
-    address public immutable packetConsumerFactory;
     // The hashed source chain Id that this contract is consuming from.
     bytes32 public immutable hashedSourceChainId;
     // The hashed target chain Id that this contract is at.
@@ -43,16 +41,13 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
     constructor(
         address tunnelRouter_,
-        address packetConsumerFactory_,
         bytes32 hashedSourceChainId_,
         bytes32 hashedTargetChainId_,
         address initialOwner
     ) Ownable(initialOwner) {
         hashedSourceChainId = hashedSourceChainId_;
         hashedTargetChainId = hashedTargetChainId_;
-
         tunnelRouter = tunnelRouter_;
-        packetConsumerFactory = packetConsumerFactory_;
     }
 
     /**
@@ -139,11 +134,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     }
 
     ///@dev Sets the tunnel Id of the contract.
-    function setTunnelId(uint64 tunnelId_) external {
-        if (msg.sender != packetConsumerFactory) {
-            revert UnauthorizedFactory(msg.sender);
-        }
-
+    function setTunnelId(uint64 tunnelId_) external onlyOwner {
         tunnelId = tunnelId_;
     }
 

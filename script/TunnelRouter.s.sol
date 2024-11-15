@@ -12,14 +12,11 @@ import {ITssVerifier} from "../src/interfaces/ITssVerifier.sol";
 import {GasPriceTunnelRouter} from "../src/router/GasPriceTunnelRouter.sol";
 import {TssVerifier} from "../src/TssVerifier.sol";
 import {Vault} from "../src/Vault.sol";
-import {PacketConsumerFactory} from "../src/PacketConsumerFactory.sol";
 
 contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
         uint64 transitionPeriod = uint64(vm.envUint("TRANSITION_PERIOD"));
-        string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
-        string memory destinationChainId = vm.envString("DESTINATION_CHAIN_ID");
 
         vm.startBroadcast(privKey);
 
@@ -52,13 +49,6 @@ contract DeployScript is Script {
         // Set the tunnel router address in the vault
         Vault(payable(proxyVaultAddr)).setTunnelRouter(proxyTunnelRouterAddr);
 
-        // Deploy the PacketConsumerFactory contract
-        PacketConsumerFactory factory = new PacketConsumerFactory(
-            keccak256(bytes(sourceChainId)),
-            keccak256(bytes(destinationChainId)),
-            address(proxyTunnelRouterAddr)
-        );
-
         vm.stopBroadcast();
 
         console.log("Vault Proxy deployed at :", proxyVaultAddr);
@@ -72,6 +62,5 @@ contract DeployScript is Script {
             "GasPriceTunnelRouter Implementation deployed at :",
             implTunnelRouterAddr
         );
-        console.log("PacketConsumerFactory deployed at :", address(factory));
     }
 }

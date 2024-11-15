@@ -6,26 +6,21 @@ import {console} from "forge-std/console.sol";
 import {Script} from "forge-std/script.sol";
 
 import {PacketConsumer} from "../src/PacketConsumer.sol";
-import {PacketConsumerFactory} from "../src/PacketConsumerFactory.sol";
 
 contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
-        address packetConsumerFactory = vm.envAddress(
-            "PACKET_CONSUMER_FACTORY"
-        );
-        uint64 tunnelId = uint64(vm.envUint("TUNNEL_ID"));
-
+        address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
+        string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
+        string memory destinationChainId = vm.envString("DESTINATION_CHAIN_ID");
+        
         vm.startBroadcast(privKey);
 
-        PacketConsumerFactory factory = PacketConsumerFactory(
-            packetConsumerFactory
-        );
-
-        // Deploy the PacketConsumer contract
-        PacketConsumer packetConsumer = factory.createPacketConsumer(
-            tunnelId,
-            "salt"
+        PacketConsumer packetConsumer = new PacketConsumer(
+            tunnelRouterAddr,
+            keccak256(bytes(sourceChainId)),
+            keccak256(bytes(destinationChainId)),
+            msg.sender
         );
 
         vm.stopBroadcast();

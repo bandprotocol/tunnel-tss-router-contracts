@@ -40,7 +40,6 @@ contract VaultTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            1,
             keccak256("bandchain"),
             keccak256("eth"),
             address(this)

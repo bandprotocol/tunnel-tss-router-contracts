@@ -13,7 +13,7 @@ import "./libraries/Address.sol";
 import "./TssVerifier.sol";
 
 contract PacketConsumer is IDataConsumer, Ownable2Step {
-    // An object that contains the price of a signal Id.
+    // An object that contains the price of a signal ID.
     struct Price {
         uint64 price;
         int64 timestamp;

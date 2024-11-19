@@ -3,11 +3,11 @@
 pragma solidity ^0.8.23;
 
 library PacketDecoder {
-    bytes4 private constant _FIXED_POINT_ENCODER_SELECTOR = 0xcba0ad5a; // keccak256("FixedPointABI");
-    bytes4 private constant _TICK_ENCODER_SELECTOR = 0xdb99b2b3; // keccak256("TickABI");
+    bytes8 private constant _FIXED_POINT_ENCODER_SELECTOR = 0xd3813e0ccba0ad5a; // keccak256("tunnel")[:4] + keccak256("FixedPointABI")[:4];
+    bytes8 private constant _TICK_ENCODER_SELECTOR = 0xd3813e0cdb99b2b3; // keccak256("tunnel")[:4] + keccak256("TickABI")[:4];
 
     enum EncoderType {
-        Unidentified,
+        Undefined,
         FixedPoint,
         Tick
     }
@@ -45,7 +45,7 @@ library PacketDecoder {
     function decodeTssMessage(
         bytes calldata message
     ) internal pure returns (TssMessage memory) {
-        EncoderType encoder = _toEncoderType(bytes4(message[52:56]));
+        EncoderType encoder = _toEncoderType(bytes8(message[48:56]));
 
         Packet memory packet = _decodePacket(message);
 
@@ -78,14 +78,14 @@ library PacketDecoder {
      * @return EncoderType The encoder type.
      */
     function _toEncoderType(
-        bytes4 selector
+        bytes8 selector
     ) internal pure returns (EncoderType) {
         if (selector == _FIXED_POINT_ENCODER_SELECTOR) {
             return EncoderType.FixedPoint;
         } else if (selector == _TICK_ENCODER_SELECTOR) {
             return EncoderType.Tick;
         } else {
-            return EncoderType.Unidentified;
+            return EncoderType.Undefined;
         }
     }
 }

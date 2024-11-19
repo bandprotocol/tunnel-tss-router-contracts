@@ -85,6 +85,11 @@ interface ITunnelRouter {
     error ActiveTargetContract(address targetAddr);
 
     /**
+     * @notice Reverts if the encoder type is undefined.
+     */
+    error UndefinedEncoderType();
+
+    /**
      * @notice Reverts if the sequence is incorrect.
      *
      * @param expected The expected sequence of the tunnel.

@@ -101,6 +101,9 @@ abstract contract BaseTunnelRouter is
         address targetAddr = packet.targetAddr.toAddress();
 
         // check if the message is valid.
+        if (tssMessage.encoderType == PacketDecoder.EncoderType.Undefined) {
+            revert UndefinedEncoderType();
+        }
         if (!isActive[packet.tunnelId][targetAddr]) {
             revert InactiveTargetContract(targetAddr);
         }

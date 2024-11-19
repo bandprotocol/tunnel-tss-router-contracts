@@ -19,7 +19,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         IVault vault_,
         address initialOwner,
         uint256 additionalGas_,
-        uint256 maxAllowableCallbackGasLimit_,
+        uint256 callbackGasLimit_,
         uint256 gasPrice_
     ) public initializer {
         __BaseRouter_init(
@@ -27,7 +27,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
             vault_,
             initialOwner,
             additionalGas_,
-            maxAllowableCallbackGasLimit_
+            callbackGasLimit_
         );
 
         _setGasFee(GasFeeInfo(gasPrice_));

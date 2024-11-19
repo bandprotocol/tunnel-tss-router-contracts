@@ -133,7 +133,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         }
     }
 
-    ///@dev Sets the tunnel Id of the contract.
+    ///@dev Sets the tunnel ID of the contract.
     function setTunnelId(uint64 tunnelId_) external onlyOwner {
         tunnelId = tunnelId_;
     }

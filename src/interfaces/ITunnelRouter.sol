@@ -10,12 +10,11 @@ interface ITunnelRouter {
     // ========================================
 
     /**
-     * @notice Emitted when the maximum allowable callback gas limit is set.
+     * @notice Emitted when the callback gas limit is set.
      *
-     * @param maxAllowableCallbackGasLimit The maximum gas limit to be used
-     * when calling the target contract.
+     * @param callbackGasLimit The maximum gas limit can be used when calling the target contract.
      */
-    event MaxAllowableCallbackGasLimitSet(uint256 maxAllowableCallbackGasLimit);
+    event CallbackGasLimitSet(uint256 callbackGasLimit);
 
     /**
      * @notice Emitted when the additional gas used is set.

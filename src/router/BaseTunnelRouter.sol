@@ -29,11 +29,11 @@ abstract contract BaseTunnelRouter is
     // Additional gas estimated for relaying the message;
     // does not include the gas cost for executing the target contract.
     uint256 public additionalGasUsed;
-    // The maximum allowable gas to be used when calling the target contract.
-    uint256 public maxAllowableCallbackGasLimit;
+    // The maximum gas limit can be used when calling the target contract.
+    uint256 public callbackGasLimit;
 
-    mapping(uint64 => mapping(address => bool)) public isActive; // tunnelId => targetAddr => isActive
-    mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelId => targetAddr => sequence
+    mapping(uint64 => mapping(address => bool)) public isActive; // tunnelID => targetAddr => isActive
+    mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelID => targetAddr => sequence
 
     uint[50] __gap;
 
@@ -42,7 +42,7 @@ abstract contract BaseTunnelRouter is
         IVault vault_,
         address initialOwner,
         uint256 additionalGasUsed_,
-        uint256 maxAllowableCallbackGasLimit_
+        uint256 callbackGasLimit_
     ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -52,7 +52,7 @@ abstract contract BaseTunnelRouter is
         vault = vault_;
 
         _setAdditionalGasUsed(additionalGasUsed_);
-        _setMaxAllowableCallbackGasLimit(maxAllowableCallbackGasLimit_);
+        _setCallbackGasLimit(callbackGasLimit_);
     }
 
     /**
@@ -66,14 +66,12 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev Sets the maximum gas used in calling targetAddr.process().
-     * @param maxAllowableCallbackGasLimit_ The maximum allowable gas to be used when
-     * calling the target contract.
+     * @dev Sets the callback gas limit.
+     *
+     * @param callbackGasLimit_ the maximum gas limit can be used when calling the target contract.
      */
-    function setMaxAllowableCallbackGasLimit(
-        uint256 maxAllowableCallbackGasLimit_
-    ) external onlyOwner {
-        _setMaxAllowableCallbackGasLimit(maxAllowableCallbackGasLimit_);
+    function setCallbackGasLimit(uint256 callbackGasLimit_) external onlyOwner {
+        _setCallbackGasLimit(callbackGasLimit_);
     }
 
     /**
@@ -130,9 +128,7 @@ abstract contract BaseTunnelRouter is
         uint256 gasLeft = gasleft();
         bool isReverted = false;
         try
-            IDataConsumer(targetAddr).process{
-                gas: maxAllowableCallbackGasLimit
-            }(tssMessage)
+            IDataConsumer(targetAddr).process{gas: callbackGasLimit}(tssMessage)
         {} catch {
             isReverted = true;
         }
@@ -194,7 +190,7 @@ abstract contract BaseTunnelRouter is
      * @dev See {ITunnelRouter-minimumBalanceThreshold}.
      */
     function minimumBalanceThreshold() public view override returns (uint256) {
-        return _routerFee(additionalGasUsed + maxAllowableCallbackGasLimit);
+        return _routerFee(additionalGasUsed + callbackGasLimit);
     }
 
     /**
@@ -233,12 +229,10 @@ abstract contract BaseTunnelRouter is
         return 0;
     }
 
-    /// @dev Sets maxAllowableCallbackGasLimit and emit an event.
-    function _setMaxAllowableCallbackGasLimit(
-        uint256 maxAllowableCallbackGasLimit_
-    ) internal {
-        maxAllowableCallbackGasLimit = maxAllowableCallbackGasLimit_;
-        emit MaxAllowableCallbackGasLimitSet(maxAllowableCallbackGasLimit);
+    /// @dev Sets callbackGasLimit and emit an event.
+    function _setCallbackGasLimit(uint256 callbackGasLimit_) internal {
+        callbackGasLimit = callbackGasLimit_;
+        emit CallbackGasLimitSet(callbackGasLimit_);
     }
 
     /// @dev Sets additionalGasUsed and emit an event.

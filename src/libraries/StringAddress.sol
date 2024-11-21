@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
+// ref: https://ethereum.stackexchange.com/questions/147944/convert-string-to-address-in-solidity
 
 pragma solidity ^0.8.23;
 
 library StringAddress {
+    error InvalidInput();
+
     /**
      * @dev Convert a string to an address.
      *
@@ -13,7 +16,9 @@ library StringAddress {
      */
     function toAddress(string memory str) internal pure returns (address) {
         bytes memory strBytes = bytes(str);
-        require(strBytes.length == 42, "StringAddress: !length");
+        if (strBytes.length != 42) {
+            revert InvalidInput();
+        }
         uint160 result;
 
         assembly {

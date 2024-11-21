@@ -9,21 +9,22 @@ import {PacketConsumer} from "../src/PacketConsumer.sol";
 
 contract DeployScript is Script {
     function run() external {
-        uint privKey = vm.envUint("PRIVATE_KEY");
+        uint256 privKey = vm.envUint("PRIVATE_KEY");
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
-        bytes32 hashOriginator = vm.envBytes32("HASH_ORIGINATOR");
-
+        string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
+        string memory destinationChainId = vm.envString("DESTINATION_CHAIN_ID");
+        
         vm.startBroadcast(privKey);
 
-        // Deploy the PacketConsumer contract
         PacketConsumer packetConsumer = new PacketConsumer(
             tunnelRouterAddr,
-            hashOriginator,
+            keccak256(bytes(sourceChainId)),
+            keccak256(bytes(destinationChainId)),
             msg.sender
         );
 
         vm.stopBroadcast();
 
-        console.log("PacketConsumer: ", address(packetConsumer));
+        console.log("PacketConsumer deployed at:", address(packetConsumer));
     }
 }

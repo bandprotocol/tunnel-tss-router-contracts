@@ -6,56 +6,35 @@ import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "./interfaces/IVault.sol";
+import "./interfaces/ITunnelRouter.sol";
 
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
-    mapping(uint64 => mapping(address => uint)) public balance; // tunnelID => account => amount.
+    mapping(uint64 => mapping(address => uint)) public balance; // tunnelId => account => amount.
 
-    uint public minimumActiveBalance;
     address public tunnelRouter;
 
     uint[50] __gap;
 
-    event SetMinimumActiveBalance(uint minimumActiveBalance);
-    event SetTunnelRouter(address tunnelRouter_);
-    event Deposit(uint indexed tunnelID, address indexed account, uint amount);
-    event Withdraw(
-        uint indexed tunnelID,
-        address indexed account,
-        address to,
-        uint amount
-    );
-
     modifier onlyTunnelRouter() {
-        require(msg.sender == tunnelRouter, "TunnelDepositor: !tunnelRouter");
+        if (msg.sender != tunnelRouter) {
+            revert UnauthorizedTunnelRouter();
+        }
         _;
     }
 
     function initialize(
         address initialOwner,
-        uint minimumActiveBalance_,
         address tunnelRouter_
     ) public initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
-        _setMinimumActiveBalance(minimumActiveBalance_);
         _setTunnelRouter(tunnelRouter_);
     }
 
     /**
-     * @dev set minimum active balance.
-     * @param minimumActiveBalance_ the minimum balance that the account must have
-     * to be considered as active
-     */
-    function setMinimumActiveBalance(
-        uint minimumActiveBalance_
-    ) external onlyOwner {
-        _setMinimumActiveBalance(minimumActiveBalance_);
-    }
-
-    /**
-     * @dev set the tunnel router contract address
-     * @param tunnelRouter_ the tunnel router contract address
+     * @dev Sets the tunnel router contract address
+     * @param tunnelRouter_ The tunnel router contract address
      */
     function setTunnelRouter(address tunnelRouter_) external onlyOwner {
         _setTunnelRouter(tunnelRouter_);
@@ -64,77 +43,81 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     /**
      * @dev See {IVault-deposit}.
      */
-    function deposit(uint64 tunnelID, address account) external payable {
-        balance[tunnelID][account] += msg.value;
-        emit Deposit(tunnelID, account, msg.value);
+    function deposit(uint64 tunnelId, address account) external payable {
+        balance[tunnelId][account] += msg.value;
+        emit Deposited(tunnelId, msg.sender, account, msg.value);
     }
 
     /**
      * @dev See {IVault-withdraw}.
      */
-    function withdraw(uint64 tunnelID, uint amount) external {
-        uint _balance = balance[tunnelID][msg.sender];
-        require(
-            _balance >= amount + minimumActiveBalance,
-            "TunnelDepositor: !balance"
-        );
+    function withdraw(uint64 tunnelId, uint256 amount) external {
+        if (_isRemainingBalanceUnderThreshold(tunnelId, msg.sender, amount)) {
+            revert InsufficientRemainingBalance();
+        }
 
-        _withdraw(tunnelID, msg.sender, msg.sender, amount);
+        _withdraw(tunnelId, msg.sender, msg.sender, amount);
     }
 
     /**
      * @dev See {IVault-withdrawAll}.
      */
-    function withdrawAll(
-        uint64 tunnelID,
-        address account
-    ) external onlyTunnelRouter {
-        _withdraw(tunnelID, account, account, balance[tunnelID][account]);
+    function withdrawAll(uint64 tunnelId) external {
+        uint256 amount = balance[tunnelId][msg.sender];
+
+        if (_isRemainingBalanceUnderThreshold(tunnelId, msg.sender, amount)) {
+            revert InsufficientRemainingBalance();
+        }
+
+        _withdraw(tunnelId, msg.sender, msg.sender, amount);
     }
 
     /**
      * @dev See {IVault-collectFee}.
      */
     function collectFee(
-        uint64 tunnelID,
+        uint64 tunnelId,
         address account,
-        uint amount
+        uint256 amount
     ) public onlyTunnelRouter {
-        _withdraw(tunnelID, account, tunnelRouter, amount);
+        _withdraw(tunnelId, account, tunnelRouter, amount);
     }
 
-    /**
-     * @dev See {IVault-isBalanceOverThreshold}.
-     */
-    function isBalanceOverThreshold(
-        uint64 tunnelID,
-        address account
-    ) external view returns (bool) {
-        return balance[tunnelID][account] >= minimumActiveBalance;
+    function _isRemainingBalanceUnderThreshold(
+        uint64 tunnelId,
+        address account,
+        uint256 amount
+    ) internal view returns (bool) {
+        uint256 minBalance;
+        ITunnelRouter router = ITunnelRouter(tunnelRouter);
+
+        if (router.isActive(tunnelId, account)) {
+            minBalance = router.minimumBalanceThreshold();
+        }
+
+        uint256 current = balance[tunnelId][account];
+        return current < minBalance + amount;
     }
 
     function _withdraw(
-        uint64 tunnelID,
+        uint64 tunnelId,
         address account,
         address to,
-        uint amount
+        uint256 amount
     ) internal {
-        balance[tunnelID][account] -= amount;
+        balance[tunnelId][account] -= amount;
 
         (bool ok, ) = payable(to).call{value: amount}("");
-        require(ok, "TunnelDepositor: !send");
+        if (!ok) {
+            revert TokenTransferFailed(to);
+        }
 
-        emit Withdraw(tunnelID, account, to, amount);
-    }
-
-    function _setMinimumActiveBalance(uint minimumActiveBalance_) internal {
-        minimumActiveBalance = minimumActiveBalance_;
-        emit SetMinimumActiveBalance(minimumActiveBalance_);
+        emit Withdrawn(tunnelId, account, to, amount);
     }
 
     function _setTunnelRouter(address tunnelRouter_) internal {
         tunnelRouter = tunnelRouter_;
-        emit SetTunnelRouter(tunnelRouter_);
+        emit TunnelRouterSet(tunnelRouter_);
     }
 
     receive() external payable {}

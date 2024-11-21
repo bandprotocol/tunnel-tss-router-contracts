@@ -5,7 +5,6 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 
 import "../src/libraries/StringAddress.sol";
-import "../src/PacketConsumer.sol";
 
 contract StringAddressTest is Test {
     using StringAddress for string;
@@ -23,14 +22,14 @@ contract StringAddressTest is Test {
         expectedAddrs[2] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         expectedAddrs[3] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
-        for (uint i = 0; i < addrs.length; i++) {
+        for (uint256 i = 0; i < addrs.length; i++) {
             assertEq(expectedAddrs[i], addrs[i].toAddress());
         }
     }
 
     function testStringRevertIncorrectLength() public {
         string memory test = "0x6D9b8Ec0D5982f918210A05724E17";
-        vm.expectRevert("StringAddress: !length");
+        vm.expectRevert(StringAddress.InvalidInput.selector);
         test.toAddress();
     }
 

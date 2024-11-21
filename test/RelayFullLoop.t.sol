@@ -5,7 +5,7 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import "../src/GasPriceTunnelRouter.sol";
+import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/PacketConsumer.sol";
 import "../src/TssVerifier.sol";
 import "../src/Vault.sol";
@@ -19,21 +19,19 @@ contract RelayFullLoopTest is Test, Constants {
     Vault vault;
 
     function setUp() public {
-        tssVerifier = new TssVerifier(0x00, address(this));
-        tssVerifier.addPubKeyByOwner(CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
+        tssVerifier = new TssVerifier(86400, address(this));
+        tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), 0, address(0x00));
+        vault.initialize(address(this), address(0x00));
 
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            "eth",
             address(this),
             75000,
-            50000,
-            50000,
+            75000,
             1
         );
 
@@ -42,7 +40,8 @@ contract RelayFullLoopTest is Test, Constants {
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),
-            0x78512D24E95216DC140F557181A03631715A023424CBAD94601F3546CDFC3DE4,
+            keccak256("bandchain"),
+            keccak256("testnet-evm"),
             address(this)
         );
         address packetConsumerAddr = makeAddr("PacketConsumer");
@@ -51,30 +50,32 @@ contract RelayFullLoopTest is Test, Constants {
             packetConsumerArgs,
             packetConsumerAddr
         );
+
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
+        packetConsumer.setTunnelId(1);
 
         // set latest nonce.
-        packetConsumer.activate{value: 0.01 ether}(1, 1);
+        packetConsumer.activate{value: 0.01 ether}(0);
     }
 
-    function testRelayMessageConsumerHasEnoughFund() public {
-        uint relayerBalance = address(this).balance;
-        uint currentGas = gasleft();
+    function testRelayMessageConsumerNotDeactivate() public {
+        uint256 relayerBalance = address(this).balance;
+        uint256 currentGas = gasleft();
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
-        uint gasUsed = currentGas - gasleft();
-        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
+        uint256 gasUsed = currentGas - gasleft();
+        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), true);
 
-        uint feeGain = address(this).balance - relayerBalance;
+        uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint gasUsedDuringProcessMsg = feeGain /
+        uint256 gasUsedDuringProcessMsg = feeGain /
             tunnelRouter.gasFee() -
-            tunnelRouter.additionalGas();
+            tunnelRouter.additionalGasUsed();
 
         console.log(
             "gas used during process message: ",
@@ -86,28 +87,27 @@ contract RelayFullLoopTest is Test, Constants {
         );
     }
 
-    function testRelayMessageConsumerUseReserve() public {
-        uint relayerBalance = address(this).balance;
+    function testRelayMessageConsumerWithDeactivate() public {
+        uint256 relayerBalance = address(this).balance;
+        tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
 
-        vault.setMinimumActiveBalance(1 ether);
-
-        uint currentGas = gasleft();
+        uint256 currentGas = gasleft();
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
-        uint gasUsed = currentGas - gasleft();
+        uint256 gasUsed = currentGas - gasleft();
 
-        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 2);
+        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), false);
 
-        uint feeGain = address(this).balance - relayerBalance;
+        uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint gasUsedDuringProcessMsg = feeGain /
+        uint256 gasUsedDuringProcessMsg = feeGain /
             tunnelRouter.gasFee() -
-            tunnelRouter.additionalGas();
+            tunnelRouter.additionalGasUsed();
 
         console.log(
             "gas used during process message: ",
@@ -120,11 +120,16 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayInvalidSequence() public {
-        packetConsumer.deactivate(1);
+        packetConsumer.deactivate();
 
-        packetConsumer.activate{value: 0.01 ether}(1, 0);
+        packetConsumer.activate{value: 0.01 ether}(3);
 
-        vm.expectRevert("TunnelRouter: !sequence");
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.InvalidSequence.selector,
+            4,
+            1
+        );
+        vm.expectRevert(expectedErr);
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
@@ -133,9 +138,13 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayInactiveTargetContract() public {
-        packetConsumer.deactivate(1);
+        packetConsumer.deactivate();
 
-        vm.expectRevert("TunnelRouter: !active");
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.InactiveTargetContract.selector,
+            address(packetConsumer)
+        );
+        vm.expectRevert(expectedErr);
         tunnelRouter.relay(
             TSS_RAW_MESSAGE,
             SIGNATURE_NONCE_ADDR,
@@ -155,8 +164,12 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testReactivateAlreadyActive() public {
-        vm.expectRevert("TunnelRouter: !inactive");
-        packetConsumer.activate(1, 1);
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.ActiveTargetContract.selector,
+            address(packetConsumer)
+        );
+        vm.expectRevert(expectedErr);
+        packetConsumer.activate(1);
     }
 
     receive() external payable {}

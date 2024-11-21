@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.23;
 
+import "../interfaces/IVault.sol";
 import "./BaseTunnelRouter.sol";
 
-contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
+contract GasPriceTunnelRouter is BaseTunnelRouter {
     struct GasFeeInfo {
-        uint baseFee;
-        uint priorityFee;
+        uint256 gasPrice;
     }
 
     GasFeeInfo public gasFee;
@@ -17,30 +17,25 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     function initialize(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        string memory chainID_,
         address initialOwner,
-        uint additionalGas_,
-        uint maxGasUsedProcess_,
-        uint maxGasUsedCollectFee_,
-        uint baseFee_,
-        uint priorityFee_
+        uint256 additionalGas_,
+        uint256 callbackGasLimit_,
+        uint256 gasPrice_
     ) public initializer {
         __BaseRouter_init(
             tssVerifier_,
             vault_,
-            chainID_,
             initialOwner,
             additionalGas_,
-            maxGasUsedProcess_,
-            maxGasUsedCollectFee_
+            callbackGasLimit_
         );
 
-        _setGasFee(GasFeeInfo(baseFee_, priorityFee_));
+        _setGasFee(GasFeeInfo(gasPrice_));
     }
 
     /**
-     * @dev Set the gas fee information.
-     * @param gasFee_ is the new gas fee information.
+     * @dev Sets the gas fee information.
+     * @param gasFee_ The new gas fee information.
      */
     function setGasFee(GasFeeInfo memory gasFee_) public onlyOwner {
         _setGasFee(gasFee_);
@@ -52,9 +47,8 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
     }
 
     function _routerFee(
-        uint gasUsed
+        uint256 gasUsed
     ) internal view virtual override returns (uint) {
-        GasFeeInfo memory _gasFee = gasFee;
-        return (_gasFee.priorityFee + _gasFee.baseFee) * gasUsed;
+        return gasFee.gasPrice * gasUsed;
     }
 }

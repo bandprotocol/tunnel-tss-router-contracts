@@ -5,46 +5,200 @@ pragma solidity ^0.8.23;
 import "./IVault.sol";
 
 interface ITunnelRouter {
+    // ========================================
+    // Events
+    // ========================================
+
     /**
-     * @dev relay the message to the target contract.
+     * @notice Emitted when the callback gas limit is set.
      *
-     * The contract verify the message's sequence and the signature before forwarding to
-     * the dataConsumer contract.
+     * @param callbackGasLimit The maximum gas limit can be used when calling the target contract.
+     */
+    event CallbackGasLimitSet(uint256 callbackGasLimit);
+
+    /**
+     * @notice Emitted when the additional gas used is set.
      *
-     * The sender is entitled to a reward from the vault contract, even if the dataConsumer
-     * contract fails to process the message. The reward is calculated based on the gas
-     * consumed when calling dataConsumer to process the message, plus an predefined amount of
-     * additional estimated gas used by the others in the relaying process.
+     * @param additionalGasUsed The additional gas estimated for relaying the message;
+     * does not include the gas cost for executing the target contract.
+     */
+    event AdditionalGasUsedSet(uint256 additionalGasUsed);
+
+    /**
+     * @notice Emitted after the message is relayed to the target contract
+     * to indicate the result of the process.
      *
-     * @param message is the message to be relayed.
-     * @param rAddr is the random address of the signature.
-     * @param signature is the signature of the message.
+     * @param tunnelId The tunnel ID that the message is relayed.
+     * @param targetAddr The target address that the message is relayed.
+     * @param sequence The sequence of the message.
+     * @param isReverted The flag indicating whether the message is reverted.
+     */
+    event MessageProcessed(
+        uint64 indexed tunnelId,
+        address indexed targetAddr,
+        uint64 indexed sequence,
+        bool isReverted
+    );
+
+    /**
+     * @notice Emitted when the target address is activated.
+     *
+     * @param tunnelId The tunnel ID that the sender is activating.
+     * @param targetAddr The target address that the sender is activating.
+     * @param latestNonce The latest nonce of the sender.
+     */
+    event Activated(
+        uint64 indexed tunnelId,
+        address indexed targetAddr,
+        uint64 latestNonce
+    );
+
+    /**
+     * @notice Emitted when the target address is deactivated.
+     *
+     * @param tunnelId The tunnel ID that the sender is deactivating.
+     * @param targetAddr The target address that the sender is deactivating.
+     * @param latestNonce The latest nonce of the sender.
+     */
+    event Deactivated(
+        uint64 indexed tunnelId,
+        address indexed targetAddr,
+        uint64 latestNonce
+    );
+
+    // ========================================
+    // Custom Errors
+    // ========================================
+
+    /**
+     * @notice Reverts if the target contract is inactive.
+     *
+     * @param targetAddr The target address that is inactive.
+     */
+    error InactiveTargetContract(address targetAddr);
+
+    /**
+     * @notice Reverts if the target contract is active.
+     *
+     * @param targetAddr The target address that is active.
+     */
+    error ActiveTargetContract(address targetAddr);
+
+    /**
+     * @notice Reverts if the encoder type is undefined.
+     */
+    error UndefinedEncoderType();
+
+    /**
+     * @notice Reverts if the sequence is incorrect.
+     *
+     * @param expected The expected sequence of the tunnel.
+     * @param input The input sequence of the tunnel.
+     */
+    error InvalidSequence(uint64 expected, uint64 input);
+
+    /**
+     * @notice Reverts if the chain ID is incorrect.
+     *
+     * @param chainId The chain ID of the tunnel.
+     */
+    error InvalidChain(string chainId);
+
+    /**
+     * @notice Reverts if the message and its signature doesn't match.
+     */
+    error InvalidSignature();
+
+    /**
+     * @notice Reverts if the contract cannot send fee to the specific address.
+     */
+    error TokenTransferFailed(address addr);
+
+    /**
+     * @notice Reverts if the remaining balance is insufficient to withdraw.
+     *
+     * @param tunnelId The tunnel ID that the sender is withdrawing tokens.
+     * @param addr The account from which the sender is withdrawing tokens.
+     */
+    error InsufficientRemainingBalance(uint64 tunnelId, address addr);
+
+    // ========================================
+    // Functions
+    // ========================================
+
+    ///@dev Tunnel information
+    struct TunnelInfo {
+        bool isActive; // whether the tunnel is active or not
+        uint64 latestSequence; // the latest sequence of the tunnel
+        uint256 balance; // the remaining balance of the tunnel
+    }
+
+    /**
+     * @dev Relays the message to the target contract.
+     *
+     * Verifies the message's sequence and signature before forwarding it to
+     * the data consumer contract. The sender is entitled to a reward from the
+     * vault contract, even if the data consumer contract fails to process the
+     * message. The reward is based on the gas consumed during processing plus
+     * a predefined additional gas estimate.
+     *
+     * @param message The message to be relayed.
+     * @param randomAddr The random address used in signature.
+     * @param signature The signature of the message.
      */
     function relay(
         bytes calldata message,
-        address rAddr,
-        uint signature
+        address randomAddr,
+        uint256 signature
     ) external;
 
     /**
-     * @dev activate the sender and associated tunnelID.
+     * @dev Activates the sender and associated tunnel ID.
      *
-     * This also deposit into the vault and set the latest sequence if the existing deposit
-     * is above the threshold.
-     *
-     * @param tunnelID is the tunnelID that the sender contract is activating.
-     * @param latestSeq is the new sequence of the tunnelID.
+     * @param tunnelId The tunnel ID that the sender contract is activating.
+     * @param latestSeq The new sequence of the tunnelID.
      */
-    function activate(uint64 tunnelID, uint64 latestSeq) external payable;
+    function activate(uint64 tunnelId, uint64 latestSeq) external payable;
 
     /**
-     * @dev deactivate the pair of the sender address and the tunnelID.
+     * @dev Deactivates the sender and associated tunnel ID.
      *
-     * This also withdraws the tokens from the vault contract if there is an existing deposit.
-     *
-     * @param tunnelID is the tunnelID that the sender contract is deactivating.
+     * @param tunnelId The tunnel ID being deactivated.
      */
-    function deactivate(uint64 tunnelID) external;
+    function deactivate(uint64 tunnelId) external;
+
+    /**
+     * @dev Returns the minimum balance required to keep the tunnel active.
+     *
+     * @return uint256 The minimum balance threshold.
+     */
+    function minimumBalanceThreshold() external view returns (uint256);
+
+    /**
+     * @dev Returns whether the tunnel is active or not.
+     *
+     * @param tunnelId The ID of the tunnel.
+     * @param addr The target contract address.
+     *
+     * @return bool True if the tunnel is active, false otherwise.
+     */
+    function isActive(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (bool);
+
+    /**
+     * @dev Returns the tunnel information.
+     *
+     * @param tunnelId The ID of the tunnel.
+     * @param addr The target contract address.
+     *
+     * @return bool True if the tunnel is active, false otherwise.
+     */
+    function tunnelInfo(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (TunnelInfo memory);
 
     /**
      * @dev Returns the vault contract address.

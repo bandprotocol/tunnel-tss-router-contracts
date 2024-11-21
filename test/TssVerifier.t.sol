@@ -11,8 +11,8 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
     bytes32 constant _HASH_ORIGINATOR_REPLACEMENT =
         0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
 
-    // abi.keccak("bandtss")[:4] | abi.keccak("transition")[:4].
-    bytes8 constant _UPDATE_KEY_PREFIX = 0x135e4b63acc0e671;
+    // abi.keccak("bandtss")[:4] | abi.keccak("Transition")[:4].
+    bytes8 constant _UPDATE_KEY_PREFIX = 0x135e4b6361b9b741;
     uint256 _privateKey =
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
     TssVerifier public verifier;

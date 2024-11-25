@@ -34,6 +34,7 @@ contract RelayFullLoopTest is Test, Constants {
             75000,
             1
         );
+        tunnelRouter.addWhitelist(address(this));
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -170,6 +171,22 @@ contract RelayFullLoopTest is Test, Constants {
         );
         vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
+    }
+
+    function testSenderNotWhitelist() public {
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.SenderNotWhitelist.selector,
+            MOCK_SENDER
+        );
+
+        vm.expectRevert(expectedErr);
+        vm.prank(MOCK_SENDER);
+
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
     }
 
     receive() external payable {}

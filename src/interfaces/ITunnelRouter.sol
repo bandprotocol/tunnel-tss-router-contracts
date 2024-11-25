@@ -118,6 +118,11 @@ interface ITunnelRouter {
      */
     error InsufficientRemainingBalance(uint64 tunnelId, address addr);
 
+    /**
+     * @notice Reverts if the sender is not in whitelist.
+     */
+    error SenderNotWhitelist(address addr);
+
     // ========================================
     // Functions
     // ========================================

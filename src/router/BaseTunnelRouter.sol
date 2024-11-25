@@ -36,6 +36,15 @@ abstract contract BaseTunnelRouter is
     mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelId => targetAddr => sequence
 
     uint[50] __gap;
+    // A list of senders authorized to relay packets.
+    mapping(address => bool) public whitelistSenders;
+
+    modifier onlyWhitelist() {
+        if (!whitelistSenders[msg.sender]) {
+            revert SenderNotWhitelist(msg.sender);
+        }
+        _;
+    }
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
@@ -97,7 +106,7 @@ abstract contract BaseTunnelRouter is
         bytes calldata message,
         address randomAddr,
         uint256 signature
-    ) external whenNotPaused {
+    ) external whenNotPaused onlyWhitelist {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         address targetAddr = packet.targetAddr.toAddress();
@@ -245,6 +254,11 @@ abstract contract BaseTunnelRouter is
     function _setAdditionalGasUsed(uint256 additionalGasUsed_) internal {
         additionalGasUsed = additionalGasUsed_;
         emit AdditionalGasUsedSet(additionalGasUsed_);
+    }
+
+    /// @dev Add the address to the whitelist.
+    function addWhitelist(address sender) external onlyOwner {
+        whitelistSenders[sender] = true;
     }
 
     /// @dev the vault contract send fees to the contract when relayer relays a message.

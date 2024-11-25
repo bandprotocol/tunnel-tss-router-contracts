@@ -37,6 +37,8 @@ contract Constants {
         0xdb1487a4227350bd9a0e0f9f9bd7e2a769414fbac733f68eff9e8a01352de63a;
     address constant SIGNATURE_NONCE_ADDR =
         0x876172f41ea36aa6820105D4a754409054A59953;
+    address constant MOCK_SENDER = 
+        0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
 
     function DECODED_TSS_MESSAGE()
         public

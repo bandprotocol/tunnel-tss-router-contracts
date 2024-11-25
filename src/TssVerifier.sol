@@ -9,7 +9,7 @@ import "./interfaces/ITssVerifier.sol";
 
 contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     struct PublicKey {
-        uint64 activeTime; // The timestamp that the public key is activated.
+        uint64 activeTime; // The timestamp that the public key was activated at.
         uint8 parity; // The parity value of the public key.
         uint256 px; // The x-coordinate value of the public key.
     }
@@ -82,7 +82,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // Get the public key that is valid at the given timestamp.
         uint256 pubKeyIdx = _getPubKeyIndexByTimestamp(uint64(block.timestamp));
 
-        // if the active time of the public key is in the transition period, then
+        // If the active time of the public key is in the transition period, then
         // we need to check the previous public key as it may be the signature from
         // the previous group.
         bool isInTransitionPeriod = publicKeys[pubKeyIdx].activeTime +
@@ -125,7 +125,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         length = publicKeys.length;
     }
 
-    /// @dev returns true if the signature is valid against the given public key.
+    /// @dev Returns true if the signature is valid against the given public key.
     function _verifyWithPublickKey(
         bytes32 hashedMessage,
         address randomAddr,
@@ -166,7 +166,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         return randomAddr == addr;
     }
 
-    /// @dev push the public key to the list.
+    /// @dev Pushes the public key to the list.
     function _updatePublicKey(
         uint64 timestamp,
         uint8 parity,
@@ -184,7 +184,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         emit GroupPubKeyUpdated(publicKeys.length, timestamp, parity, px, true);
     }
 
-    ///@dev get the public key index that is valid at th given timestamp.
+    ///@dev Gets the public key index that is valid at th given timestamp.
     function _getPubKeyIndexByTimestamp(
         uint64 timestamp
     ) internal view returns (uint256) {

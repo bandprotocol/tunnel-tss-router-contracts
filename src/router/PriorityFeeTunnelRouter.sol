@@ -18,7 +18,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         IVault vault_,
         address initialOwner,
         uint256 additionalGas_,
-        uint256 maxAllowableCallbackGasLimit_,
+        uint256 callbackGasLimit_,
         uint256 priorityFee_
     ) public initializer {
         __BaseRouter_init(
@@ -26,7 +26,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
             vault_,
             initialOwner,
             additionalGas_,
-            maxAllowableCallbackGasLimit_
+            callbackGasLimit_
         );
 
         _setGasFee(GasFeeInfo(priorityFee_));

@@ -66,6 +66,18 @@ interface ITunnelRouter {
         uint64 latestNonce
     );
 
+    /**
+     * @notice Emitted when a sender's address is added to or removed from the whitelist.
+     *
+     * @param sender The address of the sender whose whitelist status is being updated.
+     * @param flag A boolean value indicating the whitelist status of the address:
+     * `true` if the address is added to the whitelist, `false` if removed.
+     */
+    event SetWhiteList(
+        address indexed sender,
+        bool flag
+    );
+
     // ========================================
     // Custom Errors
     // ========================================
@@ -126,6 +138,11 @@ interface ITunnelRouter {
      * @notice Reverts if the sender is not in whitelist.
      */
     error SenderNotWhitelist(address addr);
+
+    /**
+     * @notice Reverts if the sender is address(0).
+     */
+    error InvalidSenderAddress(address addr);
 
     // ========================================
     // Functions

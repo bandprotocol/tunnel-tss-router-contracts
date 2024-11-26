@@ -36,12 +36,12 @@ abstract contract BaseTunnelRouter is
     mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelID => targetAddr => sequence
 
     uint[50] __gap;
-    // A list of senders authorized to relay packets.
-    mapping(address => bool) public whitelistSenders;
+    // A list of senders allowed to relay packets.
+    mapping(address => bool) public isAllowed;
 
-    modifier onlyWhitelist() {
-        if (!whitelistSenders[msg.sender]) {
-            revert SenderNotWhitelist(msg.sender);
+    modifier onlyWhitelisted() {
+        if (!isAllowed[msg.sender]) {
+            revert SenderNotWhitelist(msg.sender); 
         }
         _;
     }
@@ -104,7 +104,7 @@ abstract contract BaseTunnelRouter is
         bytes calldata message,
         address randomAddr,
         uint256 signature
-    ) external whenNotPaused onlyWhitelist {
+    ) external whenNotPaused onlyWhitelisted {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         address targetAddr = packet.targetAddr.toAddress();
@@ -220,6 +220,19 @@ abstract contract BaseTunnelRouter is
             });
     }
 
+    /** 
+     * @dev Sets senders' address by given flag.
+     */ 
+    function setWhitelist(address[] memory senders, bool flag) external onlyOwner {
+        for (uint256 i = 0; i < senders.length; i++) {
+            if (senders[i] == address(0)) {
+                revert InvalidSenderAddress(senders[i]);
+            }
+            isAllowed[senders[i]] = flag;
+            emit SetWhiteList(senders[i], flag);
+        }
+    }
+
     function _isBalanceUnderThreshold(
         uint64 tunnelId,
         address addr
@@ -251,11 +264,6 @@ abstract contract BaseTunnelRouter is
     function _setAdditionalGasUsed(uint256 additionalGasUsed_) internal {
         additionalGasUsed = additionalGasUsed_;
         emit AdditionalGasUsedSet(additionalGasUsed_);
-    }
-
-    /// @dev Add the address to the whitelist.
-    function addWhitelist(address sender) external onlyOwner {
-        whitelistSenders[sender] = true;
     }
 
     /// @dev the vault contract send fees to the contract when relayer relays a message.

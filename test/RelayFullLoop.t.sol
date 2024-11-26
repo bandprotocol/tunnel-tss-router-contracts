@@ -34,7 +34,9 @@ contract RelayFullLoopTest is Test, Constants {
             75000,
             1
         );
-        tunnelRouter.addWhitelist(address(this));
+        address[] memory whitelist = new address[](1);
+        whitelist[0] = address(this);
+        tunnelRouter.setWhitelist(whitelist, true);
 
         vault.setTunnelRouter(address(tunnelRouter));
 

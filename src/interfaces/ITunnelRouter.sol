@@ -142,7 +142,7 @@ interface ITunnelRouter {
     /**
      * @notice Reverts if the sender is address(0).
      */
-    error InvalidSenderAddress(address addr);
+    error InvalidSenderAddress();
 
     // ========================================
     // Functions

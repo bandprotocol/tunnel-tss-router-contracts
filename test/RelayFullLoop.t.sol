@@ -175,7 +175,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer.activate(1);
     }
 
-    function testSenderNotWhitelist() public {
+    function testSenderNotInWhitelist() public {
         bytes memory expectedErr = abi.encodeWithSelector(
             ITunnelRouter.SenderNotWhitelist.selector,
             MOCK_SENDER
@@ -189,6 +189,18 @@ contract RelayFullLoopTest is Test, Constants {
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
+    }
+
+    function testSetWhitelistInvalidSender() public {
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.InvalidSenderAddress.selector
+        );
+
+        vm.expectRevert(expectedErr);
+
+        address[] memory whitelist = new address[](1);
+        whitelist[0] = address(0);
+        tunnelRouter.setWhitelist(whitelist, true);
     }
 
     receive() external payable {}

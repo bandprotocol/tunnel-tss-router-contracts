@@ -226,7 +226,7 @@ abstract contract BaseTunnelRouter is
     function setWhitelist(address[] memory senders, bool flag) external onlyOwner {
         for (uint256 i = 0; i < senders.length; i++) {
             if (senders[i] == address(0)) {
-                revert InvalidSenderAddress(senders[i]);
+                revert InvalidSenderAddress();
             }
             isAllowed[senders[i]] = flag;
             emit SetWhiteList(senders[i], flag);

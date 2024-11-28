@@ -13,10 +13,10 @@ import "./helper/Constants.sol";
 import "./helper/TssSignerHelper.sol";
 
 contract VaultTest is Test, Constants {
-    PacketConsumer packetConsumer;
-    GasPriceTunnelRouter tunnelRouter;
-    TssVerifier tssVerifier;
-    Vault vault;
+    PacketConsumer internal packetConsumer;
+    GasPriceTunnelRouter internal tunnelRouter;
+    TssVerifier internal tssVerifier;
+    Vault internal vault;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, address(this));
@@ -26,7 +26,7 @@ contract VaultTest is Test, Constants {
         vault.initialize(address(this), address(0x00), "laozi-mainnet");
 
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1);
+        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1, "laozi-mainnet");
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -44,9 +44,12 @@ contract VaultTest is Test, Constants {
 
         packetConsumer.deposit{value: 0.01 ether}();
 
+        bytes32 originatorHash =
+            Originator.hash(keccak256(bytes("laozi-mainnet")), packetConsumer.tunnelId(), address(packetConsumer));
+
         assertEq(vault.balance(packetConsumer.tunnelId(), address(packetConsumer)), 0.01 ether);
         assertEq(address(vault).balance, balanceVaultBefore + 0.01 ether);
-        assertEq(tunnelRouter.isActive(packetConsumer.tunnelId(), address(packetConsumer)), false);
+        assertEq(tunnelRouter.isActive(originatorHash), false);
 
         // withdraw
         packetConsumer.withdraw(0.01 ether);
@@ -58,17 +61,20 @@ contract VaultTest is Test, Constants {
         // activate + deposit
         uint256 balanceVaultBefore = address(vault).balance;
 
+        bytes32 originatorHash =
+            Originator.hash(keccak256(bytes("laozi-mainnet")), packetConsumer.tunnelId(), address(packetConsumer));
+
         packetConsumer.activate{value: 0.01 ether}(2);
 
         assertEq(vault.balance(packetConsumer.tunnelId(), address(packetConsumer)), 0.01 ether);
         assertEq(address(vault).balance, balanceVaultBefore + 0.01 ether);
-        assertEq(tunnelRouter.isActive(packetConsumer.tunnelId(), address(packetConsumer)), true);
+        assertEq(tunnelRouter.isActive(originatorHash), true);
 
         // withdraw
         vm.expectRevert(IVault.WithdrawnAmountExceedsThreshold.selector);
         packetConsumer.withdraw(0.01 ether);
 
-        assertEq(tunnelRouter.isActive(packetConsumer.tunnelId(), address(packetConsumer)), true);
+        assertEq(tunnelRouter.isActive(originatorHash), true);
     }
 
     receive() external payable {}

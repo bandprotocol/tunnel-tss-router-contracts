@@ -25,7 +25,7 @@ contract RelayFullLoopTest is Test, Constants {
         vault = new Vault();
         vault.initialize(address(this), address(0x00), "laozi-mainnet");
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1);
+        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1, "laozi-mainnet");
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -47,8 +47,10 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 currentGas = gasleft();
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
-        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
-        assertEq(tunnelRouter.isActive(1, address(packetConsumer)), true);
+
+        bytes32 originatorHash = Originator.hash(keccak256(bytes("laozi-mainnet")), 1, address(packetConsumer));
+        assertEq(tunnelRouter.sequence(originatorHash), 1);
+        assertEq(tunnelRouter.isActive(originatorHash), true);
 
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
@@ -67,8 +69,9 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
 
-        assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
-        assertEq(tunnelRouter.isActive(1, address(packetConsumer)), false);
+        bytes32 originatorHash = Originator.hash(keccak256(bytes("laozi-mainnet")), 1, address(packetConsumer));
+        assertEq(tunnelRouter.sequence(originatorHash), 1);
+        assertEq(tunnelRouter.isActive(originatorHash), false);
 
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
@@ -89,11 +92,11 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
 
-    function testRelayInactiveTargetContract() public {
+    function testRelayInactiveTunnel() public {
         packetConsumer.deactivate();
 
         bytes memory expectedErr =
-            abi.encodeWithSelector(ITunnelRouter.InactiveTargetContract.selector, address(packetConsumer));
+            abi.encodeWithSelector(ITunnelRouter.InactiveTunnel.selector, address(packetConsumer));
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
@@ -106,8 +109,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testReactivateAlreadyActive() public {
-        bytes memory expectedErr =
-            abi.encodeWithSelector(ITunnelRouter.ActiveTargetContract.selector, address(packetConsumer));
+        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.ActiveTunnel.selector, address(packetConsumer));
         vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
     }

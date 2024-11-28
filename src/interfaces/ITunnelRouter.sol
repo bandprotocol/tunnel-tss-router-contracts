@@ -28,32 +28,27 @@ interface ITunnelRouter {
      * @notice Emitted after the message is relayed to the target contract
      * to indicate the result of the process.
      *
-     * @param tunnelId The tunnel ID that the message is relayed.
-     * @param targetAddr The target address that the message is relayed.
+     * @param originatorHash The originatorHash of the target that the sender is deactivating.
      * @param sequence The sequence of the message.
      * @param isReverted The flag indicating whether the message is reverted.
      */
-    event MessageProcessed(
-        uint64 indexed tunnelId, address indexed targetAddr, uint64 indexed sequence, bool isReverted
-    );
+    event MessageProcessed(bytes32 indexed originatorHash, uint64 indexed sequence, bool isReverted);
 
     /**
      * @notice Emitted when the target address is activated.
      *
-     * @param tunnelId The tunnel ID that the sender is activating.
-     * @param targetAddr The target address that the sender is activating.
+     * @param originatorHash The originatorHash of the target that the sender is deactivating.
      * @param latestNonce The latest nonce of the sender.
      */
-    event Activated(uint64 indexed tunnelId, address indexed targetAddr, uint64 latestNonce);
+    event Activated(bytes32 indexed originatorHash, uint64 latestNonce);
 
     /**
      * @notice Emitted when the target address is deactivated.
      *
-     * @param tunnelId The tunnel ID that the sender is deactivating.
-     * @param targetAddr The target address that the sender is deactivating.
+     * @param originatorHash The originatorHash of the target that the sender is deactivating.
      * @param latestNonce The latest nonce of the sender.
      */
-    event Deactivated(uint64 indexed tunnelId, address indexed targetAddr, uint64 latestNonce);
+    event Deactivated(bytes32 indexed originatorHash, uint64 latestNonce);
 
     // ========================================
     // Custom Errors
@@ -64,14 +59,14 @@ interface ITunnelRouter {
      *
      * @param targetAddr The target address that is inactive.
      */
-    error InactiveTargetContract(address targetAddr);
+    error InactiveTunnel(address targetAddr);
 
     /**
-     * @notice Reverts if the target contract is active.
+     * @notice Reverts if the target contract is already active.
      *
      * @param targetAddr The target address that is active.
      */
-    error ActiveTargetContract(address targetAddr);
+    error ActiveTunnel(address targetAddr);
 
     /**
      * @notice Reverts if the encoder type is undefined.
@@ -160,16 +155,6 @@ interface ITunnelRouter {
     function minimumBalanceThreshold() external view returns (uint256);
 
     /**
-     * @dev Returns whether the tunnel is active or not.
-     *
-     * @param tunnelId The ID of the tunnel.
-     * @param addr The target contract address.
-     *
-     * @return bool True if the tunnel is active, false otherwise.
-     */
-    function isActive(uint64 tunnelId, address addr) external view returns (bool);
-
-    /**
      * @dev Returns the tunnel information.
      *
      * @param tunnelId The ID of the tunnel.
@@ -178,6 +163,24 @@ interface ITunnelRouter {
      * @return bool True if the tunnel is active, false otherwise.
      */
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory);
+
+    /**
+     * @dev Returns the active status of the target contract.
+     *
+     * @param originatorHash The originatorHash of the target contract.
+     *
+     * @return bool True if the target contract is active, false otherwise.
+     */
+    function isActive(bytes32 originatorHash) external view returns (bool);
+
+    /**
+     * @dev Returns the sequence of the target contract.
+     *
+     * @param originatorHash The originatorHash of the target contract.
+     *
+     * @return uint64 The sequence of the target contract.
+     */
+    function sequence(bytes32 originatorHash) external view returns (uint64);
 
     /**
      * @dev Returns the vault contract address.

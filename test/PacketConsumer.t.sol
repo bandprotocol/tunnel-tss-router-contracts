@@ -65,7 +65,7 @@ contract PacketConsumerTest is Test, Constants {
         vault.initialize(address(this), address(0x00), "laozi-mainnet");
 
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 50000, 1);
+        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 50000, 1, "laozi-mainnet");
 
         vault.setTunnelRouter(address(tunnelRouter));
 

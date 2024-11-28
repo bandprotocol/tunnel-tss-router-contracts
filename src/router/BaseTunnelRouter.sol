@@ -13,6 +13,7 @@ import "../interfaces/IVault.sol";
 
 import "../libraries/PacketDecoder.sol";
 import "../libraries/StringAddress.sol";
+import "../libraries/Originator.sol";
 
 abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, PausableUpgradeable, ITunnelRouter {
     using StringAddress for string;
@@ -21,23 +22,30 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     ITssVerifier public tssVerifier;
     IVault public vault;
 
+    struct TunnelDetail {
+        bool isActive;
+        uint64 sequence;
+    }
+
     // Additional gas estimated for relaying the message;
     // does not include the gas cost for executing the target contract.
     uint256 public additionalGasUsed;
     // The maximum gas limit can be used when calling the target contract.
     uint256 public callbackGasLimit;
 
-    mapping(uint64 => mapping(address => bool)) public isActive; // tunnelID => targetAddr => isActive
-    mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelID => targetAddr => sequence
+    bytes32 private _sourceChainIdHash;
 
-    uint256[50] __gap;
+    mapping(bytes32 => TunnelDetail) public tunnelDetails; // tunnelID => TunnelDetail
+
+    uint256[50] internal __gap;
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IVault vault_,
         address initialOwner,
         uint256 additionalGasUsed_,
-        uint256 callbackGasLimit_
+        uint256 callbackGasLimit_,
+        string calldata sourceChainId
     ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -45,6 +53,8 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
 
         tssVerifier = tssVerifier_;
         vault = vault_;
+
+        _sourceChainIdHash = keccak256(bytes(sourceChainId));
 
         _setAdditionalGasUsed(additionalGasUsed_);
         _setCallbackGasLimit(callbackGasLimit_);
@@ -88,16 +98,17 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         address targetAddr = packet.targetAddr.toAddress();
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, packet.tunnelId, targetAddr);
 
         // check if the message is valid.
         if (tssMessage.encoderType == PacketDecoder.EncoderType.Undefined) {
             revert UndefinedEncoderType();
         }
-        if (!isActive[packet.tunnelId][targetAddr]) {
-            revert InactiveTargetContract(targetAddr);
+        if (!tunnelDetails[originatorHash].isActive) {
+            revert InactiveTunnel(targetAddr);
         }
-        if (sequence[packet.tunnelId][targetAddr] + 1 != packet.sequence) {
-            revert InvalidSequence(sequence[packet.tunnelId][targetAddr] + 1, packet.sequence);
+        if (tunnelDetails[originatorHash].sequence + 1 != packet.sequence) {
+            revert InvalidSequence(tunnelDetails[originatorHash].sequence + 1, packet.sequence);
         }
 
         // verify signature.
@@ -107,7 +118,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         }
 
         // update the sequence.
-        sequence[packet.tunnelId][targetAddr] = packet.sequence;
+        tunnelDetails[originatorHash].sequence = packet.sequence;
 
         // forward the message to the target contract.
         uint256 gasLeft = gasleft();
@@ -117,7 +128,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
             isReverted = true;
         }
 
-        emit MessageProcessed(packet.tunnelId, targetAddr, packet.sequence, isReverted);
+        emit MessageProcessed(originatorHash, packet.sequence, isReverted);
 
         // charge a fee from the target contract.
         uint256 fee = _routerFee(gasLeft - gasleft() + additionalGasUsed);
@@ -125,7 +136,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
 
         // deactivate the target contract if the remaining balance is under the threshold.
         if (_isBalanceUnderThreshold(packet.tunnelId, targetAddr)) {
-            _deactivate(packet.tunnelId, targetAddr);
+            _deactivate(originatorHash);
         }
 
         (bool ok,) = payable(msg.sender).call{value: fee}("");
@@ -138,8 +149,10 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-activate}.
      */
     function activate(uint64 tunnelId, uint64 latestSeq) external payable {
-        if (isActive[tunnelId][msg.sender]) {
-            revert ActiveTargetContract(msg.sender);
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+
+        if (tunnelDetails[originatorHash].isActive) {
+            revert ActiveTunnel(msg.sender);
         }
 
         vault.deposit{value: msg.value}(tunnelId, msg.sender);
@@ -149,20 +162,22 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
             revert InsufficientRemainingBalance(tunnelId, msg.sender);
         }
 
-        isActive[tunnelId][msg.sender] = true;
-        sequence[tunnelId][msg.sender] = latestSeq;
-        emit Activated(tunnelId, msg.sender, latestSeq);
+        tunnelDetails[originatorHash].isActive = true;
+        tunnelDetails[originatorHash].sequence = latestSeq;
+        emit Activated(originatorHash, latestSeq);
     }
 
     /**
      * @dev See {ITunnelRouter-deactivate}.
      */
     function deactivate(uint64 tunnelId) external {
-        if (!isActive[tunnelId][msg.sender]) {
-            revert InactiveTargetContract(msg.sender);
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+
+        if (!tunnelDetails[originatorHash].isActive) {
+            revert InactiveTunnel(msg.sender);
         }
 
-        _deactivate(tunnelId, msg.sender);
+        _deactivate(originatorHash);
     }
 
     /**
@@ -176,11 +191,20 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-tunnelInfo}.
      */
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory) {
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, addr);
         return TunnelInfo({
-            isActive: isActive[tunnelId][addr],
-            latestSequence: sequence[tunnelId][addr],
+            isActive: tunnelDetails[originatorHash].isActive,
+            latestSequence: tunnelDetails[originatorHash].sequence,
             balance: vault.balance(tunnelId, addr)
         });
+    }
+
+    function isActive(bytes32 originatorHash) external view override returns (bool) {
+        return tunnelDetails[originatorHash].isActive;
+    }
+
+    function sequence(bytes32 originatorHash) external view override returns (uint64) {
+        return tunnelDetails[originatorHash].sequence;
     }
 
     function _isBalanceUnderThreshold(uint64 tunnelId, address addr) internal view returns (bool) {
@@ -189,9 +213,9 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     }
 
     /// @dev Deactivates the (contract address, tunnelId).
-    function _deactivate(uint64 tunnelId, address addr) internal {
-        isActive[tunnelId][addr] = false;
-        emit Deactivated(tunnelId, addr, sequence[tunnelId][addr]);
+    function _deactivate(bytes32 originatorHash) internal {
+        tunnelDetails[originatorHash].isActive = false;
+        emit Deactivated(originatorHash, tunnelDetails[originatorHash].sequence);
     }
 
     /// @dev Calculates the fee for the router.

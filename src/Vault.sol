@@ -59,13 +59,14 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * @dev See {IVault-withdraw}.
      */
     function withdraw(uint64 tunnelId, address to, uint256 amount) external {
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+
         ITunnelRouter router = ITunnelRouter(tunnelRouter);
         uint256 threshold;
-        if (router.isActive(tunnelId, msg.sender)) {
+        if (router.isActive(originatorHash)) {
             threshold = router.minimumBalanceThreshold();
         }
 
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
         if (threshold + amount > _balance[originatorHash]) {
             revert WithdrawnAmountExceedsThreshold();
         }
@@ -81,7 +82,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         uint256 amount = _balance[originatorHash];
 
         ITunnelRouter router = ITunnelRouter(tunnelRouter);
-        if (router.isActive(tunnelId, msg.sender)) {
+        if (router.isActive(originatorHash)) {
             revert TunnelIsActive();
         }
 

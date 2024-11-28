@@ -13,14 +13,11 @@ contract DeployScript is Script {
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory destinationChainId = vm.envString("DESTINATION_CHAIN_ID");
-        
+
         vm.startBroadcast(privKey);
 
         PacketConsumer packetConsumer = new PacketConsumer(
-            tunnelRouterAddr,
-            keccak256(bytes(sourceChainId)),
-            keccak256(bytes(destinationChainId)),
-            msg.sender
+            tunnelRouterAddr, keccak256(bytes(sourceChainId)), keccak256(bytes(destinationChainId)), msg.sender
         );
 
         vm.stopBroadcast();

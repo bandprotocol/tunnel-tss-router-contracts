@@ -42,19 +42,13 @@ library PacketDecoder {
      * @param message The encoded message.
      * @return TssMessage The decoded TSS message object.
      */
-    function decodeTssMessage(
-        bytes calldata message
-    ) internal pure returns (TssMessage memory) {
+    function decodeTssMessage(bytes calldata message) internal pure returns (TssMessage memory) {
         EncoderType encoder = _toEncoderType(bytes8(message[48:56]));
 
         Packet memory packet = _decodePacket(message);
 
         TssMessage memory tssMessage = TssMessage(
-            bytes32(message[0:32]),
-            uint64(bytes8(message[32:40])),
-            uint64(bytes8(message[40:48])),
-            encoder,
-            packet
+            bytes32(message[0:32]), uint64(bytes8(message[32:40])), uint64(bytes8(message[40:48])), encoder, packet
         );
 
         return tssMessage;
@@ -65,9 +59,7 @@ library PacketDecoder {
      * @param message The encoded message.
      * @return TssMessage The decoded TSS message object.
      */
-    function _decodePacket(
-        bytes calldata message
-    ) internal pure returns (Packet memory) {
+    function _decodePacket(bytes calldata message) internal pure returns (Packet memory) {
         Packet memory packet = abi.decode(message[56:], (Packet));
         return packet;
     }
@@ -77,9 +69,7 @@ library PacketDecoder {
      * @param selector The selector to be converted.
      * @return EncoderType The encoder type.
      */
-    function _toEncoderType(
-        bytes8 selector
-    ) internal pure returns (EncoderType) {
+    function _toEncoderType(bytes8 selector) internal pure returns (EncoderType) {
         if (selector == _FIXED_POINT_ENCODER_SELECTOR) {
             return EncoderType.FixedPoint;
         } else if (selector == _TICK_ENCODER_SELECTOR) {

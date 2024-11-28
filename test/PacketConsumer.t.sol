@@ -20,18 +20,10 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
 
     function setUp() public {
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs = abi.encode(
-            address(this),
-            keccak256("bandchain"),
-            keccak256("testnet-evm"),
-            address(this)
-        );
+        bytes memory packetConsumerArgs =
+            abi.encode(address(this), keccak256("bandchain"), keccak256("testnet-evm"), address(this));
         address packetConsumerAddr = makeAddr("PacketConsumer");
-        deployCodeTo(
-            "PacketConsumer.sol:PacketConsumer",
-            packetConsumerArgs,
-            packetConsumerAddr
-        );
+        deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
         packetConsumer.setTunnelId(1);
     }
@@ -43,9 +35,7 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         packetConsumer.process(data);
 
         // check prices mapping.
-        (uint64 price, int64 timestamp) = packetConsumer.prices(
-            packet.signals[0].signal
-        );
+        (uint64 price, int64 timestamp) = packetConsumer.prices(packet.signals[0].signal);
         assertEq(price, packet.signals[0].price);
         assertEq(timestamp, packet.timestamp);
     }
@@ -55,9 +45,7 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
 
         // fix originator hash.
         data.hashOriginator = 0x00;
-        bytes memory expectedErr = abi.encodeWithSelector(
-            IDataConsumer.InvalidHashOriginator.selector
-        );
+        bytes memory expectedErr = abi.encodeWithSelector(IDataConsumer.InvalidHashOriginator.selector);
         vm.expectRevert(expectedErr);
         packetConsumer.process(data);
     }
@@ -74,33 +62,18 @@ contract PacketConsumerTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), address(0x00), 0x72ebe83d, "laozi-mainnet");
+        vault.initialize(address(this), address(0x00), "laozi-mainnet");
 
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(
-            tssVerifier,
-            vault,
-            address(this),
-            75000,
-            50000,
-            1
-        );
+        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 50000, 1);
 
         vault.setTunnelRouter(address(tunnelRouter));
 
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs = abi.encode(
-            address(tunnelRouter),
-            keccak256("bandchain"),
-            keccak256("testnet-evm"),
-            address(this)
-        );
+        bytes memory packetConsumerArgs =
+            abi.encode(address(tunnelRouter), keccak256("bandchain"), keccak256("testnet-evm"), address(this));
         address packetConsumerAddr = makeAddr("PacketConsumer");
-        deployCodeTo(
-            "PacketConsumer.sol:PacketConsumer",
-            packetConsumerArgs,
-            packetConsumerAddr
-        );
+        deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
 
         // set latest nonce.
@@ -108,18 +81,12 @@ contract PacketConsumerTest is Test, Constants {
     }
 
     function testDeposit() public {
-        uint depositedAmtBefore = vault.balance(
-            packetConsumer.tunnelId(),
-            address(packetConsumer)
-        );
-        uint balanceVaultBefore = address(vault).balance;
+        uint256 depositedAmtBefore = vault.balance(packetConsumer.tunnelId(), address(packetConsumer));
+        uint256 balanceVaultBefore = address(vault).balance;
 
         packetConsumer.deposit{value: 0.01 ether}();
 
-        assertEq(
-            vault.balance(packetConsumer.tunnelId(), address(packetConsumer)),
-            depositedAmtBefore + 0.01 ether
-        );
+        assertEq(vault.balance(packetConsumer.tunnelId(), address(packetConsumer)), depositedAmtBefore + 0.01 ether);
 
         assertEq(address(vault).balance, balanceVaultBefore + 0.01 ether);
     }

@@ -8,16 +8,16 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/ITunnelRouter.sol";
 import "./libraries/Address.sol";
+import "./libraries/Originator.sol";
 
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
-    bytes4 public ORIGINATOR_HASH_PREFIX;
-    bytes32 public SOURCE_CHAIN_ID_HASH;
-
-    mapping(bytes32 => uint) private _balance; // originatorHash => amount.
-
     address public tunnelRouter;
 
-    uint[50] internal __gap;
+    bytes32 internal _sourceChainIdHash;
+
+    mapping(bytes32 => uint256) private _balance; // originatorHash => amount.
+
+    uint256[50] internal __gap;
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -26,19 +26,16 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         _;
     }
 
-    function initialize(
-        address initialOwner,
-        address tunnelRouter_,
-        bytes4 originatorHashPrefix,
-        string calldata sourceChainId
-    ) public initializer {
+    function initialize(address initialOwner, address tunnelRouter_, string calldata sourceChainId)
+        public
+        initializer
+    {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
-        _setTunnelRouter(tunnelRouter_);
+        _sourceChainIdHash = keccak256(bytes(sourceChainId));
 
-        ORIGINATOR_HASH_PREFIX = originatorHashPrefix;
-        SOURCE_CHAIN_ID_HASH = keccak256(bytes(sourceChainId));
+        _setTunnelRouter(tunnelRouter_);
     }
 
     /**
@@ -53,7 +50,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * @dev See {IVault-deposit}.
      */
     function deposit(uint64 tunnelId, address to) external payable {
-        bytes32 originatorHash = _originatorHash(tunnelId, to);
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, to);
         _balance[originatorHash] += msg.value;
         emit Deposited(originatorHash, msg.sender, msg.value);
     }
@@ -68,19 +65,19 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
             threshold = router.minimumBalanceThreshold();
         }
 
-        bytes32 originatorHash = _originatorHash(tunnelId, msg.sender);
-        if (threshold > _balance[originatorHash] - amount) {
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+        if (threshold + amount > _balance[originatorHash]) {
             revert WithdrawnAmountExceedsThreshold();
         }
 
-        _withdraw(originatorHash, to,amount);
+        _withdraw(originatorHash, to, amount);
     }
 
     /**
      * @dev See {IVault-withdrawAll}.
      */
     function withdrawAll(uint64 tunnelId, address to) external {
-        bytes32 originatorHash = _originatorHash(tunnelId, msg.sender);
+        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
         uint256 amount = _balance[originatorHash];
 
         ITunnelRouter router = ITunnelRouter(tunnelRouter);
@@ -88,40 +85,21 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
             revert TunnelIsActive();
         }
 
-        _withdraw(originatorHash,to, amount);
+        _withdraw(originatorHash, to, amount);
     }
 
     /**
      * @dev See {IVault-collectFee}.
      */
     function collectFee(uint64 tunnelId, address account, uint256 amount) public onlyTunnelRouter {
-        _withdraw(_originatorHash(tunnelId, account), tunnelRouter, amount);
+        _withdraw(Originator.hash(_sourceChainIdHash, tunnelId, account), tunnelRouter, amount);
     }
 
     function balance(uint64 tunnelId, address account) external view returns (uint256) {
-        return _balance[_originatorHash(tunnelId, account)];
+        return _balance[Originator.hash(_sourceChainIdHash, tunnelId, account)];
     }
 
-    function _originatorHash(
-        uint64 tunnelId,
-        address account
-    ) internal view returns (bytes32) {
-        return keccak256(
-            abi.encodePacked(
-                ORIGINATOR_HASH_PREFIX,
-                SOURCE_CHAIN_ID_HASH,
-                bytes8(tunnelId),
-                block.chainid,
-                keccak256(bytes(Address.toChecksumString(account)))
-            )
-        );
-    }
-
-    function _withdraw(
-        bytes32 originatorHash,
-        address to,
-        uint256 amount
-    ) internal {
+    function _withdraw(bytes32 originatorHash, address to, uint256 amount) internal {
         _balance[originatorHash] -= amount;
         (bool ok,) = payable(to).call{value: amount}("");
         if (!ok) {

@@ -15,8 +15,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     }
 
     // The group order of secp256k1.
-    uint256 constant _ORDER =
-        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+    uint256 constant _ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     // The grace period for the public key.
     uint64 immutable transitionPeriod;
     // The prefix for the hashing process in bandchain.
@@ -27,21 +26,14 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The list of public keys that are used for the verification process.
     PublicKey[] public publicKeys;
 
-    constructor(
-        uint64 transitionPeriod_,
-        address initialAddr
-    ) Ownable(initialAddr) {
+    constructor(uint64 transitionPeriod_, address initialAddr) Ownable(initialAddr) {
         transitionPeriod = transitionPeriod_;
     }
 
     /**
      * @dev See {ITssVerifier-addPubKeyWithProof}.
      */
-    function addPubKeyWithProof(
-        bytes calldata message,
-        address randomAddr,
-        uint256 s
-    ) external whenNotPaused {
+    function addPubKeyWithProof(bytes calldata message, address randomAddr, uint256 s) external whenNotPaused {
         if (!verify(keccak256(message), randomAddr, s)) {
             revert InvalidSignature();
         }
@@ -50,7 +42,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // hashedOrignator (32 bytes) || timestamp (uint64; 8-bytes) || signingId (uint64; 8 bytes)
         // || modulePrefix (8 bytes) || parity (1 byte) || px (32 bytes) || timestamp (8 bytes)
         uint8 parity = uint8(bytes1(message[56:57]));
-        uint256 px = uint(bytes32(message[57:89]));
+        uint256 px = uint256(bytes32(message[57:89]));
         uint64 timestamp = uint64(bytes8(message[89:97]));
 
         _updatePublicKey(timestamp, parity, px);
@@ -59,22 +51,19 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     /**
      * @dev See {ITssVerifier-addPubKeyByOwner}.
      */
-    function addPubKeyByOwner(
-        uint64 timestamp,
-        uint8 parity,
-        uint256 px
-    ) external onlyOwner {
+    function addPubKeyByOwner(uint64 timestamp, uint8 parity, uint256 px) external onlyOwner {
         _updatePublicKey(timestamp, parity, px);
     }
 
     /**
      * @dev See {ITssVerifier-verify}.
      */
-    function verify(
-        bytes32 hashedMessage,
-        address randomAddr,
-        uint256 signature
-    ) public view whenNotPaused returns (bool result) {
+    function verify(bytes32 hashedMessage, address randomAddr, uint256 signature)
+        public
+        view
+        whenNotPaused
+        returns (bool result)
+    {
         if (randomAddr == address(0)) {
             return false;
         }
@@ -85,29 +74,15 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // If the active time of the public key is in the transition period, then
         // we need to check the previous public key as it may be the signature from
         // the previous group.
-        bool isInTransitionPeriod = publicKeys[pubKeyIdx].activeTime +
-            transitionPeriod >=
-            block.timestamp;
+        bool isInTransitionPeriod = publicKeys[pubKeyIdx].activeTime + transitionPeriod >= block.timestamp;
         if (
-            pubKeyIdx > 0 &&
-            isInTransitionPeriod &&
-            _verifyWithPublickKey(
-                hashedMessage,
-                randomAddr,
-                signature,
-                publicKeys[pubKeyIdx - 1]
-            )
+            pubKeyIdx > 0 && isInTransitionPeriod
+                && _verifyWithPublickKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx - 1])
         ) {
             return true;
         }
 
-        return
-            _verifyWithPublickKey(
-                hashedMessage,
-                randomAddr,
-                signature,
-                publicKeys[pubKeyIdx]
-            );
+        return _verifyWithPublickKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx]);
     }
 
     /// @dev Pauses the contract to prevent any further updates.
@@ -157,37 +132,22 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             revert ProcessingSignatureFailed();
         }
 
-        address addr = ecrecover(
-            bytes32(spx),
-            publicKey.parity,
-            bytes32(publicKey.px),
-            bytes32(cpx)
-        );
+        address addr = ecrecover(bytes32(spx), publicKey.parity, bytes32(publicKey.px), bytes32(cpx));
         return randomAddr == addr;
     }
 
     /// @dev Pushes the public key to the list.
-    function _updatePublicKey(
-        uint64 timestamp,
-        uint8 parity,
-        uint256 px
-    ) internal {
+    function _updatePublicKey(uint64 timestamp, uint8 parity, uint256 px) internal {
         // Note: Offset parity by 25 to match with the calculation in TSS module
         // In etheruem, the parity is typically 27 or 28.
-        PublicKey memory pubKey = PublicKey({
-            activeTime: timestamp,
-            parity: parity + 25,
-            px: px
-        });
+        PublicKey memory pubKey = PublicKey({activeTime: timestamp, parity: parity + 25, px: px});
         publicKeys.push(pubKey);
 
         emit GroupPubKeyUpdated(publicKeys.length, timestamp, parity, px, true);
     }
 
     ///@dev Gets the public key index that is valid at th given timestamp.
-    function _getPubKeyIndexByTimestamp(
-        uint64 timestamp
-    ) internal view returns (uint256) {
+    function _getPubKeyIndexByTimestamp(uint64 timestamp) internal view returns (uint256) {
         for (uint256 i = publicKeys.length; i > 0; i--) {
             if (publicKeys[i - 1].activeTime <= timestamp) {
                 return i - 1;

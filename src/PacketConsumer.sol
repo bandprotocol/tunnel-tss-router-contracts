@@ -39,12 +39,9 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
         _;
     }
 
-    constructor(
-        address tunnelRouter_,
-        bytes32 hashedSourceChainId_,
-        bytes32 hashedTargetChainId_,
-        address initialOwner
-    ) Ownable(initialOwner) {
+    constructor(address tunnelRouter_, bytes32 hashedSourceChainId_, bytes32 hashedTargetChainId_, address initialOwner)
+        Ownable(initialOwner)
+    {
         hashedSourceChainId = hashedSourceChainId_;
         hashedTargetChainId = hashedTargetChainId_;
         tunnelRouter = tunnelRouter_;
@@ -53,25 +50,16 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     /**
      * @dev See {IDataConsumer-process}.
      */
-    function process(
-        PacketDecoder.TssMessage memory data
-    ) external onlyTunnelRouter {
+    function process(PacketDecoder.TssMessage memory data) external onlyTunnelRouter {
         if (data.hashOriginator != hashOriginator()) {
             revert InvalidHashOriginator();
         }
 
         PacketDecoder.Packet memory packet = data.packet;
         for (uint256 i = 0; i < packet.signals.length; i++) {
-            prices[packet.signals[i].signal] = Price({
-                price: packet.signals[i].price,
-                timestamp: packet.timestamp
-            });
+            prices[packet.signals[i].signal] = Price({price: packet.signals[i].price, timestamp: packet.timestamp});
 
-            emit SignalPriceUpdated(
-                packet.signals[i].signal,
-                packet.signals[i].price,
-                packet.timestamp
-            );
+            emit SignalPriceUpdated(packet.signals[i].signal, packet.signals[i].price, packet.timestamp);
         }
     }
 
@@ -79,10 +67,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
      * @dev See {IDataConsumer-activate}.
      */
     function activate(uint64 latestSeq) external payable onlyOwner {
-        ITunnelRouter(tunnelRouter).activate{value: msg.value}(
-            tunnelId,
-            latestSeq
-        );
+        ITunnelRouter(tunnelRouter).activate{value: msg.value}(tunnelId, latestSeq);
     }
 
     /**
@@ -111,7 +96,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
         // send the remaining balance to the caller.
         uint256 balance = address(this).balance;
-        (bool ok, ) = payable(msg.sender).call{value: balance}("");
+        (bool ok,) = payable(msg.sender).call{value: balance}("");
         if (!ok) {
             revert TokenTransferFailed(msg.sender);
         }
@@ -127,7 +112,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
         // send the remaining balance to the caller.
         uint256 balance = address(this).balance;
-        (bool ok, ) = payable(msg.sender).call{value: balance}("");
+        (bool ok,) = payable(msg.sender).call{value: balance}("");
         if (!ok) {
             revert TokenTransferFailed(msg.sender);
         }
@@ -140,16 +125,15 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
 
     ///@dev Returns the hash of the originator of the packet.
     function hashOriginator() public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    bytes4(0xa466d313), // keccak("tunnelOriginatorPrefix")[:4]
-                    hashedSourceChainId,
-                    tunnelId,
-                    keccak256(bytes(Address.toChecksumString(address(this)))),
-                    hashedTargetChainId
-                )
-            );
+        return keccak256(
+            abi.encodePacked(
+                bytes4(0xa466d313), // keccak("tunnelOriginatorPrefix")[:4]
+                hashedSourceChainId,
+                tunnelId,
+                keccak256(bytes(Address.toChecksumString(address(this)))),
+                hashedTargetChainId
+            )
+        );
     }
 
     ///@dev The contract receive eth from the vault contract when user call withdraw.

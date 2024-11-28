@@ -21,13 +21,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         uint256 callbackGasLimit_,
         uint256 priorityFee_
     ) public initializer {
-        __BaseRouter_init(
-            tssVerifier_,
-            vault_,
-            initialOwner,
-            additionalGas_,
-            callbackGasLimit_
-        );
+        __BaseRouter_init(tssVerifier_, vault_, initialOwner, additionalGas_, callbackGasLimit_);
 
         _setGasFee(GasFeeInfo(priorityFee_));
     }
@@ -45,9 +39,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         emit SetGasFee(gasFee_);
     }
 
-    function _routerFee(
-        uint256 gasUsed
-    ) internal view virtual override returns (uint) {
+    function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
         GasFeeInfo memory _gasFee = gasFee;
         return (_gasFee.priorityFee + block.basefee) * gasUsed;
     }

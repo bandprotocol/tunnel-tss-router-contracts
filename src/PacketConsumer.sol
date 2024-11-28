@@ -107,7 +107,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     function withdraw(uint256 amount) external onlyOwner {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
-        vault.withdraw(tunnelId, amount);
+        vault.withdraw(tunnelId, address(this), amount);
 
         // send the remaining balance to the caller.
         uint256 balance = address(this).balance;
@@ -123,7 +123,7 @@ contract PacketConsumer is IDataConsumer, Ownable2Step {
     function withdrawAll() external onlyOwner {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
-        vault.withdrawAll(tunnelId);
+        vault.withdrawAll(tunnelId, address(this));
 
         // send the remaining balance to the caller.
         uint256 balance = address(this).balance;

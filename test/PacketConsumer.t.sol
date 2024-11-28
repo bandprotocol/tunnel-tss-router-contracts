@@ -74,7 +74,7 @@ contract PacketConsumerTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), address(0x00));
+        vault.initialize(address(this), address(0x00), 0x72ebe83d, "laozi-mainnet");
 
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(

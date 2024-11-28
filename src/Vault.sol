@@ -7,13 +7,17 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "./interfaces/IVault.sol";
 import "./interfaces/ITunnelRouter.sol";
+import "./libraries/Address.sol";
 
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
-    mapping(uint64 => mapping(address => uint)) public balance; // tunnelId => account => amount.
+    bytes4 public ORIGINATOR_HASH_PREFIX;
+    bytes32 public SOURCE_CHAIN_ID_HASH;
+
+    mapping(bytes32 => uint) private _balance; // originatorHash => amount.
 
     address public tunnelRouter;
 
-    uint[50] __gap;
+    uint[50] internal __gap;
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -24,12 +28,17 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
 
     function initialize(
         address initialOwner,
-        address tunnelRouter_
+        address tunnelRouter_,
+        bytes4 originatorHashPrefix,
+        string calldata sourceChainId
     ) public initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
         _setTunnelRouter(tunnelRouter_);
+
+        ORIGINATOR_HASH_PREFIX = originatorHashPrefix;
+        SOURCE_CHAIN_ID_HASH = keccak256(bytes(sourceChainId));
     }
 
     /**
@@ -43,76 +52,83 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     /**
      * @dev See {IVault-deposit}.
      */
-    function deposit(uint64 tunnelId, address account) external payable {
-        balance[tunnelId][account] += msg.value;
-        emit Deposited(tunnelId, msg.sender, account, msg.value);
+    function deposit(uint64 tunnelId, address to) external payable {
+        bytes32 originatorHash = _originatorHash(tunnelId, to);
+        _balance[originatorHash] += msg.value;
+        emit Deposited(originatorHash, msg.sender, msg.value);
     }
 
     /**
      * @dev See {IVault-withdraw}.
      */
-    function withdraw(uint64 tunnelId, uint256 amount) external {
-        if (_isRemainingBalanceUnderThreshold(tunnelId, msg.sender, amount)) {
-            revert InsufficientRemainingBalance();
+    function withdraw(uint64 tunnelId, address to, uint256 amount) external {
+        ITunnelRouter router = ITunnelRouter(tunnelRouter);
+        uint256 threshold;
+        if (router.isActive(tunnelId, msg.sender)) {
+            threshold = router.minimumBalanceThreshold();
         }
 
-        _withdraw(tunnelId, msg.sender, msg.sender, amount);
+        bytes32 originatorHash = _originatorHash(tunnelId, msg.sender);
+        if (threshold > _balance[originatorHash] - amount) {
+            revert WithdrawnAmountExceedsThreshold();
+        }
+
+        _withdraw(originatorHash, to,amount);
     }
 
     /**
      * @dev See {IVault-withdrawAll}.
      */
-    function withdrawAll(uint64 tunnelId) external {
-        uint256 amount = balance[tunnelId][msg.sender];
+    function withdrawAll(uint64 tunnelId, address to) external {
+        bytes32 originatorHash = _originatorHash(tunnelId, msg.sender);
+        uint256 amount = _balance[originatorHash];
 
-        if (_isRemainingBalanceUnderThreshold(tunnelId, msg.sender, amount)) {
-            revert InsufficientRemainingBalance();
+        ITunnelRouter router = ITunnelRouter(tunnelRouter);
+        if (router.isActive(tunnelId, msg.sender)) {
+            revert TunnelIsActive();
         }
 
-        _withdraw(tunnelId, msg.sender, msg.sender, amount);
+        _withdraw(originatorHash,to, amount);
     }
 
     /**
      * @dev See {IVault-collectFee}.
      */
-    function collectFee(
-        uint64 tunnelId,
-        address account,
-        uint256 amount
-    ) public onlyTunnelRouter {
-        _withdraw(tunnelId, account, tunnelRouter, amount);
+    function collectFee(uint64 tunnelId, address account, uint256 amount) public onlyTunnelRouter {
+        _withdraw(_originatorHash(tunnelId, account), tunnelRouter, amount);
     }
 
-    function _isRemainingBalanceUnderThreshold(
+    function balance(uint64 tunnelId, address account) external view returns (uint256) {
+        return _balance[_originatorHash(tunnelId, account)];
+    }
+
+    function _originatorHash(
         uint64 tunnelId,
-        address account,
-        uint256 amount
-    ) internal view returns (bool) {
-        uint256 minBalance;
-        ITunnelRouter router = ITunnelRouter(tunnelRouter);
-
-        if (router.isActive(tunnelId, account)) {
-            minBalance = router.minimumBalanceThreshold();
-        }
-
-        uint256 current = balance[tunnelId][account];
-        return current < minBalance + amount;
+        address account
+    ) internal view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                ORIGINATOR_HASH_PREFIX,
+                SOURCE_CHAIN_ID_HASH,
+                bytes8(tunnelId),
+                block.chainid,
+                keccak256(bytes(Address.toChecksumString(account)))
+            )
+        );
     }
 
     function _withdraw(
-        uint64 tunnelId,
-        address account,
+        bytes32 originatorHash,
         address to,
         uint256 amount
     ) internal {
-        balance[tunnelId][account] -= amount;
-
-        (bool ok, ) = payable(to).call{value: amount}("");
+        _balance[originatorHash] -= amount;
+        (bool ok,) = payable(to).call{value: amount}("");
         if (!ok) {
             revert TokenTransferFailed(to);
         }
 
-        emit Withdrawn(tunnelId, account, to, amount);
+        emit Withdrawn(originatorHash, to, amount);
     }
 
     function _setTunnelRouter(address tunnelRouter_) internal {

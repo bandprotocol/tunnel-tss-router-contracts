@@ -22,7 +22,17 @@ contract DeployScript is Script {
 
         // Deploy the proxy vault contract
         address proxyVaultAddr = Upgrades.deployTransparentProxy(
-            "Vault.sol", msg.sender, abi.encodeCall(Vault.initialize, (msg.sender, address(0x00)))
+            "Vault.sol",
+            msg.sender,
+            abi.encodeCall(
+                Vault.initialize,
+                (
+                    msg.sender,
+                    address(0x00),
+                    0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+                    0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+                )
+            )
         );
         address implVaultAddr = Upgrades.getImplementationAddress(proxyVaultAddr);
 
@@ -35,7 +45,16 @@ contract DeployScript is Script {
             msg.sender,
             abi.encodeCall(
                 GasPriceTunnelRouter.initialize,
-                (tssVerifier, IVault(proxyVaultAddr), msg.sender, 100000, 300000, 0.11 gwei)
+                (
+                    tssVerifier,
+                    IVault(proxyVaultAddr),
+                    msg.sender,
+                    100000,
+                    300000,
+                    0.11 gwei,
+                    0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+                    0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+                )
             )
         );
         address implTunnelRouterAddr = Upgrades.getImplementationAddress(proxyTunnelRouterAddr);

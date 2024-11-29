@@ -12,12 +12,12 @@ contract TssSignerHelper is Test {
     uint256 public constant ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
 
     /// @dev Gets the signing message that will be used in signing of the tss module.
-    function getSigningMessage(bytes32 hashOriginator, uint64 signingID, uint64 timestamp, bytes calldata rawMessage)
+    function getSigningMessage(bytes32 orignatorHash, uint64 signingID, uint64 timestamp, bytes calldata rawMessage)
         public
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(hashOriginator, timestamp, signingID, rawMessage);
+        return abi.encodePacked(orignatorHash, timestamp, signingID, rawMessage);
     }
 
     /// @dev Generates new public key.

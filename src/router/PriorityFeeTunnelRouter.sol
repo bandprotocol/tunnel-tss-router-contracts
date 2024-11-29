@@ -19,9 +19,19 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         address initialOwner,
         uint256 additionalGas_,
         uint256 callbackGasLimit_,
-        uint256 priorityFee_
+        uint256 priorityFee_,
+        bytes32 sourceChainIdHash_,
+        bytes32 targetChainIdHash_
     ) public initializer {
-        __BaseRouter_init(tssVerifier_, vault_, initialOwner, additionalGas_, callbackGasLimit_);
+        __BaseRouter_init(
+            tssVerifier_,
+            vault_,
+            initialOwner,
+            additionalGas_,
+            callbackGasLimit_,
+            sourceChainIdHash_,
+            targetChainIdHash_
+        );
 
         _setGasFee(GasFeeInfo(priorityFee_));
     }

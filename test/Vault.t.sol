@@ -23,10 +23,24 @@ contract VaultTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), address(0x00), "laozi-mainnet");
+        vault.initialize(
+            address(this),
+            address(0x00),
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+        );
 
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1, "laozi-mainnet");
+        tunnelRouter.initialize(
+            tssVerifier,
+            vault,
+            address(this),
+            75000,
+            75000,
+            1,
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+        );
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -44,8 +58,12 @@ contract VaultTest is Test, Constants {
 
         packetConsumer.deposit{value: 0.01 ether}();
 
-        bytes32 originatorHash =
-            Originator.hash(keccak256(bytes("laozi-mainnet")), packetConsumer.tunnelId(), address(packetConsumer));
+        bytes32 originatorHash = Originator.hash(
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155,
+            packetConsumer.tunnelId(),
+            address(packetConsumer)
+        );
 
         assertEq(vault.balance(packetConsumer.tunnelId(), address(packetConsumer)), 0.01 ether);
         assertEq(address(vault).balance, balanceVaultBefore + 0.01 ether);
@@ -61,8 +79,12 @@ contract VaultTest is Test, Constants {
         // activate + deposit
         uint256 balanceVaultBefore = address(vault).balance;
 
-        bytes32 originatorHash =
-            Originator.hash(keccak256(bytes("laozi-mainnet")), packetConsumer.tunnelId(), address(packetConsumer));
+        bytes32 originatorHash = Originator.hash(
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155,
+            packetConsumer.tunnelId(),
+            address(packetConsumer)
+        );
 
         packetConsumer.activate{value: 0.01 ether}(2);
 

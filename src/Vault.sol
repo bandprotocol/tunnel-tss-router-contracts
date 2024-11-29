@@ -12,8 +12,8 @@ import "./libraries/Originator.sol";
 
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     address public tunnelRouter;
-
-    bytes32 internal _sourceChainIdHash;
+    bytes32 public sourceChainIdHash;
+    bytes32 public targetChainIdHash;
 
     mapping(bytes32 => uint256) private _balance; // originatorHash => amount.
 
@@ -26,14 +26,17 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         _;
     }
 
-    function initialize(address initialOwner, address tunnelRouter_, string calldata sourceChainId)
-        public
-        initializer
-    {
+    function initialize(
+        address initialOwner,
+        address tunnelRouter_,
+        bytes32 sourceChainIdHash_,
+        bytes32 targetChainIdHash_
+    ) public initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
-        _sourceChainIdHash = keccak256(bytes(sourceChainId));
+        sourceChainIdHash = sourceChainIdHash_;
+        targetChainIdHash = targetChainIdHash_;
 
         _setTunnelRouter(tunnelRouter_);
     }
@@ -50,7 +53,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * @dev See {IVault-deposit}.
      */
     function deposit(uint64 tunnelId, address to) external payable {
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, to);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, to);
         _balance[originatorHash] += msg.value;
         emit Deposited(originatorHash, msg.sender, msg.value);
     }
@@ -59,7 +62,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * @dev See {IVault-withdraw}.
      */
     function withdraw(uint64 tunnelId, address to, uint256 amount) external {
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
 
         ITunnelRouter router = ITunnelRouter(tunnelRouter);
         uint256 threshold;
@@ -78,7 +81,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * @dev See {IVault-withdrawAll}.
      */
     function withdrawAll(uint64 tunnelId, address to) external {
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
         uint256 amount = _balance[originatorHash];
 
         ITunnelRouter router = ITunnelRouter(tunnelRouter);
@@ -93,11 +96,11 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
      * @dev See {IVault-collectFee}.
      */
     function collectFee(uint64 tunnelId, address account, uint256 amount) public onlyTunnelRouter {
-        _withdraw(Originator.hash(_sourceChainIdHash, tunnelId, account), tunnelRouter, amount);
+        _withdraw(Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, account), tunnelRouter, amount);
     }
 
     function balance(uint64 tunnelId, address account) external view returns (uint256) {
-        return _balance[Originator.hash(_sourceChainIdHash, tunnelId, account)];
+        return _balance[Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, account)];
     }
 
     function _withdraw(bytes32 originatorHash, address to, uint256 amount) internal {

@@ -8,11 +8,12 @@ import "../src/TssVerifier.sol";
 import "./helper/TssSignerHelper.sol";
 
 contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
-    bytes32 constant _HASH_ORIGINATOR_REPLACEMENT = 0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
+    bytes32 internal constant _ORIGINATOR_HASH_REPLACEMENT =
+        0xB1E192CBEADD6C77C810644A56E1DD40CEF65DDF0CB9B67DD42CDF538D755DE2;
 
     // abi.keccak("bandtss")[:4] | abi.keccak("Transition")[:4].
-    bytes8 constant _UPDATE_KEY_PREFIX = 0x135e4b6361b9b741;
-    uint256 _privateKey = uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
+    bytes8 internal constant _UPDATE_KEY_PREFIX = 0x135e4b6361b9b741;
+    uint256 internal _privateKey = uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY")));
     TssVerifier public verifier;
 
     function setUp() public {
@@ -33,7 +34,7 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
         uint256 nextPrivateKey;
         uint64 signingID;
         uint64 timestamp;
-        bytes32 hashOriginator;
+        bytes32 originatorHash;
         uint8 parity;
         uint256 px;
         uint8 newParity;
@@ -52,13 +53,13 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
 
         for (uint256 i = 0; i < 100; i++) {
             tmp.signingID = uint64(i + 1);
-            tmp.hashOriginator = 0x00;
+            tmp.originatorHash = 0x00;
             tmp.timestamp = uint64(block.timestamp + 1);
             vm.warp(tmp.timestamp);
 
             // generate data and message to be signed.
             bytes memory data = abi.encodePacked(i, "any message to be sign");
-            bytes memory message = this.getSigningMessage(tmp.hashOriginator, tmp.signingID, tmp.timestamp, data);
+            bytes memory message = this.getSigningMessage(tmp.originatorHash, tmp.signingID, tmp.timestamp, data);
             tmp.messageHash = keccak256(message);
 
             (tmp.parity, tmp.px) = getPubkey(privateKey);
@@ -76,7 +77,7 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
 
             // generate new replacement signing message
             data = abi.encodePacked(_UPDATE_KEY_PREFIX, tmp.newParity - 25, tmp.newPx, tmp.timestamp);
-            message = this.getSigningMessage(_HASH_ORIGINATOR_REPLACEMENT, tmp.signingID, tmp.timestamp, data);
+            message = this.getSigningMessage(_ORIGINATOR_HASH_REPLACEMENT, tmp.signingID, tmp.timestamp, data);
             tmp.messageHash = keccak256(message);
 
             // sign a message
@@ -102,13 +103,13 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
 }
 
 contract TssVerifierWithTransitioPeriodTest is Test, TssSignerHelper {
-    uint256[3] _privateKeys = [
+    uint256[3] internal _privateKeys = [
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY_1"))),
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY_2"))),
         uint256(keccak256(abi.encodePacked("TEST_PRIVATE_KEY_3")))
     ];
 
-    uint64[3] activeTimes = [100, 300, 500];
+    uint64[3] internal _activeTimes = [100, 300, 500];
 
     TssVerifier public verifier;
 
@@ -117,7 +118,7 @@ contract TssVerifierWithTransitioPeriodTest is Test, TssSignerHelper {
 
         for (uint256 i = 0; i < 3; i++) {
             (uint8 parity, uint256 px) = getPubkey(_privateKeys[i]);
-            verifier.addPubKeyByOwner(activeTimes[i], parity - 25, px);
+            verifier.addPubKeyByOwner(_activeTimes[i], parity - 25, px);
         }
     }
 

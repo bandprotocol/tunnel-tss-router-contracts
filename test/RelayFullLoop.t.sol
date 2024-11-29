@@ -23,9 +23,23 @@ contract RelayFullLoopTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(address(this), address(0x00), "laozi-mainnet");
+        vault.initialize(
+            address(this),
+            address(0x00),
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+        );
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1, "laozi-mainnet");
+        tunnelRouter.initialize(
+            tssVerifier,
+            vault,
+            address(this),
+            75000,
+            75000,
+            1,
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+        );
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -48,7 +62,12 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
 
-        bytes32 originatorHash = Originator.hash(keccak256(bytes("laozi-mainnet")), 1, address(packetConsumer));
+        bytes32 originatorHash = Originator.hash(
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155,
+            1,
+            address(packetConsumer)
+        );
         assertEq(tunnelRouter.sequence(originatorHash), 1);
         assertEq(tunnelRouter.isActive(originatorHash), true);
 
@@ -69,7 +88,12 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
 
-        bytes32 originatorHash = Originator.hash(keccak256(bytes("laozi-mainnet")), 1, address(packetConsumer));
+        bytes32 originatorHash = Originator.hash(
+            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
+            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155,
+            1,
+            address(packetConsumer)
+        );
         assertEq(tunnelRouter.sequence(originatorHash), 1);
         assertEq(tunnelRouter.isActive(originatorHash), false);
 

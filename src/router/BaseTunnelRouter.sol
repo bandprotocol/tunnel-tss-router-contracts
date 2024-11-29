@@ -32,10 +32,12 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     uint256 public additionalGasUsed;
     // The maximum gas limit can be used when calling the target contract.
     uint256 public callbackGasLimit;
+    // The hash of the source chain ID.
+    bytes32 public sourceChainIdHash;
+    // The hash of the target chain ID (the chain id where the contract is deployed).
+    bytes32 public targetChainIdHash;
 
-    bytes32 private _sourceChainIdHash;
-
-    mapping(bytes32 => TunnelDetail) public tunnelDetails; // tunnelID => TunnelDetail
+    mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
     uint256[50] internal __gap;
 
@@ -45,7 +47,8 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         address initialOwner,
         uint256 additionalGasUsed_,
         uint256 callbackGasLimit_,
-        string calldata sourceChainId
+        bytes32 sourceChainIdHash_,
+        bytes32 targetChainIdHash_
     ) internal onlyInitializing {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -53,8 +56,8 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
 
         tssVerifier = tssVerifier_;
         vault = vault_;
-
-        _sourceChainIdHash = keccak256(bytes(sourceChainId));
+        sourceChainIdHash = sourceChainIdHash_;
+        targetChainIdHash = targetChainIdHash_;
 
         _setAdditionalGasUsed(additionalGasUsed_);
         _setCallbackGasLimit(callbackGasLimit_);
@@ -98,7 +101,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         address targetAddr = packet.targetAddr.toAddress();
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, packet.tunnelId, targetAddr);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, packet.tunnelId, targetAddr);
 
         // check if the message is valid.
         if (tssMessage.encoderType == PacketDecoder.EncoderType.Undefined) {
@@ -107,8 +110,10 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         if (!tunnelDetails[originatorHash].isActive) {
             revert InactiveTunnel(targetAddr);
         }
-        if (tunnelDetails[originatorHash].sequence + 1 != packet.sequence) {
-            revert InvalidSequence(tunnelDetails[originatorHash].sequence + 1, packet.sequence);
+
+        uint64 seq = tunnelDetails[originatorHash].sequence;
+        if (seq + 1 != packet.sequence) {
+            revert InvalidSequence(seq + 1, packet.sequence);
         }
 
         // verify signature.
@@ -149,7 +154,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-activate}.
      */
     function activate(uint64 tunnelId, uint64 latestSeq) external payable {
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
 
         if (tunnelDetails[originatorHash].isActive) {
             revert ActiveTunnel(msg.sender);
@@ -171,7 +176,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-deactivate}.
      */
     function deactivate(uint64 tunnelId) external {
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, msg.sender);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
 
         if (!tunnelDetails[originatorHash].isActive) {
             revert InactiveTunnel(msg.sender);
@@ -191,7 +196,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-tunnelInfo}.
      */
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory) {
-        bytes32 originatorHash = Originator.hash(_sourceChainIdHash, tunnelId, addr);
+        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
         return TunnelInfo({
             isActive: tunnelDetails[originatorHash].isActive,
             latestSequence: tunnelDetails[originatorHash].sequence,

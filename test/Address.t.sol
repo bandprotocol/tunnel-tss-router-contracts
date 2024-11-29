@@ -40,10 +40,7 @@ contract AddressTest is Test {
         expectedStrs[3] = "c25a272a4d2ef4c80173187bf69f4238c5b6564f";
 
         for (uint256 i = 0; i < addrs.length; i++) {
-            assertEq(
-                expectedStrs[i],
-                string(Address.ToLowercaseBytes(addrs[i]))
-            );
+            assertEq(expectedStrs[i], string(Address.ToLowercaseBytes(addrs[i])));
         }
     }
 }

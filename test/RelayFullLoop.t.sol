@@ -26,30 +26,15 @@ contract RelayFullLoopTest is Test, Constants {
         vault.initialize(address(this), address(0x00));
 
         tunnelRouter = new GasPriceTunnelRouter();
-        tunnelRouter.initialize(
-            tssVerifier,
-            vault,
-            address(this),
-            75000,
-            75000,
-            1
-        );
+        tunnelRouter.initialize(tssVerifier, vault, address(this), 75000, 75000, 1);
 
         vault.setTunnelRouter(address(tunnelRouter));
 
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs = abi.encode(
-            address(tunnelRouter),
-            keccak256("bandchain"),
-            keccak256("testnet-evm"),
-            address(this)
-        );
+        bytes memory packetConsumerArgs =
+            abi.encode(address(tunnelRouter), keccak256("bandchain"), keccak256("testnet-evm"), address(this));
         address packetConsumerAddr = makeAddr("PacketConsumer");
-        deployCodeTo(
-            "PacketConsumer.sol:PacketConsumer",
-            packetConsumerArgs,
-            packetConsumerAddr
-        );
+        deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
 
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
         packetConsumer.setTunnelId(1);
@@ -61,11 +46,7 @@ contract RelayFullLoopTest is Test, Constants {
     function testRelayMessageConsumerNotDeactivate() public {
         uint256 relayerBalance = address(this).balance;
         uint256 currentGas = gasleft();
-        tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
-            SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
-        );
+        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
         assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
         assertEq(tunnelRouter.isActive(1, address(packetConsumer)), true);
@@ -73,18 +54,10 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasFee() -
-            tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain / tunnelRouter.gasFee() - tunnelRouter.additionalGasUsed();
 
-        console.log(
-            "gas used during process message: ",
-            gasUsedDuringProcessMsg
-        );
-        console.log(
-            "gas used during others step: ",
-            gasUsed - gasUsedDuringProcessMsg
-        );
+        console.log("gas used during process message: ", gasUsedDuringProcessMsg);
+        console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
     }
 
     function testRelayMessageConsumerWithDeactivate() public {
@@ -92,11 +65,7 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
 
         uint256 currentGas = gasleft();
-        tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
-            SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
-        );
+        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
 
         assertEq(tunnelRouter.sequence(1, address(packetConsumer)), 1);
@@ -105,18 +74,10 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasFee() -
-            tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain / tunnelRouter.gasFee() - tunnelRouter.additionalGasUsed();
 
-        console.log(
-            "gas used during process message: ",
-            gasUsedDuringProcessMsg
-        );
-        console.log(
-            "gas used during others step: ",
-            gasUsed - gasUsedDuringProcessMsg
-        );
+        console.log("gas used during process message: ", gasUsedDuringProcessMsg);
+        console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
     }
 
     function testRelayInvalidSequence() public {
@@ -124,50 +85,30 @@ contract RelayFullLoopTest is Test, Constants {
 
         packetConsumer.activate{value: 0.01 ether}(3);
 
-        bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.InvalidSequence.selector,
-            4,
-            1
-        );
+        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.InvalidSequence.selector, 4, 1);
         vm.expectRevert(expectedErr);
-        tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
-            SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
-        );
+        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
 
     function testRelayInactiveTargetContract() public {
         packetConsumer.deactivate();
 
-        bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.InactiveTargetContract.selector,
-            address(packetConsumer)
-        );
+        bytes memory expectedErr =
+            abi.encodeWithSelector(ITunnelRouter.InactiveTargetContract.selector, address(packetConsumer));
         vm.expectRevert(expectedErr);
-        tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
-            SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
-        );
+        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
 
     function testRelayVaultNotEnoughToken() public {
         tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(1 ether));
 
         vm.expectRevert(); // underflow error
-        tunnelRouter.relay(
-            TSS_RAW_MESSAGE,
-            SIGNATURE_NONCE_ADDR,
-            MESSAGE_SIGNATURE
-        );
+        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
 
     function testReactivateAlreadyActive() public {
-        bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.ActiveTargetContract.selector,
-            address(packetConsumer)
-        );
+        bytes memory expectedErr =
+            abi.encodeWithSelector(ITunnelRouter.ActiveTargetContract.selector, address(packetConsumer));
         vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
     }

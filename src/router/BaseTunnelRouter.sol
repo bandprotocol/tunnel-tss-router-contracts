@@ -204,12 +204,16 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         });
     }
 
-    function isActive(bytes32 originatorHash) external view override returns (bool) {
+    function isActive(bytes32 originatorHash) external view returns (bool) {
         return tunnelDetails[originatorHash].isActive;
     }
 
-    function sequence(bytes32 originatorHash) external view override returns (uint64) {
+    function sequence(bytes32 originatorHash) external view returns (uint64) {
         return tunnelDetails[originatorHash].sequence;
+    }
+
+    function originatorHash(uint64 tunnelId, address addr) external view returns (bytes32) {
+        return Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
     }
 
     function _isBalanceUnderThreshold(uint64 tunnelId, address addr) internal view returns (bool) {

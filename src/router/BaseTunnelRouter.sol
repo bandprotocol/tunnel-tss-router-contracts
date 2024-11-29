@@ -14,12 +14,7 @@ import "../interfaces/IVault.sol";
 import "../libraries/PacketDecoder.sol";
 import "../libraries/StringAddress.sol";
 
-abstract contract BaseTunnelRouter is
-    Initializable,
-    Ownable2StepUpgradeable,
-    PausableUpgradeable,
-    ITunnelRouter
-{
+abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, PausableUpgradeable, ITunnelRouter {
     using StringAddress for string;
     using PacketDecoder for bytes;
 
@@ -35,7 +30,7 @@ abstract contract BaseTunnelRouter is
     mapping(uint64 => mapping(address => bool)) public isActive; // tunnelID => targetAddr => isActive
     mapping(uint64 => mapping(address => uint64)) public sequence; // tunnelID => targetAddr => sequence
 
-    uint[50] __gap;
+    uint256[50] __gap;
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
@@ -59,9 +54,7 @@ abstract contract BaseTunnelRouter is
      * @dev Sets the additionalGasUsed being used in relaying message.
      * @param additionalGasUsed_ The new additional gas used amount.
      */
-    function setAdditionalGasUsed(
-        uint256 additionalGasUsed_
-    ) external onlyOwner {
+    function setAdditionalGasUsed(uint256 additionalGasUsed_) external onlyOwner {
         _setAdditionalGasUsed(additionalGasUsed_);
     }
 
@@ -91,11 +84,7 @@ abstract contract BaseTunnelRouter is
     /**
      * @dev See {ITunnelRouter-relay}.
      */
-    function relay(
-        bytes calldata message,
-        address randomAddr,
-        uint256 signature
-    ) external whenNotPaused {
+    function relay(bytes calldata message, address randomAddr, uint256 signature) external whenNotPaused {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         address targetAddr = packet.targetAddr.toAddress();
@@ -108,18 +97,11 @@ abstract contract BaseTunnelRouter is
             revert InactiveTargetContract(targetAddr);
         }
         if (sequence[packet.tunnelId][targetAddr] + 1 != packet.sequence) {
-            revert InvalidSequence(
-                sequence[packet.tunnelId][targetAddr] + 1,
-                packet.sequence
-            );
+            revert InvalidSequence(sequence[packet.tunnelId][targetAddr] + 1, packet.sequence);
         }
 
         // verify signature.
-        bool isValid = tssVerifier.verify(
-            keccak256(message),
-            randomAddr,
-            signature
-        );
+        bool isValid = tssVerifier.verify(keccak256(message), randomAddr, signature);
         if (!isValid) {
             revert InvalidSignature();
         }
@@ -130,18 +112,12 @@ abstract contract BaseTunnelRouter is
         // forward the message to the target contract.
         uint256 gasLeft = gasleft();
         bool isReverted = false;
-        try
-            IDataConsumer(targetAddr).process{gas: callbackGasLimit}(tssMessage)
-        {} catch {
+        try IDataConsumer(targetAddr).process{gas: callbackGasLimit}(tssMessage) {}
+        catch {
             isReverted = true;
         }
 
-        emit MessageProcessed(
-            packet.tunnelId,
-            targetAddr,
-            packet.sequence,
-            isReverted
-        );
+        emit MessageProcessed(packet.tunnelId, targetAddr, packet.sequence, isReverted);
 
         // charge a fee from the target contract.
         uint256 fee = _routerFee(gasLeft - gasleft() + additionalGasUsed);
@@ -152,7 +128,7 @@ abstract contract BaseTunnelRouter is
             _deactivate(packet.tunnelId, targetAddr);
         }
 
-        (bool ok, ) = payable(msg.sender).call{value: fee}("");
+        (bool ok,) = payable(msg.sender).call{value: fee}("");
         if (!ok) {
             revert TokenTransferFailed(msg.sender);
         }
@@ -199,22 +175,15 @@ abstract contract BaseTunnelRouter is
     /**
      * @dev See {ITunnelRouter-tunnelInfo}.
      */
-    function tunnelInfo(
-        uint64 tunnelId,
-        address addr
-    ) external view returns (TunnelInfo memory) {
-        return
-            TunnelInfo({
-                isActive: isActive[tunnelId][addr],
-                latestSequence: sequence[tunnelId][addr],
-                balance: vault.balance(tunnelId, addr)
-            });
+    function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory) {
+        return TunnelInfo({
+            isActive: isActive[tunnelId][addr],
+            latestSequence: sequence[tunnelId][addr],
+            balance: vault.balance(tunnelId, addr)
+        });
     }
 
-    function _isBalanceUnderThreshold(
-        uint64 tunnelId,
-        address addr
-    ) internal view returns (bool) {
+    function _isBalanceUnderThreshold(uint64 tunnelId, address addr) internal view returns (bool) {
         uint256 remainingBalance = vault.balance(tunnelId, addr);
         return remainingBalance < minimumBalanceThreshold();
     }
@@ -226,7 +195,7 @@ abstract contract BaseTunnelRouter is
     }
 
     /// @dev Calculates the fee for the router.
-    function _routerFee(uint256 gasUsed) internal view virtual returns (uint) {
+    function _routerFee(uint256 gasUsed) internal view virtual returns (uint256) {
         gasUsed; // Shh
 
         return 0;

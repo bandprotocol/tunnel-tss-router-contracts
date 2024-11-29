@@ -16,11 +16,7 @@ interface IDataConsumer {
      * @param price The new price of the signal.
      * @param timestamp The timestamp of the updated prices.
      */
-    event SignalPriceUpdated(
-        bytes32 indexed signalId,
-        uint64 price,
-        int64 timestamp
-    );
+    event SignalPriceUpdated(bytes32 indexed signalId, uint64 price, int64 timestamp);
 
     // ========================================
     // Custom Errors

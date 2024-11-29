@@ -34,10 +34,7 @@ interface ITunnelRouter {
      * @param isReverted The flag indicating whether the message is reverted.
      */
     event MessageProcessed(
-        uint64 indexed tunnelId,
-        address indexed targetAddr,
-        uint64 indexed sequence,
-        bool isReverted
+        uint64 indexed tunnelId, address indexed targetAddr, uint64 indexed sequence, bool isReverted
     );
 
     /**
@@ -47,11 +44,7 @@ interface ITunnelRouter {
      * @param targetAddr The target address that the sender is activating.
      * @param latestNonce The latest nonce of the sender.
      */
-    event Activated(
-        uint64 indexed tunnelId,
-        address indexed targetAddr,
-        uint64 latestNonce
-    );
+    event Activated(uint64 indexed tunnelId, address indexed targetAddr, uint64 latestNonce);
 
     /**
      * @notice Emitted when the target address is deactivated.
@@ -60,11 +53,7 @@ interface ITunnelRouter {
      * @param targetAddr The target address that the sender is deactivating.
      * @param latestNonce The latest nonce of the sender.
      */
-    event Deactivated(
-        uint64 indexed tunnelId,
-        address indexed targetAddr,
-        uint64 latestNonce
-    );
+    event Deactivated(uint64 indexed tunnelId, address indexed targetAddr, uint64 latestNonce);
 
     // ========================================
     // Custom Errors
@@ -146,11 +135,7 @@ interface ITunnelRouter {
      * @param randomAddr The random address used in signature.
      * @param signature The signature of the message.
      */
-    function relay(
-        bytes calldata message,
-        address randomAddr,
-        uint256 signature
-    ) external;
+    function relay(bytes calldata message, address randomAddr, uint256 signature) external;
 
     /**
      * @dev Activates the sender and associated tunnel ID.
@@ -182,10 +167,7 @@ interface ITunnelRouter {
      *
      * @return bool True if the tunnel is active, false otherwise.
      */
-    function isActive(
-        uint64 tunnelId,
-        address addr
-    ) external view returns (bool);
+    function isActive(uint64 tunnelId, address addr) external view returns (bool);
 
     /**
      * @dev Returns the tunnel information.
@@ -195,10 +177,7 @@ interface ITunnelRouter {
      *
      * @return bool True if the tunnel is active, false otherwise.
      */
-    function tunnelInfo(
-        uint64 tunnelId,
-        address addr
-    ) external view returns (TunnelInfo memory);
+    function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory);
 
     /**
      * @dev Returns the vault contract address.

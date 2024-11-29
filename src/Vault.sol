@@ -9,11 +9,11 @@ import "./interfaces/IVault.sol";
 import "./interfaces/ITunnelRouter.sol";
 
 contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
-    mapping(uint64 => mapping(address => uint)) public balance; // tunnelId => account => amount.
+    mapping(uint64 => mapping(address => uint256)) public balance; // tunnelId => account => amount.
 
     address public tunnelRouter;
 
-    uint[50] __gap;
+    uint256[50] __gap;
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -22,10 +22,7 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         _;
     }
 
-    function initialize(
-        address initialOwner,
-        address tunnelRouter_
-    ) public initializer {
+    function initialize(address initialOwner, address tunnelRouter_) public initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
@@ -75,19 +72,15 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     /**
      * @dev See {IVault-collectFee}.
      */
-    function collectFee(
-        uint64 tunnelId,
-        address account,
-        uint256 amount
-    ) public onlyTunnelRouter {
+    function collectFee(uint64 tunnelId, address account, uint256 amount) public onlyTunnelRouter {
         _withdraw(tunnelId, account, tunnelRouter, amount);
     }
 
-    function _isRemainingBalanceUnderThreshold(
-        uint64 tunnelId,
-        address account,
-        uint256 amount
-    ) internal view returns (bool) {
+    function _isRemainingBalanceUnderThreshold(uint64 tunnelId, address account, uint256 amount)
+        internal
+        view
+        returns (bool)
+    {
         uint256 minBalance;
         ITunnelRouter router = ITunnelRouter(tunnelRouter);
 
@@ -99,15 +92,10 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         return current < minBalance + amount;
     }
 
-    function _withdraw(
-        uint64 tunnelId,
-        address account,
-        address to,
-        uint256 amount
-    ) internal {
+    function _withdraw(uint64 tunnelId, address account, address to, uint256 amount) internal {
         balance[tunnelId][account] -= amount;
 
-        (bool ok, ) = payable(to).call{value: amount}("");
+        (bool ok,) = payable(to).call{value: amount}("");
         if (!ok) {
             revert TokenTransferFailed(to);
         }

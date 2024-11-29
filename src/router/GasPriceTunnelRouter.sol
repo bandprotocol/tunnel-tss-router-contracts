@@ -22,13 +22,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         uint256 callbackGasLimit_,
         uint256 gasPrice_
     ) public initializer {
-        __BaseRouter_init(
-            tssVerifier_,
-            vault_,
-            initialOwner,
-            additionalGas_,
-            callbackGasLimit_
-        );
+        __BaseRouter_init(tssVerifier_, vault_, initialOwner, additionalGas_, callbackGasLimit_);
 
         _setGasFee(GasFeeInfo(gasPrice_));
     }
@@ -46,9 +40,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         emit SetGasFee(gasFee_);
     }
 
-    function _routerFee(
-        uint256 gasUsed
-    ) internal view virtual override returns (uint) {
+    function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
         return gasFee.gasPrice * gasUsed;
     }
 }

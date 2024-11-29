@@ -22,11 +22,7 @@ library StringAddress {
         uint160 result;
 
         assembly {
-            for {
-                let i := 2
-            } lt(i, 42) {
-                i := add(i, 1)
-            } {
+            for { let i := 2 } lt(i, 42) { i := add(i, 1) } {
                 let char := byte(0, mload(add(str, add(0x20, i))))
                 let converted := false
 

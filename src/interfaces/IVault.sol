@@ -22,12 +22,7 @@ interface IVault {
      * @param to The account into which the token is deposited.
      * @param amount The amount of tokens deposited.
      */
-    event Deposited(
-        uint256 indexed tunnelId,
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
+    event Deposited(uint256 indexed tunnelId, address indexed from, address indexed to, uint256 amount);
 
     /**
      * @notice Emitted when the caller withdraw native token from the contract.
@@ -37,12 +32,7 @@ interface IVault {
      * @param to The account to which the token is withdrawn.
      * @param amount The amount of tokens withdrawn.
      */
-    event Withdrawn(
-        uint256 indexed tunnelId,
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
+    event Withdrawn(uint256 indexed tunnelId, address indexed from, address indexed to, uint256 amount);
 
     // ========================================
     // Custom Errors
@@ -102,11 +92,7 @@ interface IVault {
      * @param account The account from which the caller is withdrawing tokens.
      * @param amount the amount of tokens to withdraw.
      */
-    function collectFee(
-        uint64 tunnelId,
-        address account,
-        uint256 amount
-    ) external;
+    function collectFee(uint64 tunnelId, address account, uint256 amount) external;
 
     /**
      * @dev Returns the balance of the account.
@@ -114,10 +100,7 @@ interface IVault {
      * @param tunnelId The ID of the tunnel to check the balance.
      * @param account The account to check the balance.
      */
-    function balance(
-        uint64 tunnelId,
-        address account
-    ) external view returns (uint256);
+    function balance(uint64 tunnelId, address account) external view returns (uint256);
 
     /**
      * @dev Returns the tunnel router contract address.

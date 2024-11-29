@@ -22,13 +22,9 @@ contract DeployScript is Script {
 
         // Deploy the proxy vault contract
         address proxyVaultAddr = Upgrades.deployTransparentProxy(
-            "Vault.sol",
-            msg.sender,
-            abi.encodeCall(Vault.initialize, (msg.sender, address(0x00)))
+            "Vault.sol", msg.sender, abi.encodeCall(Vault.initialize, (msg.sender, address(0x00)))
         );
-        address implVaultAddr = Upgrades.getImplementationAddress(
-            proxyVaultAddr
-        );
+        address implVaultAddr = Upgrades.getImplementationAddress(proxyVaultAddr);
 
         // Deploy the TssVerifier contract
         TssVerifier tssVerifier = new TssVerifier(transitionPeriod, msg.sender);
@@ -39,19 +35,10 @@ contract DeployScript is Script {
             msg.sender,
             abi.encodeCall(
                 GasPriceTunnelRouter.initialize,
-                (
-                    tssVerifier,
-                    IVault(proxyVaultAddr),
-                    msg.sender,
-                    100000,
-                    300000,
-                    0.11 gwei
-                )
+                (tssVerifier, IVault(proxyVaultAddr), msg.sender, 100000, 300000, 0.11 gwei)
             )
         );
-        address implTunnelRouterAddr = Upgrades.getImplementationAddress(
-            proxyTunnelRouterAddr
-        );
+        address implTunnelRouterAddr = Upgrades.getImplementationAddress(proxyTunnelRouterAddr);
 
         // Set the tunnel router address in the vault
         Vault(payable(proxyVaultAddr)).setTunnelRouter(proxyTunnelRouterAddr);
@@ -61,13 +48,7 @@ contract DeployScript is Script {
         console.log("Vault Proxy deployed at :", proxyVaultAddr);
         console.log("Vault Implementation deployed at :", implVaultAddr);
         console.log("TssVerifier deployed at :", address(tssVerifier));
-        console.log(
-            "GasPriceTunnelRouter Proxy deployed at :",
-            proxyTunnelRouterAddr
-        );
-        console.log(
-            "GasPriceTunnelRouter Implementation deployed at :",
-            implTunnelRouterAddr
-        );
+        console.log("GasPriceTunnelRouter Proxy deployed at :", proxyTunnelRouterAddr);
+        console.log("GasPriceTunnelRouter Implementation deployed at :", implTunnelRouterAddr);
     }
 }

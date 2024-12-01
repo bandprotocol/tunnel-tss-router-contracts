@@ -88,15 +88,15 @@ interface IVault {
     function withdrawAll(uint64 tunnelId, address to) external;
 
     /**
-     * @dev Collects the fee from the account and the given tunnel ID.
+     * @dev Collects the fee from the given originator hash.
      *
      * This function should be called by the tunnelRouter contract only.
      *
-     * @param tunnelId the ID of the tunnel from which the caller is withdrawing tokens.
-     * @param account The account from which the caller is withdrawing tokens.
+     * @param originatorHash The originator hash of the account to which the token is withdrawn.
+     * @param to The account to which the sender is withdrawing tokens to.
      * @param amount the amount of tokens to withdraw.
      */
-    function collectFee(uint64 tunnelId, address account, uint256 amount) external;
+    function collectFee(bytes32 originatorHash, address to, uint256 amount) external;
 
     /**
      * @dev Returns the balance of the account.
@@ -105,6 +105,13 @@ interface IVault {
      * @param account The account to check the balance.
      */
     function balance(uint64 tunnelId, address account) external view returns (uint256);
+
+    /**
+     * @dev Returns the balance of the account by the given originator hash.
+     *
+     * @param originatorHash The originator hash of the account to which the token is deposited.
+     */
+    function getBalanceByOriginatorHash(bytes32 originatorHash) external view returns (uint256);
 
     /**
      * @dev Returns the tunnel router contract address.

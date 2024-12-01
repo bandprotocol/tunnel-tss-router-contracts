@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
-import "../interfaces/IDataConsumer.sol";
+import "../interfaces/IPacketConsumer.sol";
 import "../interfaces/ITssVerifier.sol";
 import "../interfaces/ITunnelRouter.sol";
 import "../interfaces/IVault.sol";
@@ -22,9 +22,12 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     ITssVerifier public tssVerifier;
     IVault public vault;
 
+    // Store information of the tunnel based on its hashOriginator.
     struct TunnelDetail {
         bool isActive;
         uint64 sequence;
+        uint64 tunnelId;
+        address targetAddr;
     }
 
     // Additional gas estimated for relaying the message;
@@ -100,20 +103,21 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     function relay(bytes calldata message, address randomAddr, uint256 signature) external whenNotPaused {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
-        address targetAddr = packet.targetAddr.toAddress();
-        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, packet.tunnelId, targetAddr);
+        bytes32 originatorHash_ = tssMessage.originatorHash;
 
         // check if the message is valid.
         if (tssMessage.encoderType == PacketDecoder.EncoderType.Undefined) {
             revert UndefinedEncoderType();
         }
-        if (!tunnelDetails[originatorHash].isActive) {
-            revert InactiveTunnel(targetAddr);
+
+        // validate the activeness and sequence of the target contract.
+        TunnelDetail memory tunnelDetail = tunnelDetails[originatorHash_];
+        if (!tunnelDetail.isActive) {
+            revert InactiveTunnel(originatorHash_);
         }
 
-        uint64 seq = tunnelDetails[originatorHash].sequence;
-        if (seq + 1 != packet.sequence) {
-            revert InvalidSequence(seq + 1, packet.sequence);
+        if (tunnelDetail.sequence + 1 != packet.sequence) {
+            revert InvalidSequence(tunnelDetail.sequence + 1, packet.sequence);
         }
 
         // verify signature.
@@ -123,30 +127,25 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         }
 
         // update the sequence.
-        tunnelDetails[originatorHash].sequence = packet.sequence;
+        tunnelDetails[originatorHash_].sequence = packet.sequence;
 
         // forward the message to the target contract.
         uint256 gasLeft = gasleft();
-        bool isReverted = false;
-        try IDataConsumer(targetAddr).process{gas: callbackGasLimit}(tssMessage) {}
+        bool isSuccess = true;
+        try IPacketConsumer(tunnelDetail.targetAddr).process{gas: callbackGasLimit}(tssMessage) {}
         catch {
-            isReverted = true;
+            isSuccess = false;
         }
 
-        emit MessageProcessed(originatorHash, packet.sequence, isReverted);
+        emit MessageProcessed(originatorHash_, packet.sequence, isSuccess);
 
-        // charge a fee from the target contract.
+        // charge a fee from the target contract and send to caller.
         uint256 fee = _routerFee(gasLeft - gasleft() + additionalGasUsed);
-        vault.collectFee(packet.tunnelId, targetAddr, fee);
+        vault.collectFee(originatorHash_, msg.sender, fee);
 
         // deactivate the target contract if the remaining balance is under the threshold.
-        if (_isBalanceUnderThreshold(packet.tunnelId, targetAddr)) {
-            _deactivate(originatorHash);
-        }
-
-        (bool ok,) = payable(msg.sender).call{value: fee}("");
-        if (!ok) {
-            revert TokenTransferFailed(msg.sender);
+        if (_isBalanceUnderThreshold(originatorHash_)) {
+            _deactivate(originatorHash_);
         }
     }
 
@@ -154,35 +153,35 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-activate}.
      */
     function activate(uint64 tunnelId, uint64 latestSeq) external payable {
-        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
-
-        if (tunnelDetails[originatorHash].isActive) {
-            revert ActiveTunnel(msg.sender);
+        bytes32 originatorHash_ = originatorHash(tunnelId, msg.sender);
+        if (tunnelDetails[originatorHash_].isActive) {
+            revert ActiveTunnel(originatorHash_);
         }
 
         vault.deposit{value: msg.value}(tunnelId, msg.sender);
 
         // cannot activate if the remaining balance is under the threshold.
-        if (_isBalanceUnderThreshold(tunnelId, msg.sender)) {
+        if (_isBalanceUnderThreshold(originatorHash_)) {
             revert InsufficientRemainingBalance(tunnelId, msg.sender);
         }
 
-        tunnelDetails[originatorHash].isActive = true;
-        tunnelDetails[originatorHash].sequence = latestSeq;
-        emit Activated(originatorHash, latestSeq);
+        tunnelDetails[originatorHash_] =
+            TunnelDetail({isActive: true, sequence: latestSeq, tunnelId: tunnelId, targetAddr: msg.sender});
+
+        emit Activated(originatorHash_, latestSeq);
     }
 
     /**
      * @dev See {ITunnelRouter-deactivate}.
      */
     function deactivate(uint64 tunnelId) external {
-        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
+        bytes32 originatorHash_ = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
 
-        if (!tunnelDetails[originatorHash].isActive) {
-            revert InactiveTunnel(msg.sender);
+        if (!tunnelDetails[originatorHash_].isActive) {
+            revert InactiveTunnel(originatorHash_);
         }
 
-        _deactivate(originatorHash);
+        _deactivate(originatorHash_);
     }
 
     /**
@@ -196,35 +195,48 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-tunnelInfo}.
      */
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory) {
-        bytes32 originatorHash = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
+        bytes32 originatorHash_ = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
+        TunnelDetail memory tunnelDetail = tunnelDetails[originatorHash_];
+
         return TunnelInfo({
-            isActive: tunnelDetails[originatorHash].isActive,
-            latestSequence: tunnelDetails[originatorHash].sequence,
-            balance: vault.balance(tunnelId, addr)
+            isActive: tunnelDetail.isActive,
+            latestSequence: tunnelDetail.sequence,
+            balance: vault.getBalanceByOriginatorHash(originatorHash_),
+            originatorHash: originatorHash_
         });
     }
 
-    function isActive(bytes32 originatorHash) external view returns (bool) {
-        return tunnelDetails[originatorHash].isActive;
-    }
-
-    function sequence(bytes32 originatorHash) external view returns (uint64) {
-        return tunnelDetails[originatorHash].sequence;
-    }
-
-    function originatorHash(uint64 tunnelId, address addr) external view returns (bytes32) {
+    /**
+     * @dev See {ITunnelRouter-originatorHash}.
+     */
+    function originatorHash(uint64 tunnelId, address addr) public view returns (bytes32) {
         return Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
     }
 
-    function _isBalanceUnderThreshold(uint64 tunnelId, address addr) internal view returns (bool) {
-        uint256 remainingBalance = vault.balance(tunnelId, addr);
+    /**
+     * @dev See {ITunnelRouter-isActive}.
+     */
+    function isActive(bytes32 originatorHash_) public view override returns (bool) {
+        return tunnelDetails[originatorHash_].isActive;
+    }
+
+    /**
+     * @dev See {ITunnelRouter-sequence}.
+     */
+    function sequence(bytes32 originatorHash_) public view override returns (uint64) {
+        return tunnelDetails[originatorHash_].sequence;
+    }
+
+    /// @dev Checks if the remaining balance is lower than the threshold.
+    function _isBalanceUnderThreshold(bytes32 originatorHash_) internal view returns (bool) {
+        uint256 remainingBalance = vault.getBalanceByOriginatorHash(originatorHash_);
         return remainingBalance < minimumBalanceThreshold();
     }
 
-    /// @dev Deactivates the (contract address, tunnelId).
-    function _deactivate(bytes32 originatorHash) internal {
-        tunnelDetails[originatorHash].isActive = false;
-        emit Deactivated(originatorHash, tunnelDetails[originatorHash].sequence);
+    /// @dev Deactivates the given originator hash.
+    function _deactivate(bytes32 originatorHash_) internal {
+        tunnelDetails[originatorHash_].isActive = false;
+        emit Deactivated(originatorHash_, tunnelDetails[originatorHash_].sequence);
     }
 
     /// @dev Calculates the fee for the router.
@@ -245,7 +257,4 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         additionalGasUsed = additionalGasUsed_;
         emit AdditionalGasUsedSet(additionalGasUsed_);
     }
-
-    /// @dev the vault contract send fees to the contract when relayer relays a message.
-    receive() external payable {}
 }

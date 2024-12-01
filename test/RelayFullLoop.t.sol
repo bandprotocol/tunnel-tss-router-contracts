@@ -17,35 +17,23 @@ contract RelayFullLoopTest is Test, Constants {
     GasPriceTunnelRouter tunnelRouter;
     TssVerifier tssVerifier;
     Vault vault;
+    bytes32 originatorHash;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, address(this));
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(
-            address(this),
-            address(0x00),
-            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
-        );
+        vault.initialize(address(this), address(0x00));
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
-            tssVerifier,
-            vault,
-            address(this),
-            75000,
-            75000,
-            1,
-            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+            tssVerifier, vault, address(this), 75000, 75000, 1, keccak256("bandchain"), keccak256("testnet-evm")
         );
 
         vault.setTunnelRouter(address(tunnelRouter));
 
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs =
-            abi.encode(address(tunnelRouter), keccak256("bandchain"), keccak256("testnet-evm"), address(this));
+        bytes memory packetConsumerArgs = abi.encode(address(tunnelRouter), address(this));
         address packetConsumerAddr = makeAddr("PacketConsumer");
         deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
 
@@ -54,6 +42,11 @@ contract RelayFullLoopTest is Test, Constants {
 
         // set latest nonce.
         packetConsumer.activate{value: 0.01 ether}(0);
+
+        originatorHash = Originator.hash(
+            tunnelRouter.sourceChainIdHash(), tunnelRouter.targetChainIdHash(), 1, address(packetConsumer)
+        );
+        assertEq(tunnelRouter.isActive(originatorHash), true);
     }
 
     function testRelayMessageConsumerNotDeactivate() public {
@@ -62,12 +55,6 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
 
-        bytes32 originatorHash = Originator.hash(
-            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155,
-            1,
-            address(packetConsumer)
-        );
         assertEq(tunnelRouter.sequence(originatorHash), 1);
         assertEq(tunnelRouter.isActive(originatorHash), true);
 
@@ -88,12 +75,6 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
 
-        bytes32 originatorHash = Originator.hash(
-            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155,
-            1,
-            address(packetConsumer)
-        );
         assertEq(tunnelRouter.sequence(originatorHash), 1);
         assertEq(tunnelRouter.isActive(originatorHash), false);
 
@@ -119,8 +100,7 @@ contract RelayFullLoopTest is Test, Constants {
     function testRelayInactiveTunnel() public {
         packetConsumer.deactivate();
 
-        bytes memory expectedErr =
-            abi.encodeWithSelector(ITunnelRouter.InactiveTunnel.selector, address(packetConsumer));
+        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.InactiveTunnel.selector, originatorHash);
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
@@ -133,7 +113,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testReactivateAlreadyActive() public {
-        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.ActiveTunnel.selector, address(packetConsumer));
+        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.ActiveTunnel.selector, originatorHash);
         vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
     }

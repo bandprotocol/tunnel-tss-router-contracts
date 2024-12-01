@@ -26,19 +26,14 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
         _;
     }
 
-    function initialize(
-        address initialOwner,
-        address tunnelRouter_,
-        bytes32 sourceChainIdHash_,
-        bytes32 targetChainIdHash_
-    ) public initializer {
+    function initialize(address initialOwner, address tunnelRouter_) public initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
-        sourceChainIdHash = sourceChainIdHash_;
-        targetChainIdHash = targetChainIdHash_;
-
-        _setTunnelRouter(tunnelRouter_);
+        // Set the tunnel router contract address if it is provided.
+        if (tunnelRouter_ != address(0)) {
+            _setTunnelRouter(tunnelRouter_);
+        }
     }
 
     /**
@@ -95,12 +90,22 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     /**
      * @dev See {IVault-collectFee}.
      */
-    function collectFee(uint64 tunnelId, address account, uint256 amount) public onlyTunnelRouter {
-        _withdraw(Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, account), tunnelRouter, amount);
+    function collectFee(bytes32 originatorHash, address to, uint256 amount) public onlyTunnelRouter {
+        _withdraw(originatorHash, to, amount);
     }
 
+    /**
+     * @dev See {IVault-balance}.
+     */
     function balance(uint64 tunnelId, address account) external view returns (uint256) {
         return _balance[Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, account)];
+    }
+
+    /**
+     * @dev See {IVault-getBalanceByOriginatorHash}.
+     */
+    function getBalanceByOriginatorHash(bytes32 originatorHash) external view returns (uint256) {
+        return _balance[originatorHash];
     }
 
     function _withdraw(bytes32 originatorHash, address to, uint256 amount) internal {
@@ -114,6 +119,8 @@ contract Vault is Initializable, Ownable2StepUpgradeable, IVault {
     }
 
     function _setTunnelRouter(address tunnelRouter_) internal {
+        sourceChainIdHash = ITunnelRouter(tunnelRouter_).sourceChainIdHash();
+        targetChainIdHash = ITunnelRouter(tunnelRouter_).targetChainIdHash();
         tunnelRouter = tunnelRouter_;
         emit TunnelRouterSet(tunnelRouter_);
     }

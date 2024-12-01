@@ -27,11 +27,6 @@ interface IPacketConsumer {
      */
     error UnauthorizedTunnelRouter();
 
-    /**
-     * @notice Reverts if the originator hash is not matched.
-     */
-    error InvalidOriginatorHash();
-
     // ========================================
     // Functions
     // ========================================

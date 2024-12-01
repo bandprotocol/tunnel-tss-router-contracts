@@ -42,16 +42,6 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         assertEq(price, packet.signals[0].price);
         assertEq(timestamp, packet.timestamp);
     }
-
-    function testProcessInvalidOriginatorHash() public {
-        PacketDecoder.TssMessage memory data = DECODED_TSS_MESSAGE();
-
-        // fix originator hash.
-        data.originatorHash = 0x00;
-        bytes memory expectedErr = abi.encodeWithSelector(IPacketConsumer.InvalidOriginatorHash.selector);
-        vm.expectRevert(expectedErr);
-        packetConsumer.process(data);
-    }
 }
 
 contract PacketConsumerTest is Test, Constants {

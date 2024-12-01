@@ -9,9 +9,7 @@ import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
 
 import "./libraries/Address.sol";
-import "./libraries/Originator.sol";
 import "./libraries/PacketDecoder.sol";
-import "./TssVerifier.sol";
 
 contract PacketConsumer is IPacketConsumer, Ownable2Step {
     // An object that contains the price of a signal ID.
@@ -22,10 +20,6 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
 
     // The tunnel router contract.
     address public immutable tunnelRouter;
-    // The hashed source chain ID that this contract is consuming from.
-    bytes32 public immutable sourceChainIdHash;
-    // The hashed target chain ID that this contract is at.
-    bytes32 public immutable targetChainIdHash;
 
     // The tunnel ID that this contract is consuming; cannot be immutable or else the create2
     // will result in different address.
@@ -41,8 +35,6 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     }
 
     constructor(address tunnelRouter_, address initialOwner) Ownable(initialOwner) {
-        sourceChainIdHash = ITunnelRouter(tunnelRouter_).sourceChainIdHash();
-        targetChainIdHash = ITunnelRouter(tunnelRouter_).targetChainIdHash();
         tunnelRouter = tunnelRouter_;
     }
 
@@ -50,10 +42,6 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
      * @dev See {IPacketConsumer-process}.
      */
     function process(PacketDecoder.TssMessage memory data) external onlyTunnelRouter {
-        if (data.originatorHash != Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, address(this))) {
-            revert InvalidOriginatorHash();
-        }
-
         PacketDecoder.Packet memory packet = data.packet;
         for (uint256 i = 0; i < packet.signals.length; i++) {
             prices[packet.signals[i].signal] = Price({price: packet.signals[i].price, timestamp: packet.timestamp});

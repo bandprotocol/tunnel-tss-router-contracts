@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import "../libraries/PacketDecoder.sol";
 
-interface IDataConsumer {
+interface IPacketConsumer {
     // ========================================
     // Events
     // ========================================
@@ -26,23 +26,6 @@ interface IDataConsumer {
      * @notice Reverts if the caller is not the tunnelRouter contract.
      */
     error UnauthorizedTunnelRouter();
-
-    /**
-     * @notice Reverts if the hashed originator is not matched.
-     */
-    error InvalidHashOriginator();
-
-    /**
-     * @notice Reverts if the program fails to send tokens to the specified address.
-     *
-     * @param addr The address to which the token transfer failed.
-     */
-    error TokenTransferFailed(address addr);
-
-    /**
-     * @notice Reverts if the caller is not the factory contract.
-     */
-    error UnauthorizedFactory(address addr);
 
     // ========================================
     // Functions

@@ -24,15 +24,12 @@ contract PacketDecoderTest is Test, Constants {
 
         // check tss Message.
         assertEq(uint8(tssMessage.encoderType), uint8(PacketDecoder.EncoderType.FixedPoint));
-        assertEq(tssMessage.hashOriginator, expectedMsg.hashOriginator);
-        assertEq(tssMessage.sourceBlocktimestamp, expectedMsg.sourceBlocktimestamp);
+        assertEq(tssMessage.originatorHash, expectedMsg.originatorHash);
+        assertEq(tssMessage.sourceTimestamp, expectedMsg.sourceTimestamp);
         assertEq(tssMessage.signingId, expectedMsg.signingId);
 
         // check packet.
-        assertEq(packet.tunnelId, expectedPacket.tunnelId);
         assertEq(packet.sequence, expectedPacket.sequence);
-        assertEq(packet.chainId, expectedPacket.chainId);
-        assertEq(packet.targetAddr, expectedPacket.targetAddr);
         assertEq(packet.signals[0].signal, expectedPacket.signals[0].signal);
         assertEq(packet.signals[0].price, expectedPacket.signals[0].price);
         assertEq(packet.timestamp, expectedPacket.timestamp);

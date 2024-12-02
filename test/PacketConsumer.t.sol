@@ -14,14 +14,17 @@ import "./helper/Constants.sol";
 contract PacketConsumerMockTunnelRouterTest is Test, Constants {
     PacketConsumer public packetConsumer;
 
-    function chainId() public pure returns (string memory) {
-        return "eth";
+    function sourceChainIdHash() public pure returns (bytes32) {
+        return keccak256("bandchain");
+    }
+
+    function targetChainIdHash() public pure returns (bytes32) {
+        return keccak256("testnet-evm");
     }
 
     function setUp() public {
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs =
-            abi.encode(address(this), keccak256("bandchain"), keccak256("testnet-evm"), address(this));
+        bytes memory packetConsumerArgs = abi.encode(address(this), address(this));
         address packetConsumerAddr = makeAddr("PacketConsumer");
         deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
@@ -39,16 +42,6 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         assertEq(price, packet.signals[0].price);
         assertEq(timestamp, packet.timestamp);
     }
-
-    function testProcessInvalidHashOriginator() public {
-        PacketDecoder.TssMessage memory data = DECODED_TSS_MESSAGE();
-
-        // fix originator hash.
-        data.hashOriginator = 0x00;
-        bytes memory expectedErr = abi.encodeWithSelector(IDataConsumer.InvalidHashOriginator.selector);
-        vm.expectRevert(expectedErr);
-        packetConsumer.process(data);
-    }
 }
 
 contract PacketConsumerTest is Test, Constants {
@@ -62,12 +55,7 @@ contract PacketConsumerTest is Test, Constants {
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
-        vault.initialize(
-            address(this),
-            address(0x00),
-            0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-            0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
-        );
+        vault.initialize(address(this), address(0x00));
 
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
@@ -84,8 +72,7 @@ contract PacketConsumerTest is Test, Constants {
         vault.setTunnelRouter(address(tunnelRouter));
 
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs =
-            abi.encode(address(tunnelRouter), keccak256("bandchain"), keccak256("testnet-evm"), address(this));
+        bytes memory packetConsumerArgs = abi.encode(address(tunnelRouter), address(this));
         address packetConsumerAddr = makeAddr("PacketConsumer");
         deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));

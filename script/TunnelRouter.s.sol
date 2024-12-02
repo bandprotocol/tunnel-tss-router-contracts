@@ -17,22 +17,14 @@ contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
         uint64 transitionPeriod = uint64(vm.envUint("TRANSITION_PERIOD"));
+        string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
+        string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
 
         vm.startBroadcast(privKey);
 
         // Deploy the proxy vault contract
         address proxyVaultAddr = Upgrades.deployTransparentProxy(
-            "Vault.sol",
-            msg.sender,
-            abi.encodeCall(
-                Vault.initialize,
-                (
-                    msg.sender,
-                    address(0x00),
-                    0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-                    0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
-                )
-            )
+            "Vault.sol", msg.sender, abi.encodeCall(Vault.initialize, (msg.sender, address(0x00)))
         );
         address implVaultAddr = Upgrades.getImplementationAddress(proxyVaultAddr);
 
@@ -52,8 +44,8 @@ contract DeployScript is Script {
                     100000,
                     300000,
                     0.11 gwei,
-                    0x0e1ac2c4a50a82aa49717691fc1ae2e5fa68eff45bd8576b0f2be7a0850fa7c6,
-                    0x541111248b45b7a8dc3f5579f630e74cb01456ea6ac067d3f4d793245a255155
+                    keccak256(bytes(sourceChainId)),
+                    keccak256(bytes(targetChainId))
                 )
             )
         );

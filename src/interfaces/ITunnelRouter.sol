@@ -30,43 +30,43 @@ interface ITunnelRouter {
      *
      * @param originatorHash The originatorHash of the target that the sender is deactivating.
      * @param sequence The sequence of the message.
-     * @param isReverted The flag indicating whether the message is reverted.
+     * @param isSuccess The flag indicating whether the message is successful execute.
      */
-    event MessageProcessed(bytes32 indexed originatorHash, uint64 indexed sequence, bool isReverted);
+    event MessageProcessed(bytes32 indexed originatorHash, uint64 indexed sequence, bool isSuccess);
 
     /**
-     * @notice Emitted when the target address is activated.
+     * @notice Emitted when the target is activated.
      *
-     * @param originatorHash The originatorHash of the target that the sender is deactivating.
-     * @param latestNonce The latest nonce of the sender.
+     * @param originatorHash The originatorHash of the target that the sender is activating.
+     * @param latestSequence The latest sequence of the tunnel.
      */
-    event Activated(bytes32 indexed originatorHash, uint64 latestNonce);
+    event Activated(bytes32 indexed originatorHash, uint64 latestSequence);
 
     /**
-     * @notice Emitted when the target address is deactivated.
+     * @notice Emitted when the target is deactivated.
      *
      * @param originatorHash The originatorHash of the target that the sender is deactivating.
-     * @param latestNonce The latest nonce of the sender.
+     * @param latestSequence The latest sequence of the tunnel.
      */
-    event Deactivated(bytes32 indexed originatorHash, uint64 latestNonce);
+    event Deactivated(bytes32 indexed originatorHash, uint64 latestSequence);
 
     // ========================================
     // Custom Errors
     // ========================================
 
     /**
-     * @notice Reverts if the target contract is inactive.
+     * @notice Reverts if the originatorHash is inactive.
      *
-     * @param targetAddr The target address that is inactive.
+     * @param originatorHash The originatorHash of the target contract and tunnelID.
      */
-    error InactiveTunnel(address targetAddr);
+    error InactiveTunnel(bytes32 originatorHash);
 
     /**
-     * @notice Reverts if the target contract is already active.
+     * @notice Reverts if the originatorHash is already active.
      *
-     * @param targetAddr The target address that is active.
+     * @param originatorHash The originatorHash of the target contract and tunnelID.
      */
-    error ActiveTunnel(address targetAddr);
+    error ActiveTunnel(bytes32 originatorHash);
 
     /**
      * @notice Reverts if the encoder type is undefined.
@@ -82,21 +82,9 @@ interface ITunnelRouter {
     error InvalidSequence(uint64 expected, uint64 input);
 
     /**
-     * @notice Reverts if the chain ID is incorrect.
-     *
-     * @param chainId The chain ID of the tunnel.
-     */
-    error InvalidChain(string chainId);
-
-    /**
      * @notice Reverts if the message and its signature doesn't match.
      */
     error InvalidSignature();
-
-    /**
-     * @notice Reverts if the contract cannot send fee to the specific address.
-     */
-    error TokenTransferFailed(address addr);
 
     /**
      * @notice Reverts if the remaining balance is insufficient to withdraw.
@@ -115,14 +103,15 @@ interface ITunnelRouter {
         bool isActive; // whether the tunnel is active or not
         uint64 latestSequence; // the latest sequence of the tunnel
         uint256 balance; // the remaining balance of the tunnel
+        bytes32 originatorHash; // the originator hash of the tunnel
     }
 
     /**
      * @dev Relays the message to the target contract.
      *
      * Verifies the message's sequence and signature before forwarding it to
-     * the data consumer contract. The sender is entitled to a reward from the
-     * vault contract, even if the data consumer contract fails to process the
+     * the packet consumer contract. The sender is entitled to a reward from the
+     * vault contract, even if the packet consumer contract fails to process the
      * message. The reward is based on the gas consumed during processing plus
      * a predefined additional gas estimate.
      *
@@ -165,6 +154,16 @@ interface ITunnelRouter {
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory);
 
     /**
+     * @dev Returns the originator hash of the given tunnel ID and address.
+     *
+     * @param tunnelId The ID of the tunnel.
+     * @param addr The target contract address.
+     *
+     * @return bytes32 The originator hash of the tunnel.
+     */
+    function originatorHash(uint64 tunnelId, address addr) external view returns (bytes32);
+
+    /**
      * @dev Returns the active status of the target contract.
      *
      * @param originatorHash The originatorHash of the target contract.
@@ -186,4 +185,14 @@ interface ITunnelRouter {
      * @dev Returns the vault contract address.
      */
     function vault() external view returns (IVault);
+
+    /**
+     * @dev Returns the source chain ID hash.
+     */
+    function sourceChainIdHash() external view returns (bytes32);
+
+    /**
+     * @dev Returns the target chain ID hash.
+     */
+    function targetChainIdHash() external view returns (bytes32);
 }

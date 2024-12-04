@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import "./BaseTunnelRouter.sol";
 
-contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
+contract PriorityFeeTunnelRouter is BaseTunnelRouter {
     struct GasFeeInfo {
         uint256 priorityFee;
     }

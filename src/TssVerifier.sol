@@ -17,7 +17,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The group order of secp256k1.
     uint256 constant _ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     // The grace period for the public key.
-    uint64 immutable transitionPeriod;
+    uint64 public immutable transitionPeriod;
     // The prefix for the hashing process in bandchain.
     string constant _CONTEXT = "BAND-TSS-secp256k1-v0";
     // The prefix for the challenging hash message.
@@ -77,12 +77,12 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         bool isInTransitionPeriod = publicKeys[pubKeyIdx].activeTime + transitionPeriod >= block.timestamp;
         if (
             pubKeyIdx > 0 && isInTransitionPeriod
-                && _verifyWithPublickKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx - 1])
+                && _verifyWithPublicKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx - 1])
         ) {
             return true;
         }
 
-        return _verifyWithPublickKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx]);
+        return _verifyWithPublicKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx]);
     }
 
     /// @dev Pauses the contract to prevent any further updates.
@@ -101,7 +101,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     }
 
     /// @dev Returns true if the signature is valid against the given public key.
-    function _verifyWithPublickKey(
+    function _verifyWithPublicKey(
         bytes32 hashedMessage,
         address randomAddr,
         uint256 signature,

@@ -40,38 +40,18 @@ contract TssVerifierTest is Test, TssSignerHelper {
     function testGetPubkey() public pure {
         uint8 parity;
         uint256 px;
-        (parity, px) = getPubkey(
-            0xbbfee063f4b3af6cfb1e3b69944401d36dee7d295753f8e47934ce6e63e2d2d0
-        );
+        (parity, px) = getPubkey(0xbbfee063f4b3af6cfb1e3b69944401d36dee7d295753f8e47934ce6e63e2d2d0);
         assertEq(uint8(27), parity);
-        assertEq(
-            0xbbc14502dc6f2fb3dce112a7237a57420c3b302204f021dfa60d18446789eaaa,
-            px
-        );
-        (parity, px) = getPubkey(
-            0x5575ba296d17a5241c58517b9c235586a2ab77deeb1b4299ecd027ace48c67d1
-        );
+        assertEq(0xbbc14502dc6f2fb3dce112a7237a57420c3b302204f021dfa60d18446789eaaa, px);
+        (parity, px) = getPubkey(0x5575ba296d17a5241c58517b9c235586a2ab77deeb1b4299ecd027ace48c67d1);
         assertEq(uint8(28), parity);
-        assertEq(
-            0xd8c41847e84013f83ab06e98d5fbf75f7117ee0f20c45415c5216e7ba273789b,
-            px
-        );
-        (parity, px) = getPubkey(
-            0x672c7b975947e5ba6fa739540df1c7f53d0275aea1d23e626e036bec4aa24b57
-        );
+        assertEq(0xd8c41847e84013f83ab06e98d5fbf75f7117ee0f20c45415c5216e7ba273789b, px);
+        (parity, px) = getPubkey(0x672c7b975947e5ba6fa739540df1c7f53d0275aea1d23e626e036bec4aa24b57);
         assertEq(uint8(27), parity);
-        assertEq(
-            0x2459b0c6f115152e906d6650662109abb5f23812dc1d990dc2c1460283bc42a1,
-            px
-        );
-        (parity, px) = getPubkey(
-            0x93942b3b629d2464ef9eb112547de73c8043fcd6ef7ccc9bbe2325af1dbbadc8
-        );
+        assertEq(0x2459b0c6f115152e906d6650662109abb5f23812dc1d990dc2c1460283bc42a1, px);
+        (parity, px) = getPubkey(0x93942b3b629d2464ef9eb112547de73c8043fcd6ef7ccc9bbe2325af1dbbadc8);
         assertEq(uint8(28), parity);
-        assertEq(
-            0xc266a897cf8155706f68608316c43d3ee34b600d7fc472ce487bb17cf7a5bd41,
-            px
-        );
+        assertEq(0xc266a897cf8155706f68608316c43d3ee34b600d7fc472ce487bb17cf7a5bd41, px);
     }
 
     function testSchnorrSign() public pure {
@@ -85,18 +65,9 @@ contract TssVerifierTest is Test, TssSignerHelper {
             secret
         );
         assertEq(uint8(27), parity);
-        assertEq(
-            px,
-            0xa6ffbcd81f51883fd64cda2bdc3150fe50ccbe27f482201467d4e7a7f1a5212e
-        );
-        assertEq(
-            randomAddr,
-            address(0x4991030Be950BE3dD902612585Ff64a1e5d017ec)
-        );
-        assertEq(
-            s,
-            0xc8727773e662c4c23db072ce0ce27b1ffe3f4ee8a93460efdf61b5a9af5edffd
-        );
+        assertEq(px, 0xa6ffbcd81f51883fd64cda2bdc3150fe50ccbe27f482201467d4e7a7f1a5212e);
+        assertEq(randomAddr, address(0x4991030Be950BE3dD902612585Ff64a1e5d017ec));
+        assertEq(s, 0xc8727773e662c4c23db072ce0ce27b1ffe3f4ee8a93460efdf61b5a9af5edffd);
         secret = 0x05cff511ca26b944fb22285c8a56595baeefe399d49e5aeef27233701b59b8ad;
         (parity, px) = getPubkey(secret);
         (randomAddr, s) = sign(
@@ -107,17 +78,8 @@ contract TssVerifierTest is Test, TssSignerHelper {
             secret
         );
         assertEq(uint8(28), parity);
-        assertEq(
-            px,
-            0xa221bfe76ca3ae50df876afda2701cb1cad0527e28d0680f8af00ce14e6b079a
-        );
-        assertEq(
-            randomAddr,
-            address(0x2F7f7613Ab95bff1a6B23F3AFD3fA6dd80F04461)
-        );
-        assertEq(
-            s,
-            0xefb10cb564c33dca7d57a697941f4d182f5e80fa351a20ed5538453d6d8c2393
-        );
+        assertEq(px, 0xa221bfe76ca3ae50df876afda2701cb1cad0527e28d0680f8af00ce14e6b079a);
+        assertEq(randomAddr, address(0x2F7f7613Ab95bff1a6B23F3AFD3fA6dd80F04461));
+        assertEq(s, 0xefb10cb564c33dca7d57a697941f4d182f5e80fa351a20ed5538453d6d8c2393);
     }
 }

@@ -15,13 +15,7 @@ interface ITssVerifier {
      * @param px The x-coordinate value of the public key.
      * @param isByAdmin True if the public key is updated by the admin, false otherwise.
      */
-    event GroupPubKeyUpdated(
-        uint256 index,
-        uint256 timestamp,
-        uint8 parity,
-        uint256 px,
-        bool isByAdmin
-    );
+    event GroupPubKeyUpdated(uint256 index, uint256 timestamp, uint8 parity, uint256 px, bool isByAdmin);
 
     // ========================================
     // Custom Errors
@@ -58,11 +52,7 @@ interface ITssVerifier {
      * @param signature The tss signature.
      * @return true If the signature is valid, false otherwise.
      */
-    function verify(
-        bytes32 hashedMessage,
-        address randomAddr,
-        uint256 signature
-    ) external view returns (bool);
+    function verify(bytes32 hashedMessage, address randomAddr, uint256 signature) external view returns (bool);
 
     /**
      * @dev Adds a new public key with proof from the current group.
@@ -71,11 +61,7 @@ interface ITssVerifier {
      * @param randomAddr The address form of the commitment R.
      * @param s The Schnorr signature.
      */
-    function addPubKeyWithProof(
-        bytes calldata message,
-        address randomAddr,
-        uint256 s
-    ) external;
+    function addPubKeyWithProof(bytes calldata message, address randomAddr, uint256 s) external;
 
     /**
      * @dev Adds the new public key by the owner.
@@ -84,9 +70,5 @@ interface ITssVerifier {
      * @param parity The parity value of the new public key.
      * @param px The x-coordinate value of the new public key.
      */
-    function addPubKeyByOwner(
-        uint64 timestamp,
-        uint8 parity,
-        uint256 px
-    ) external;
+    function addPubKeyByOwner(uint64 timestamp, uint8 parity, uint256 px) external;
 }

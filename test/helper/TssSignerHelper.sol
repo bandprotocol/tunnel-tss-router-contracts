@@ -9,24 +9,19 @@ import "./SECP256k1.sol";
 
 contract TssSignerHelper is Test {
     // secp256k1 group order
-    uint256 public constant ORDER =
-        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+    uint256 public constant ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
 
     /// @dev Gets the signing message that will be used in signing of the tss module.
-    function getSigningMessage(
-        bytes32 hashOriginator,
-        uint64 signingID,
-        uint64 timestamp,
-        bytes calldata rawMessage
-    ) public pure returns (bytes memory) {
-        return
-            abi.encodePacked(hashOriginator, timestamp, signingID, rawMessage);
+    function getSigningMessage(bytes32 orignatorHash, uint64 signingID, uint64 timestamp, bytes calldata rawMessage)
+        public
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(orignatorHash, timestamp, signingID, rawMessage);
     }
 
     /// @dev Generates new public key.
-    function getPubkey(
-        uint256 privateKey
-    ) public pure returns (uint8 parity, uint256 px) {
+    function getPubkey(uint256 privateKey) public pure returns (uint8 parity, uint256 px) {
         uint256 py;
         (px, py) = SECP256k1.publicKey(privateKey);
         parity = 27;
@@ -36,18 +31,15 @@ contract TssSignerHelper is Test {
     }
 
     /// @dev Generates the challenge context that will be used in checking verifying signature.
-    function challenge(
-        uint8 _parity,
-        address randomAddr,
-        uint256 _px,
-        bytes32 messageHash
-    ) public pure returns (uint256 c) {
+    function challenge(uint8 _parity, address randomAddr, uint256 _px, bytes32 messageHash)
+        public
+        pure
+        returns (uint256 c)
+    {
         c = uint256(
             keccak256(
                 abi.encodePacked(
-                    bytes32(
-                        0x42414e442d5453532d736563703235366b312d7630006368616c6c656e676500
-                    ),
+                    bytes32(0x42414e442d5453532d736563703235366b312d7630006368616c6c656e676500),
                     randomAddr,
                     _parity,
                     _px,
@@ -58,20 +50,16 @@ contract TssSignerHelper is Test {
     }
 
     /// @dev Generates a nonce for that private key; this is not an rng function.
-    function getRandomNonce(
-        uint256 privateKey
-    ) public pure returns (uint256 k) {
+    function getRandomNonce(uint256 privateKey) public pure returns (uint256 k) {
         k = uint256(keccak256(abi.encodePacked("salt", privateKey)));
     }
 
     /// @dev Generates schnorr signature on the given message.
-    function sign(
-        uint8 parity,
-        uint256 px,
-        uint256 randomNonce,
-        bytes32 messageHash,
-        uint256 privateKey
-    ) public pure returns (address randomAddr, uint256 s) {
+    function sign(uint8 parity, uint256 px, uint256 randomNonce, bytes32 messageHash, uint256 privateKey)
+        public
+        pure
+        returns (address randomAddr, uint256 s)
+    {
         randomAddr = vm.addr(randomNonce);
         // c = h(address(R) || compressed pubkey || m)
         uint256 c = challenge(parity, randomAddr, px, messageHash);

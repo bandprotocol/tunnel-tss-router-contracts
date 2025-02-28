@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 
 import "./BaseTunnelRouter.sol";
 
-contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
+contract PriorityFeeTunnelRouter is BaseTunnelRouter {
     struct GasFeeInfo {
         uint256 priorityFee;
     }
@@ -19,14 +19,18 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         address initialOwner,
         uint256 additionalGas_,
         uint256 callbackGasLimit_,
-        uint256 priorityFee_
+        uint256 priorityFee_,
+        bytes32 sourceChainIdHash_,
+        bytes32 targetChainIdHash_
     ) public initializer {
         __BaseRouter_init(
             tssVerifier_,
             vault_,
             initialOwner,
             additionalGas_,
-            callbackGasLimit_
+            callbackGasLimit_,
+            sourceChainIdHash_,
+            targetChainIdHash_
         );
 
         _setGasFee(GasFeeInfo(priorityFee_));
@@ -45,9 +49,7 @@ contract PrioritiyFeeTunnelRouter is BaseTunnelRouter {
         emit SetGasFee(gasFee_);
     }
 
-    function _routerFee(
-        uint256 gasUsed
-    ) internal view virtual override returns (uint) {
+    function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
         GasFeeInfo memory _gasFee = gasFee;
         return (_gasFee.priorityFee + block.basefee) * gasUsed;
     }

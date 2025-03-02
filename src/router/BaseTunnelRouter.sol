@@ -231,12 +231,14 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev Sets senders' address by given flag.
      */ 
     function setWhitelist(address[] memory senders, bool flag) external onlyOwner {
-        for (uint256 i = 0; i < senders.length; i++) {
+        for (uint256 i = 0; i < senders.length;) {
             if (senders[i] == address(0)) {
                 revert InvalidSenderAddress();
             }
             isAllowed[senders[i]] = flag;
             emit SetWhiteList(senders[i], flag);
+
+            unchecked { i++; }
         }
     }
 

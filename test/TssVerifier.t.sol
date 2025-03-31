@@ -18,7 +18,7 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
-        verifier = new TssVerifier(0, address(this));
+        verifier = new TssVerifier(0, _ORIGINATOR_HASH_REPLACEMENT, address(this));
         verifier.addPubKeyByOwner(0, parity - 25, px);
     }
 
@@ -114,7 +114,7 @@ contract TssVerifierWithTransitioPeriodTest is Test, TssSignerHelper {
     TssVerifier public verifier;
 
     function setUp() public {
-        verifier = new TssVerifier(100, address(this));
+        verifier = new TssVerifier(100, 0x00, address(this));
 
         for (uint256 i = 0; i < 3; i++) {
             (uint8 parity, uint256 px) = getPubkey(_privateKeys[i]);

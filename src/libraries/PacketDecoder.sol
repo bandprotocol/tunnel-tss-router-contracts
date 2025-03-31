@@ -42,7 +42,7 @@ library PacketDecoder {
     function decodeTssMessage(bytes calldata message) internal pure returns (TssMessage memory) {
         EncoderType encoder = _toEncoderType(bytes8(message[48:56]));
 
-        Packet memory packet = _decodePacket(message);
+        Packet memory packet = _decodePacket(message[56:]);
 
         TssMessage memory tssMessage = TssMessage(
             bytes32(message[0:32]), uint64(bytes8(message[32:40])), uint64(bytes8(message[40:48])), encoder, packet
@@ -52,12 +52,12 @@ library PacketDecoder {
     }
 
     /**
-     * @dev Decode the TSS message from the encoded message.
+     * @dev Decode the packet information from the encoded message.
      * @param message The encoded message.
-     * @return TssMessage The decoded TSS message object.
+     * @return TssMessage The decoded packet object.
      */
     function _decodePacket(bytes calldata message) internal pure returns (Packet memory) {
-        Packet memory packet = abi.decode(message[56:], (Packet));
+        Packet memory packet = abi.decode(message, (Packet));
         return packet;
     }
 

@@ -20,7 +20,7 @@ contract RelayFullLoopTest is Test, Constants {
     bytes32 originatorHash;
 
     function setUp() public {
-        tssVerifier = new TssVerifier(86400, address(this));
+        tssVerifier = new TssVerifier(86400, 0x00, address(this));
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
@@ -44,7 +44,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer.activate{value: 0.01 ether}(0);
 
         originatorHash = Originator.hash(
-            tunnelRouter.sourceChainIdHash(), tunnelRouter.targetChainIdHash(), 1, address(packetConsumer)
+            tunnelRouter.sourceChainIdHash(), 1, tunnelRouter.targetChainIdHash(), address(packetConsumer)
         );
         assertEq(tunnelRouter.isActive(originatorHash), true);
     }
@@ -100,7 +100,7 @@ contract RelayFullLoopTest is Test, Constants {
     function testRelayInactiveTunnel() public {
         packetConsumer.deactivate();
 
-        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.InactiveTunnel.selector, originatorHash);
+        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.TunnelNotActive.selector, originatorHash);
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
@@ -113,7 +113,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testReactivateAlreadyActive() public {
-        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.ActiveTunnel.selector, originatorHash);
+        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.TunnelAlreadyActive.selector, originatorHash);
         vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
     }

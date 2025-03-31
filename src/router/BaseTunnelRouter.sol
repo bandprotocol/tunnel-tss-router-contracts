@@ -12,11 +12,9 @@ import "../interfaces/ITunnelRouter.sol";
 import "../interfaces/IVault.sol";
 
 import "../libraries/PacketDecoder.sol";
-import "../libraries/StringAddress.sol";
 import "../libraries/Originator.sol";
 
 abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, PausableUpgradeable, ITunnelRouter {
-    using StringAddress for string;
     using PacketDecoder for bytes;
 
     ITssVerifier public tssVerifier;

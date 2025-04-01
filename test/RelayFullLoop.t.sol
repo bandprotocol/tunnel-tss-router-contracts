@@ -123,7 +123,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testSenderNotInWhitelist() public {
         bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.SenderNotWhitelist.selector,
+            ITunnelRouter.SenderNotWhitelisted.selector,
             MOCK_SENDER
         );
 

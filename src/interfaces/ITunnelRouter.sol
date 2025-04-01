@@ -57,10 +57,7 @@ interface ITunnelRouter {
      * @param flag A boolean value indicating the whitelist status of the address:
      * `true` if the address is added to the whitelist, `false` if removed.
      */
-    event SetWhiteList(
-        address indexed sender,
-        bool flag
-    );
+    event SetWhitelist(address indexed sender, bool flag);
 
     // ========================================
     // Custom Errors
@@ -113,9 +110,9 @@ interface ITunnelRouter {
     error InsufficientRemainingBalance(uint64 tunnelId, address addr);
 
     /**
-     * @notice Reverts if the sender is not in whitelist.
+     * @notice Reverts if the sender is not whitelisted.
      */
-    error SenderNotWhitelist(address addr);
+    error SenderNotWhitelisted(address addr);
 
     /**
      * @notice Reverts if the sender is address(0).

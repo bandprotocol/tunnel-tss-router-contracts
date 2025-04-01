@@ -47,7 +47,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
 
     modifier onlyWhitelisted() {
         if (!isAllowed[msg.sender]) {
-            revert SenderNotWhitelist(msg.sender); 
+            revert SenderNotWhitelisted(msg.sender); 
         }
         _;
     }
@@ -239,7 +239,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
                 revert InvalidSenderAddress();
             }
             isAllowed[senders[i]] = flag;
-            emit SetWhiteList(senders[i], flag);
+            emit SetWhitelist(senders[i], flag);
 
             unchecked { i++; }
         }

@@ -89,7 +89,7 @@ interface IPacketConsumer {
     function tunnelRouter() external view returns (address);
 
     /**
-     * @dev Returns The tunnelId of the contract address.
+     * @dev Returns The tunnelId of the contract.
      */
     function tunnelId() external view returns (uint64);
 }

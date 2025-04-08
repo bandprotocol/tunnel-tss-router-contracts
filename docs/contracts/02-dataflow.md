@@ -16,8 +16,7 @@ Stores the active TSS group’s public key and is responsible for verifying the 
 
 ### Vault
 
-Manages funds within the system. It is used by the Tunnel Router to deduct processing fees from the target contract’s account. It allows user to deposit to and withdraw funds from the account.
-
+Manages funds within the system. It is used by the Tunnel Router to deduct processing fees from the target contract’s account. It allows users to deposit to and withdraw funds from the account.
 ## Process
 
 ![Data flow](https://i.imgur.com/MF5K3Hk.png)

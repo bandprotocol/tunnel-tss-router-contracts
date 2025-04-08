@@ -12,7 +12,7 @@ Following these steps will integrate your target contract with the BandChain tun
    With the tunnelID in hand, set it on your deployed target contract. This step links the target contract to the specific tunnel in BandChain, ensuring that incoming messages are correctly routed.
 
 4. Activate the Account:
-   To start processing messages, activate the target account. This can be done by calling the activate function either directly on the target contract (using `PacketConsumer.activate`) or via the `TunnelRouter.activate` method. Activation is essential for enabling message relaying. You may require to deposit tokens into the account as well (providing eth within the transaction).
+   To start processing messages, activate the target account. This can be done by calling the activate function either directly on the target contract (using `PacketConsumer.activate`) or via the `TunnelRouter.activate` method. Activation is essential for enabling message relaying. You may need to deposit tokens into the account as well (providing eth within the transaction).
 
 5. Verify Account Activation:
    Finally, confirm that the account is active by querying the `TunnelRouter.tunnelInfo(tunnelId, address)` function. This verification step ensures that the tunnel and target contract are properly configured and ready to receive data.

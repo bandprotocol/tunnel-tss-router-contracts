@@ -115,7 +115,7 @@ interface ITssVerifier {
      * The contract is not allowed to verify the message with obsolete public key.
      *
      * @param hashedMessage The hashed message to be verified.
-     * @param randomAddr The random address that is generated during the processing tss signature.
+     * @param randomAddr The random address generated during TSS signature processing.
      * @param signature The tss signature.
      * @return true If the signature is valid, false otherwise.
      */

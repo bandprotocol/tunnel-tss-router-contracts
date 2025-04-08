@@ -55,7 +55,7 @@ interface ITunnelRouter {
      * @param tunnelId The ID of the tunnel.
      * @param addr The target contract address.
      *
-     * @return bool True if the tunnel is active, false otherwise.
+     * @return TunnelInfo The tunnel information.
      */
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory);
 

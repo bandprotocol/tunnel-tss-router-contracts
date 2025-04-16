@@ -43,7 +43,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     // A list of senders allowed to relay packets.
     mapping(address => bool) public isAllowed; // sender address => isAllowed
 
-    uint[49] __gap;
+    uint256[49] __gap;
 
     modifier onlyWhitelisted() {
         if (!isAllowed[msg.sender]) {

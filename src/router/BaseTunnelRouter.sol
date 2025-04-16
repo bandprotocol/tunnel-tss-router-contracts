@@ -12,11 +12,9 @@ import "../interfaces/ITunnelRouter.sol";
 import "../interfaces/IVault.sol";
 
 import "../libraries/PacketDecoder.sol";
-import "../libraries/StringAddress.sol";
 import "../libraries/Originator.sol";
 
 abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, PausableUpgradeable, ITunnelRouter {
-    using StringAddress for string;
     using PacketDecoder for bytes;
 
     ITssVerifier public tssVerifier;
@@ -127,11 +125,16 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
         // validate the activeness and sequence of the target contract.
         TunnelDetail memory tunnelDetail = tunnelDetails[originatorHash_];
         if (!tunnelDetail.isActive) {
-            revert InactiveTunnel(originatorHash_);
+            revert TunnelNotActive(originatorHash_);
         }
 
         if (tunnelDetail.sequence + 1 != packet.sequence) {
             revert InvalidSequence(tunnelDetail.sequence + 1, packet.sequence);
+        }
+
+        uint64 targetTunnelId = IPacketConsumer(tunnelDetail.targetAddr).tunnelId();
+        if (targetTunnelId != tunnelDetail.tunnelId) {
+            revert InvalidTunnelId(targetTunnelId, tunnelDetail.tunnelId);
         }
 
         // verify signature.
@@ -169,7 +172,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     function activate(uint64 tunnelId, uint64 latestSeq) external payable {
         bytes32 originatorHash_ = originatorHash(tunnelId, msg.sender);
         if (tunnelDetails[originatorHash_].isActive) {
-            revert ActiveTunnel(originatorHash_);
+            revert TunnelAlreadyActive(originatorHash_);
         }
 
         vault.deposit{value: msg.value}(tunnelId, msg.sender);
@@ -189,10 +192,10 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-deactivate}.
      */
     function deactivate(uint64 tunnelId) external {
-        bytes32 originatorHash_ = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, msg.sender);
+        bytes32 originatorHash_ = Originator.hash(sourceChainIdHash, tunnelId, targetChainIdHash, msg.sender);
 
         if (!tunnelDetails[originatorHash_].isActive) {
-            revert InactiveTunnel(originatorHash_);
+            revert TunnelNotActive(originatorHash_);
         }
 
         _deactivate(originatorHash_);
@@ -209,7 +212,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-tunnelInfo}.
      */
     function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory) {
-        bytes32 originatorHash_ = Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
+        bytes32 originatorHash_ = Originator.hash(sourceChainIdHash, tunnelId, targetChainIdHash, addr);
         TunnelDetail memory tunnelDetail = tunnelDetails[originatorHash_];
 
         return TunnelInfo({
@@ -224,7 +227,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
      * @dev See {ITunnelRouter-originatorHash}.
      */
     function originatorHash(uint64 tunnelId, address addr) public view returns (bytes32) {
-        return Originator.hash(sourceChainIdHash, targetChainIdHash, tunnelId, addr);
+        return Originator.hash(sourceChainIdHash, tunnelId, targetChainIdHash, addr);
     }
 
     /** 
@@ -267,11 +270,7 @@ abstract contract BaseTunnelRouter is Initializable, Ownable2StepUpgradeable, Pa
     }
 
     /// @dev Calculates the fee for the router.
-    function _routerFee(uint256 gasUsed) internal view virtual returns (uint256) {
-        gasUsed; // Shh
-
-        return 0;
-    }
+    function _routerFee(uint256 gasUsed) internal view virtual returns (uint256);
 
     /// @dev Sets callbackGasLimit and emit an event.
     function _setCallbackGasLimit(uint256 callbackGasLimit_) internal {

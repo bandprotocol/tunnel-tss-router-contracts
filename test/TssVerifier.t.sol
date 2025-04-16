@@ -18,7 +18,7 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
 
     function setUp() public {
         (uint8 parity, uint256 px) = getPubkey(_privateKey);
-        verifier = new TssVerifier(0, address(this));
+        verifier = new TssVerifier(0, _ORIGINATOR_HASH_REPLACEMENT, address(this));
         verifier.addPubKeyByOwner(0, parity - 25, px);
     }
 
@@ -45,6 +45,8 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
         uint256 start;
         uint256 gasUsedVerifyAcc;
         uint256 gasUsedUpdateAcc;
+        uint256 initialGasUsedVerifyAcc;
+        uint256 initialGasUsedUpdateAcc;
     }
 
     function testVerify() public {
@@ -68,6 +70,11 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
             // verify signature
             tmp.start = gasleft();
             bool result = verifier.verify(tmp.messageHash, tmp.randomAddr, tmp.s);
+            if (i == 0) {
+                tmp.initialGasUsedVerifyAcc = tmp.start - gasleft();
+            } else {
+                tmp.gasUsedVerifyAcc += tmp.start - gasleft();
+            }
             tmp.gasUsedVerifyAcc += tmp.start - gasleft();
             assertEq(result, true);
 
@@ -86,19 +93,25 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
             // add new public key
             tmp.start = gasleft();
             verifier.addPubKeyWithProof(message, tmp.randomAddr, tmp.s);
-            tmp.gasUsedUpdateAcc += tmp.start - gasleft();
+
+            if (i == 0) {
+                tmp.initialGasUsedUpdateAcc = tmp.start - gasleft();
+            } else {
+                tmp.gasUsedUpdateAcc += tmp.start - gasleft();
+            }
 
             // compare result and replace existing private key.
             cmpNewPubKey(tmp.timestamp, tmp.newParity, tmp.newPx);
             privateKey = tmp.nextPrivateKey;
 
             if (i == 0) {
-                console.log("initial verify gas avg = ", tmp.gasUsedVerifyAcc);
-                console.log("initial update pubkey gas avg = ", tmp.gasUsedUpdateAcc);
+                console.log("initial verify gas avg = ", tmp.initialGasUsedVerifyAcc);
+                console.log("initial update pubkey gas avg = ", tmp.initialGasUsedUpdateAcc);
             }
         }
-        console.log("verify gas avg = ", tmp.gasUsedVerifyAcc / 100);
-        console.log("update pubkey gas avg = ", tmp.gasUsedUpdateAcc / 100);
+        
+        console.log("verify gas avg = ", tmp.gasUsedVerifyAcc / 99); // because we skip the first one.
+        console.log("update pubkey gas avg = ", tmp.gasUsedUpdateAcc / 99); // because we skip the first one.
     }
 }
 
@@ -114,7 +127,7 @@ contract TssVerifierWithTransitioPeriodTest is Test, TssSignerHelper {
     TssVerifier public verifier;
 
     function setUp() public {
-        verifier = new TssVerifier(100, address(this));
+        verifier = new TssVerifier(100, 0x00, address(this));
 
         for (uint256 i = 0; i < 3; i++) {
             (uint8 parity, uint256 px) = getPubkey(_privateKeys[i]);

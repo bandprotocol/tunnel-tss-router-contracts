@@ -50,7 +50,6 @@ contract PriorityFeeTunnelRouter is BaseTunnelRouter {
     }
 
     function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
-        GasFeeInfo memory _gasFee = gasFee;
-        return (_gasFee.priorityFee + block.basefee) * gasUsed;
+        return (gasFee.priorityFee + block.basefee) * gasUsed;
     }
 }

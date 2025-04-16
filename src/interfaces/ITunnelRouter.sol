@@ -109,7 +109,7 @@ interface ITunnelRouter {
     /**
      * @notice Reverts if the sender is not in whitelist.
      */
-    error SenderNotWhitelist(address addr);
+    error SenderNotInWhitelist(address addr);
 
     /**
      * @notice Reverts if the sender is address(0).

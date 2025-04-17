@@ -1,61 +1,74 @@
-# Future-Bridge-Prototype (FPB)
+# Tunnel TSS Router Contracts
 
 <div align="center">
 
 ![logo](docs/static/img/logo.svg)
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![test](https://github.com/bandprotocol/future-bridge-prototype/actions/workflows/test.yml/badge.svg)](https://github.com/bandprotocol/future-bridge-prototype/actions/workflows/test.yml)
+[![test](https://github.com/bandprotocol/tunnel-tss-router-contracts/actions/workflows/test.yml/badge.svg)](https://github.com/bandprotocol/tunnel-tss-router-contracts/actions/workflows/test.yml)
 
 </div>
 
-**Disclaimer:** This project is still in its early stages of development and is considered a prototype. Please refrain from using it in production.
-
-The FBP is a new relaying scheme that connects EVM networks with
-the Band protocol's chain in a more efficient way than the current 
-Bridge smart contract. It is based on threshold signature technology
-and a custom signing procedure that reduces the size of the proof and
-the number of verification operations, resulting in significant gas 
-savings.
-
----
+The Tunnel-TSS-Router is an innovative relaying solution that connects EVM networks with Band Protocol's price feeds data more efficiently than the current Bridge smart contract. It leverages threshold signature technology and a custom signing procedure to minimize proof size and verification operations, resulting in significant gas savings.
 
 ## Background
-The current Bridge smart contract contains a large number of EVM operations
-for doing lite client verification, which causes the gas used in the 
-verification to be extremely high. This is mainly due to storing and 
-reading validators with voting power, verifying numerous signatures, 
-Merkle trees hashing, and Tendermint's struct encoding. 
-To address this issue, the FBP was developed.
+The current Bridge smart contract requires extensive EVM operations for lite client verification, leading to high gas consumption. This inefficiency stems from several factors such as:
+
+1. Storing and retrieving validators with voting power
+2. Verifying multiple signatures
+3. Computing Merkle tree hashes
+4. Encoding Tendermint structures
+
+These operations result in high gas costs and slower transaction processing. The Tunnel-TSS-Router addresses these issues by implementing a more efficient verification mechanism using threshold signatures.
 
 ## Installation
-First (if you don't have Foundry) run the command below to get foundryup,
-the Foundry toolchain installer:
+If you don't have Foundry installed, run the following command to install foundryup, the Foundry toolchain installer:
 ```sh
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
 ## Testing
-
+Run the following command to execute tests:
 ```sh
 forge test -vv
 ```
 
+## Data Flow
+The Tunnel-TSS-Router system consists of multiple coordinated components that work together to securely relay data:
+
+1. A **Relayer** submits data to the `TunnelRouter`
+2. The `TunnelRouter` decodes the message and verifies its sequence to prevent replay attacks
+3. If the sequence is valid, the data and its signature are forwarded to the `TSSVerifier` for signature validation
+4. After successful verification, the message is sent to the `Target Contract` for final processing
+5. The `TunnelRouter` withdraws the relaying fee from the `Vault` and transfers it to the relayer
+6. If the remaining balance drops below a configured threshold, the Target Contract is marked as **inactive** to prevent further relaying
+
 ## Features
-The FBP is built on threshold signature technology and a custom signing
-procedure. This provides several advantages, including:
+Built on threshold signature technology and a custom signing procedure, the project offers several advantages:
 
-- Reduced gas usage: The custom signing procedure used in the FBP 
-significantly reduces the amount of gas required for verification, 
-resulting in cost savings for users.
-- Enhanced decentralization: The threshold signature mechanism employed 
-in the FBP further improves decentralization by eliminating the need for
-a multisig wallet, which was previously utilized to regulate the Bridge
-contract. This is because any parameter update can be accomplished with
-a single threshold signature as proof, avoiding the requirement for 
-numerous parties to sign off on changes. This makes the Future-Bridge
-more decentralized and less reliant on a central authority, which is a 
-vital feature for many blockchain users.
+1. 🔁 **Efficient Relaying Process**
+    - The `TunnelRouter` maintains data integrity by decoding messages and validating sequences
+    - The `TSSVerifier` securely validates data authenticity using threshold signatures
+    - Fees are automatically withdrawn from the `Vault` and paid to the relayer
+    - Account owners can securely withdraw tokens from the `Vault`.
 
-## Contributing
-Contributions to the FBP are welcome and encouraged. If you have any suggestions or feedback, please open an issue or submit a pull request. We appreciate your contributions and look forward to working with you to make the FBP even better.
+2. ✅ **Reduced Gas Usage**
+    - Compact threshold signature scheme minimizes on-chain verification logic
+    - Eliminates the need to verify multiple individual signatures
+
+3. ⚖️ **Flexible Fee Models**
+    - Supports both GasPrice and PriorityFee models
+    - Ensures fair and flexible compensation for relayers across different network conditions
+    - Vault-based system manages relayer deposits and withdrawals
+
+4. 🛡️ **Robust Security**
+    - Uses TSS to guarantee data integrity and authenticity
+    - Prevents unauthorized withdrawals through vault safeguards
+    - Sequence tracking prevents message replay and duplication
+    - Deactivation logic protects underfunded target contracts from exploitation
+
+5. 🏛️ **Enhanced Decentralization**
+    - Eliminates the need for centralized multisig validators
+
+## Contribution
+We welcome and encourage contributions to the project. If you have suggestions or feedback, please open an issue or submit a pull request. We appreciate your contributions and look forward to collaborating to improve the Tunnel-TSS-Router.

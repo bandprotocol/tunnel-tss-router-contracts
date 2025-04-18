@@ -19,7 +19,7 @@ contract VaultTest is Test, Constants {
     Vault internal vault;
 
     function setUp() public {
-        tssVerifier = new TssVerifier(86400, address(this));
+        tssVerifier = new TssVerifier(86400, 0x00, address(this));
         tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
 
         vault = new Vault();
@@ -46,7 +46,7 @@ contract VaultTest is Test, Constants {
         packetConsumer.deposit{value: 0.01 ether}();
 
         bytes32 originatorHash = Originator.hash(
-            keccak256("bandchain"), keccak256("testnet-evm"), packetConsumer.tunnelId(), address(packetConsumer)
+            keccak256("bandchain"), packetConsumer.tunnelId(), keccak256("testnet-evm"), address(packetConsumer)
         );
 
         assertEq(vault.balance(packetConsumer.tunnelId(), address(packetConsumer)), 0.01 ether);
@@ -64,7 +64,7 @@ contract VaultTest is Test, Constants {
         uint256 balanceVaultBefore = address(vault).balance;
 
         bytes32 originatorHash = Originator.hash(
-            keccak256("bandchain"), keccak256("testnet-evm"), packetConsumer.tunnelId(), address(packetConsumer)
+            keccak256("bandchain"), packetConsumer.tunnelId(), keccak256("testnet-evm"), address(packetConsumer)
         );
 
         packetConsumer.activate{value: 0.01 ether}(2);

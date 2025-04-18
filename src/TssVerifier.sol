@@ -17,7 +17,9 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The group order of secp256k1.
     uint256 constant _ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     // The grace period for the public key.
-    uint64 public immutable transitionPeriod;
+    uint64 public transitionPeriod;
+    // The originator hash of the transition message
+    bytes32 public transitionOriginatorHash;
     // The prefix for the hashing process in bandchain.
     string constant _CONTEXT = "BAND-TSS-secp256k1-v0";
     // The prefix for the challenging hash message.
@@ -26,20 +28,41 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The list of public keys that are used for the verification process.
     PublicKey[] public publicKeys;
 
-    constructor(uint64 transitionPeriod_, address initialAddr) Ownable(initialAddr) {
-        transitionPeriod = transitionPeriod_;
+    constructor(uint64 transitionPeriod_, bytes32 transitionOriginatorHash_, address initialAddr)
+        Ownable(initialAddr)
+    {
+        _setTransitionPeriod(transitionPeriod_);
+        _setTransitionOriginatorHash(transitionOriginatorHash_);
+    }
+
+    /**
+     * @dev See {ITssVerifier-setTransitionPeriod}.
+     */
+    function setTransitionPeriod(uint64 transitionPeriod_) external onlyOwner {
+        _setTransitionPeriod(transitionPeriod_);
+    }
+
+    /**
+     * @dev See {ITssVerifier-setTransitionOriginatorHash}.
+     */
+    function setTransitionOriginatorHash(bytes32 transitionOriginatorHash_) external onlyOwner {
+        _setTransitionOriginatorHash(transitionOriginatorHash_);
     }
 
     /**
      * @dev See {ITssVerifier-addPubKeyWithProof}.
      */
     function addPubKeyWithProof(bytes calldata message, address randomAddr, uint256 s) external whenNotPaused {
+        if (bytes32(message[0:32]) != transitionOriginatorHash) {
+            revert InvalidTransitionOriginatorHash();
+        }
+
         if (!verify(keccak256(message), randomAddr, s)) {
             revert InvalidSignature();
         }
 
         // Extract the public key from the message. The message is in the form of
-        // hashedOrignator (32 bytes) || timestamp (uint64; 8-bytes) || signingId (uint64; 8 bytes)
+        // hashedOriginator (32 bytes) || timestamp (uint64; 8-bytes) || signingId (uint64; 8 bytes)
         // || modulePrefix (8 bytes) || parity (1 byte) || px (32 bytes) || timestamp (8 bytes)
         uint8 parity = uint8(bytes1(message[56:57]));
         uint256 px = uint256(bytes32(message[57:89]));
@@ -155,5 +178,17 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         }
 
         revert PublicKeyNotFound(timestamp);
+    }
+
+    /// @dev Sets the transition period.
+    function _setTransitionPeriod(uint64 transitionPeriod_) internal {
+        transitionPeriod = transitionPeriod_;
+        emit TransitionPeriodUpdated(transitionPeriod_);
+    }
+
+    /// @dev Sets the transition originator hash.
+    function _setTransitionOriginatorHash(bytes32 transitionOriginatorHash_) internal {
+        transitionOriginatorHash = transitionOriginatorHash_;
+        emit TransitionOriginatorHashUpdated(transitionOriginatorHash_);
     }
 }

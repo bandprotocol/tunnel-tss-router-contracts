@@ -17,6 +17,7 @@ contract DeployScript is Script {
     function run() external {
         uint256 privKey = vm.envUint("PRIVATE_KEY");
         uint64 transitionPeriod = uint64(vm.envUint("TRANSITION_PERIOD"));
+        bytes32 transitionOriginatorHash = bytes32(vm.envUint("TRANSITION_ORIGINATOR_HASH"));
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
 
@@ -29,7 +30,7 @@ contract DeployScript is Script {
         address implVaultAddr = Upgrades.getImplementationAddress(proxyVaultAddr);
 
         // Deploy the TssVerifier contract
-        TssVerifier tssVerifier = new TssVerifier(transitionPeriod, msg.sender);
+        TssVerifier tssVerifier = new TssVerifier(transitionPeriod, transitionOriginatorHash, msg.sender);
 
         // Deploy the proxy TunnelRouter contract
         address proxyTunnelRouterAddr = Upgrades.deployTransparentProxy(
@@ -56,10 +57,10 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("Vault Proxy deployed at :", proxyVaultAddr);
-        console.log("Vault Implementation deployed at :", implVaultAddr);
-        console.log("TssVerifier deployed at :", address(tssVerifier));
-        console.log("GasPriceTunnelRouter Proxy deployed at :", proxyTunnelRouterAddr);
-        console.log("GasPriceTunnelRouter Implementation deployed at :", implTunnelRouterAddr);
+        console.log("Vault Proxy deployed at:", proxyVaultAddr);
+        console.log("Vault Implementation deployed at:", implVaultAddr);
+        console.log("TssVerifier deployed at:", address(tssVerifier));
+        console.log("GasPriceTunnelRouter Proxy deployed at:", proxyTunnelRouterAddr);
+        console.log("GasPriceTunnelRouter Implementation deployed at:", implTunnelRouterAddr);
     }
 }

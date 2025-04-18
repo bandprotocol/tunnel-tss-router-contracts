@@ -130,7 +130,7 @@ interface ITunnelRouter {
     /**
      * @dev Activates the sender and associated tunnel ID.
      *
-     * This function should be called by the consumer contract as we use msg.sender in constructing 
+     * This function should be called by the consumer contract as we use msg.sender in constructing
      * the originatorHash.
      *
      * @param tunnelId The tunnel ID that the sender contract is activating.

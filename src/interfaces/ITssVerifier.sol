@@ -38,7 +38,6 @@ interface ITssVerifier {
      */
     error InvalidSignature();
 
-
     /**
      * @notice Reverts if the transition originator hash doesn't match with the one in the message.
      */
@@ -92,7 +91,7 @@ interface ITssVerifier {
 
     /**
      * @dev Sets the transition period of the tss signature.
-     * The transition period is the period in which the previous public key is still valid even 
+     * The transition period is the period in which the previous public key is still valid even
      * though the new public key is already added.
      *
      * @param transitionPeriod_ The new duration of the transition period.

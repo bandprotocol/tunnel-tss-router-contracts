@@ -28,11 +28,13 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
     // The list of public keys that are used for the verification process.
     PublicKey[] public publicKeys;
 
-    constructor(uint64 transitionPeriod_, bytes32 transitionOriginatorHash_, address initialAddr) Ownable(initialAddr) {
+    constructor(uint64 transitionPeriod_, bytes32 transitionOriginatorHash_, address initialAddr)
+        Ownable(initialAddr)
+    {
         _setTransitionPeriod(transitionPeriod_);
         _setTransitionOriginatorHash(transitionOriginatorHash_);
     }
-    
+
     /**
      * @dev See {ITssVerifier-setTransitionPeriod}.
      */

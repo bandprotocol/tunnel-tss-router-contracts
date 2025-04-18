@@ -109,7 +109,7 @@ contract TssVerifierNoTransitionPeriodTest is Test, TssSignerHelper {
                 console.log("initial update pubkey gas avg = ", tmp.initialGasUsedUpdateAcc);
             }
         }
-        
+
         console.log("verify gas avg = ", tmp.gasUsedVerifyAcc / 99); // because we skip the first one.
         console.log("update pubkey gas avg = ", tmp.gasUsedUpdateAcc / 99); // because we skip the first one.
     }

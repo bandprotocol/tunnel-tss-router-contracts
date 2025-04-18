@@ -64,7 +64,7 @@ contract VaultTest is Test, Constants {
         uint256 balanceVaultBefore = address(vault).balance;
 
         bytes32 originatorHash = Originator.hash(
-            keccak256("bandchain"), packetConsumer.tunnelId(), keccak256("testnet-evm"),  address(packetConsumer)
+            keccak256("bandchain"), packetConsumer.tunnelId(), keccak256("testnet-evm"), address(packetConsumer)
         );
 
         packetConsumer.activate{value: 0.01 ether}(2);

@@ -30,6 +30,9 @@ interface ITunnelRouter {
     /**
      * @dev Activates the sender and associated tunnel ID.
      *
+     * This function should be called by the consumer contract as we use msg.sender in constructing
+     * the originatorHash.
+     *
      * @param tunnelId The tunnel ID that the sender contract is activating.
      * @param latestSeq The new sequence of the tunnelID.
      */
@@ -115,7 +118,7 @@ interface ITssVerifier {
      * The contract is not allowed to verify the message with obsolete public key.
      *
      * @param hashedMessage The hashed message to be verified.
-     * @param randomAddr The random address generated during TSS signature processing.
+     * @param randomAddr The random address that is generated during the processing tss signature.
      * @param signature The tss signature.
      * @return true If the signature is valid, false otherwise.
      */
@@ -126,9 +129,9 @@ interface ITssVerifier {
      *
      * @param message The message being used for updating public key.
      * @param randomAddr The address form of the commitment R.
-     * @param s The Schnorr signature.
+     * @param signature  The tss signature.
      */
-    function addPubKeyWithProof(bytes calldata message, address randomAddr, uint256 s) external;
+    function addPubKeyWithProof(bytes calldata message, address randomAddr, uint256 signature) external;
 
     /**
      * @dev Adds the new public key by the owner.
@@ -138,6 +141,23 @@ interface ITssVerifier {
      * @param px The x-coordinate value of the new public key.
      */
     function addPubKeyByOwner(uint64 timestamp, uint8 parity, uint256 px) external;
+
+    /**
+     * @dev Sets the transition period of the tss signature.
+     * The transition period is the period in which the previous public key is still valid even
+     * though the new public key is already added.
+     *
+     * @param transitionPeriod_ The new duration of the transition period.
+     */
+    function setTransitionPeriod(uint64 transitionPeriod_) external;
+
+    /**
+     * @dev Sets the transition originator hash.
+     * The transition originator hash is the hash of the originator of the transition message.
+     *
+     * @param transitionOriginatorHash_ The new transition originator hash.
+     */
+    function setTransitionOriginatorHash(bytes32 transitionOriginatorHash_) external;
 }
 ```
 

@@ -82,15 +82,12 @@ interface ITunnelRouter {
     error InvalidSequence(uint64 expected, uint64 input);
 
     /**
-     * <<<<<<< HEAD
-     * =======
      * @notice Reverts if the tunnel ID of the target contract doesn't match
      * the information of the originator hash.
      */
     error InvalidTunnelId(uint64 expected, uint64 input);
 
     /**
-     * >>>>>>> 94062ea5612e535971d1e638f6e5caadb8a1c8ed
      * @notice Reverts if the message and its signature doesn't match.
      */
     error InvalidSignature();
@@ -133,12 +130,9 @@ interface ITunnelRouter {
     /**
      * @dev Activates the sender and associated tunnel ID.
      *
-     * <<<<<<< HEAD
-     * =======
      * This function should be called by the consumer contract as we use msg.sender in constructing
      * the originatorHash.
      *
-     * >>>>>>> 94062ea5612e535971d1e638f6e5caadb8a1c8ed
      * @param tunnelId The tunnel ID that the sender contract is activating.
      * @param latestSeq The new sequence of the tunnelID.
      */

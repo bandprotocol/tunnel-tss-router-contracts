@@ -29,6 +29,9 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier, vault, address(this), 75000, 75000, 1, keccak256("bandchain"), keccak256("testnet-evm")
         );
+        address[] memory whitelist = new address[](1);
+        whitelist[0] = address(this);
+        tunnelRouter.setWhitelist(whitelist, true);
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -116,6 +119,34 @@ contract RelayFullLoopTest is Test, Constants {
         bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.TunnelAlreadyActive.selector, originatorHash);
         vm.expectRevert(expectedErr);
         packetConsumer.activate(1);
+    }
+
+    function testSenderNotInWhitelist() public {
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.SenderNotWhitelisted.selector,
+            MOCK_SENDER
+        );
+
+        vm.expectRevert(expectedErr);
+        vm.prank(MOCK_SENDER);
+
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
+    }
+
+    function testSetWhitelistInvalidSender() public {
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.InvalidSenderAddress.selector
+        );
+
+        vm.expectRevert(expectedErr);
+
+        address[] memory whitelist = new address[](1);
+        whitelist[0] = address(0);
+        tunnelRouter.setWhitelist(whitelist, true);
     }
 
     receive() external payable {}

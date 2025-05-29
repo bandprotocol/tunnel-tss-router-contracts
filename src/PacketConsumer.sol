@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
+
 import "./interfaces/IPacketConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
@@ -12,12 +13,6 @@ import "./libraries/Address.sol";
 import "./libraries/PacketDecoder.sol";
 
 contract PacketConsumer is IPacketConsumer, Ownable2Step {
-    // An object that contains the price of a signal ID.
-    struct Price {
-        uint64 price;
-        int64 timestamp;
-    }
-
     // The tunnel router contract.
     address public immutable tunnelRouter;
 
@@ -94,5 +89,50 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     ///@dev Sets the tunnel ID of the contract.
     function setTunnelId(uint64 tunnelId_) external onlyOwner {
         tunnelId = tunnelId_;
+    }
+
+    ///@dev Gets the price for `signalId`, reverting if it doesn’t exist.
+    /**
+     * @dev See {IPacketConsumer-getPrice}.
+     */
+    function getPrice(string memory signalId) public view returns (Price memory) {
+        bytes32 b = _stringToBytes32(signalId);
+        Price memory price = prices[b];
+        require(price.timestamp != 0, "Signal not found");
+        return price;
+    }
+
+    ///@dev Gets the prices for `signalIds`, reverting if it doesn’t exist.
+    /**
+     * @dev See {IPacketConsumer-getPrices}.
+     */
+    function getPrices(string[] memory signalIds) public view returns (Price[] memory) {
+        Price[] memory priceList = new Price[](signalIds.length);
+
+        for (uint i = 0; i < signalIds.length; i++) {
+            Price memory price = prices[_stringToBytes32(signalIds[i])];
+            require(price.timestamp != 0, "Signal not found");
+            priceList[i] = price;
+        }
+        
+        return priceList;
+    }
+
+    /**
+     * @dev Converts a UTF-8 string of up to 32 bytes into a bytes32 value,
+     * right-aligned and padded with leading zero bytes.
+     */
+    function _stringToBytes32(string memory signalId) internal pure returns (bytes32) {
+        bytes memory b = bytes(signalId);
+        require(b.length <= 32, "signalId too long");
+
+        uint pad = 32 - b.length;
+        bytes memory bytesSignalId = new bytes(32);
+
+        for(uint i = 0; i < b.length; i++) {
+            bytesSignalId[pad + i] = b[i];
+        }
+
+        return bytes32(bytesSignalId);
     }
 }

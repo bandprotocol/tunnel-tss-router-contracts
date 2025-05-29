@@ -27,6 +27,12 @@ interface IPacketConsumer {
      */
     error UnauthorizedTunnelRouter();
 
+    ///@dev Price information
+    struct Price {
+        uint64 price; // The price of the signal.
+        int64 timestamp; // The timestamp of the updated prices.
+    }
+
     // ========================================
     // Functions
     // ========================================
@@ -92,4 +98,18 @@ interface IPacketConsumer {
      * @dev Returns The tunnelId of the contract.
      */
     function tunnelId() external view returns (uint64);
+
+    /**
+     * @dev Returns the price for a given `signalId`, reverting if it does not exist.
+     *
+     * @param signalId The signal ID to retrieve the price for.
+     */
+    function getPrice(string memory signalId) external view returns (Price memory);
+
+    /**
+     * @dev Returns the prices for the given `signalIds`, reverting if any do not exist.
+     *
+     * @param signalIds The list of signal IDs to retrieve prices for.
+     */
+    function getPrices(string[] memory signalIds) external view returns (Price[] memory);
 }

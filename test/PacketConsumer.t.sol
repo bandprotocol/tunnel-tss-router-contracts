@@ -42,6 +42,44 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         assertEq(price, packet.signals[0].price);
         assertEq(timestamp, packet.timestamp);
     }
+
+    function testGetPrice() public {
+        PacketDecoder.TssMessage memory data = DECODED_TSS_MESSAGE();
+        PacketDecoder.Packet memory packet = data.packet;
+
+        packetConsumer.process(data);
+
+        // CS:BTC-USD prices
+        (uint64 storedBtcPrice, int64 storedBtcTimestamp) = packetConsumer.prices(packet.signals[0].signal);
+        IPacketConsumer.Price memory btcPrice = packetConsumer.getPrice("CS:BTC-USD");
+        assertEq(btcPrice.price, storedBtcPrice);
+        assertEq(btcPrice.timestamp, storedBtcTimestamp);
+
+        // CS:ETH-USD prices
+        (uint64 storedEthPrice, int64 storedEthTimestamp) = packetConsumer.prices(packet.signals[1].signal);
+        IPacketConsumer.Price memory ethPrice = packetConsumer.getPrice("CS:ETH-USD");
+        assertEq(ethPrice.price, storedEthPrice);
+        assertEq(ethPrice.timestamp, storedEthTimestamp);
+    }
+
+    function testGetPrices() public {
+        PacketDecoder.TssMessage memory data = DECODED_TSS_MESSAGE();
+        PacketDecoder.Packet memory packet = data.packet;
+
+        packetConsumer.process(data);
+
+        string[] memory signalIds = new string[](2);
+        signalIds[0] = "CS:BTC-USD";
+        signalIds[1] = "CS:ETH-USD";
+
+        IPacketConsumer.Price[] memory pricesArr = packetConsumer.getPrices(signalIds);
+
+        for (uint i = 0; i < 2 ; i++) {
+            (uint64 storedPrice, int64 storedTimestamp) = packetConsumer.prices(packet.signals[i].signal);
+            assertEq(pricesArr[i].price, storedPrice);
+            assertEq(pricesArr[i].timestamp, storedTimestamp);
+        }
+    }
 }
 
 contract PacketConsumerTest is Test, Constants {

@@ -4,7 +4,6 @@ pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
-
 import "./interfaces/IPacketConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
@@ -91,7 +90,6 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
         tunnelId = tunnelId_;
     }
 
-    ///@dev Gets the price for `signalId`, reverting if it doesn’t exist.
     /**
      * @dev See {IPacketConsumer-getPrice}.
      */
@@ -102,7 +100,6 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
         return price;
     }
 
-    ///@dev Gets the prices for `signalIds`, reverting if it doesn’t exist.
     /**
      * @dev See {IPacketConsumer-getPrices}.
      */
@@ -124,7 +121,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
      */
     function _stringToBytes32(string memory signalId) internal pure returns (bytes32) {
         bytes memory b = bytes(signalId);
-        require(b.length <= 32, "signalId too long");
+        require(b.length <= 32, "String too long");
 
         uint pad = 32 - b.length;
         bytes memory bytesSignalId = new bytes(32);

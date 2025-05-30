@@ -20,6 +20,6 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("PacketConsumerProxy deployed at:", address(packetConsumerProxy));
+        console.log("PacketConsumerProxy deployed at: ", address(packetConsumerProxy));
     }
 }

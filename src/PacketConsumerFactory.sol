@@ -1,48 +1,58 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./PacketConsumer.sol";
 
 /**
  * @title PacketConsumerFactory
- * @notice Deploys PacketConsumer contracts for unique task IDs and keeps a registry.
- *         Anyone can call to create a consumer for a given `taskId`. If one already
- *         exists, its address is returned instead of deploying again.
+ * @notice Deploys PacketConsumer contracts for unique task IDs and tracks them in a registry.
+ * @dev Only accounts with CREATOR_ROLE can create consumers.
+ *      Returns existing consumer for duplicate task IDs, checking tunnelRouter compatibility.
  */
-contract PacketConsumerFactory is Ownable2Step {
+contract PacketConsumerFactory is AccessControl {
     /* ========== ERRORS ========== */
 
-    /// @notice Thrown when the provided owner address is zero.
-    error InvalidOwner();
+    /// @notice Thrown when the owner address is zero.
+    error InvalidInputOwner();
 
-    /// @notice Thrown when the provided tunnelRouter address is zero.
-    error InvalidRouter();
+    /// @notice Thrown when the tunnelRouter address is zero.
+    error InvalidInputRouter();
 
     /* ========== EVENTS ========== */
 
-    /// @notice Emitted each time a new PacketConsumer is deployed.
-    /// @param taskId       The unique task ID (indexed).
-    /// @param tunnelRouter The router contract the consumer will use (indexed).
-    /// @param owner        The owner of the new consumer (indexed).
-    /// @param consumer     The address of the newly deployed consumer.
+    /// @notice Emitted when a new PacketConsumer is deployed.
+    /// @param taskId       Unique task ID.
+    /// @param tunnelRouter Router contract used by the consumer.
+    /// @param owner        Owner of the new consumer.
+    /// @param creator      Address with CREATOR_ROLE that deployed the consumer.
     event PacketConsumerCreated(
         uint256 indexed taskId,
-        address indexed tunnelRouter,
-        address indexed owner,
-        address consumer
+        address tunnelRouter,
+        address owner,
+        address creator
     );
 
     /* ========== STATE ========== */
 
-    /// @notice Maps each task ID to its deployed PacketConsumer (or address(0)).
+    /// @notice Role identifier for accounts allowed to create consumers.
+    bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
+
+    /// @notice Maps task IDs to their deployed PacketConsumer addresses.
     mapping(uint256 => address) public taskIdToConsumer;
 
     /* ========== CONSTRUCTOR ========== */
 
     /**
-     * @param initialOwner The address to transfer factory ownership to.
+     * @notice Sets up the contract, granting admin and creator roles to an initial account.
+     * @param adminAndCreator The address to receive the DEFAULT_ADMIN_ROLE and CREATOR_ROLE.
      */
-    constructor(address initialOwner) Ownable(initialOwner) {}
+    constructor(address adminAndCreator) {
+        if (adminAndCreator == address(0)) revert InvalidInputOwner();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, adminAndCreator);
+        _grantRole(CREATOR_ROLE, adminAndCreator);
+    }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
@@ -62,21 +72,21 @@ contract PacketConsumerFactory is Ownable2Step {
         address owner,
         address tunnelRouter,
         uint256 taskId
-    ) external returns (address consumer) {
-        if (owner == address(0)) revert InvalidOwner();
-        if (tunnelRouter == address(0)) revert InvalidRouter();
+    ) external onlyRole(CREATOR_ROLE) returns (address consumer) {
+        if (owner == address(0)) revert InvalidInputOwner();
+        if (tunnelRouter == address(0)) revert InvalidInputRouter();
 
-        // If already deployed, return that
         consumer = taskIdToConsumer[taskId];
+        // Check for existing consumer
         if (consumer != address(0)) {
             return consumer;
         }
 
-        // Deploy & register
+        // Deploy & register new consumer
         PacketConsumer newConsumer = new PacketConsumer(tunnelRouter, owner);
         consumer = address(newConsumer);
         taskIdToConsumer[taskId] = consumer;
 
-        emit PacketConsumerCreated(taskId, tunnelRouter, owner, consumer);
+        emit PacketConsumerCreated(taskId, tunnelRouter, owner, msg.sender);
     }
 }

@@ -14,11 +14,14 @@ import "../interfaces/IVault.sol";
 import "../libraries/PacketDecoder.sol";
 import "../libraries/Originator.sol";
 
+import "./ErrorHandler.sol";
+
 abstract contract BaseTunnelRouter is
     Initializable,
     Ownable2StepUpgradeable,
     PausableUpgradeable,
-    ITunnelRouter
+    ITunnelRouter,
+    ErrorHandler
 {
     using PacketDecoder for bytes;
 
@@ -286,6 +289,26 @@ abstract contract BaseTunnelRouter is
             isAllowed[senders[i]] = flag;
             emit SetWhitelist(senders[i], flag);
         }
+    }
+
+    /**
+     * @dev Register/Add a new custom error for the consumer.
+     */
+    function registerError(
+        address target,
+        string calldata fsigStr
+    ) external onlyOwner {
+        _registerError(target, fsigStr);
+    }
+
+    /**
+     * @dev Unregister/Remove an existed custom error for the consumer.
+     */
+    function unregisterError(
+        address target,
+        string calldata fsigStr
+    ) external onlyOwner {
+        _unregisterError(target, fsigStr);
     }
 
     /**

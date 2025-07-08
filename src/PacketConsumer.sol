@@ -19,7 +19,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     // will result in different address.
     uint64 public tunnelId;
     // Mapping between a signal ID and its corresponding latest price object.
-    mapping(bytes32 => Price) public prices;
+    mapping(bytes32 => Price) prices;
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -96,7 +96,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     function getPrice(string memory signalId) public view returns (Price memory) {
         bytes32 b = _stringToBytes32(signalId);
         Price memory price = prices[b];
-        require(price.timestamp != 0, "Signal not found");
+        require(price.price != 0, "Signal price is not available");
         return price;
     }
 
@@ -108,7 +108,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
 
         for (uint i = 0; i < signalIds.length; i++) {
             Price memory price = prices[_stringToBytes32(signalIds[i])];
-            require(price.timestamp != 0, "Signal not found");
+            require(price.price != 0, "Signal price is not available");
             priceList[i] = price;
         }
         

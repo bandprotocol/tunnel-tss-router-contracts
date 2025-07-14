@@ -14,6 +14,7 @@ contract ErrorHandlerTest is Test {
 
     address owner;
     address stranger;
+    uint256 constant _CALLBACK_GAS_LIMIT = 1_000_000;
 
     function setUp() public {
         owner = address(this);
@@ -81,7 +82,9 @@ contract ErrorHandlerTest is Test {
         impl.registerError(address(target), "Err1()");
         assertTrue(impl.isErrorRegistered(address(target), "Err1()"));
         bytes4[] memory regs = impl.getRegisteredErrorsBytes4(address(target));
-        string[] memory regStrs = impl.getRegisteredErrorsString(address(target));
+        string[] memory regStrs = impl.getRegisteredErrorsString(
+            address(target)
+        );
         assertEq(impl.getRegisteredErrorsCount(address(target)), 1);
         assertEq(regs.length, 1);
         assertEq(regStrs.length, 1);
@@ -235,7 +238,11 @@ contract ErrorHandlerTest is Test {
         );
         vm.expectEmit();
         emit ErrorHandler.DeliverySuccess(address(target));
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertTrue(ok);
         (uint256 val, string memory message) = abi.decode(
             data,
@@ -256,14 +263,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedRevertData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
         impl.registerError(address(target), "Err1()");
         vm.expectRevert(impl.stringToFsig("Err1()"));
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_CustomError_WithParams() public {
@@ -281,14 +292,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedRevertData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
         impl.registerError(address(target), "ErrWithParams(uint256,string)");
         vm.expectRevert(expectedRevertData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_StringRequire() public {
@@ -303,14 +318,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedRevertData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
         impl.registerError(address(target), "Error(string)");
         vm.expectRevert(expectedRevertData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_StringRevert() public {
@@ -325,14 +344,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedRevertData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
         impl.registerError(address(target), "Error(string)");
         vm.expectRevert(expectedRevertData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_LowLevelRevert() public {
@@ -346,14 +369,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), customRevertData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, customRevertData);
 
         // --- Registered ---
         impl.registerError(address(target), "some random thing");
         vm.expectRevert(customRevertData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_Assert() public {
@@ -369,14 +396,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedPanicData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
         impl.registerError(address(target), "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_Arithmetic() public {
@@ -392,14 +423,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedPanicData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
         impl.registerError(address(target), "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_DivisionByZero() public {
@@ -416,14 +451,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedPanicData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
         impl.registerError(address(target), "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_IndexOutOfBounds() public {
@@ -439,14 +478,18 @@ contract ErrorHandlerTest is Test {
         // --- Unregistered ---
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), expectedPanicData);
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
         impl.registerError(address(target), "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), callData);
+        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
     }
 
     // Note: Empty reverts (revert data length < 4) cannot be registered to re-throw
@@ -458,7 +501,11 @@ contract ErrorHandlerTest is Test {
         );
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), "");
-        (bool ok, bytes memory data) = impl.call(address(target), callData);
+        (bool ok, bytes memory data) = impl.call(
+            address(target),
+            _CALLBACK_GAS_LIMIT,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, hex"");
 
@@ -468,7 +515,7 @@ contract ErrorHandlerTest is Test {
         );
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), "");
-        (ok, data) = impl.call(address(target), callData);
+        (ok, data) = impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
 
@@ -476,7 +523,7 @@ contract ErrorHandlerTest is Test {
         callData = abi.encodeWithSelector(MockTarget.failWithTransfer.selector);
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), "");
-        (ok, data) = impl.call(address(target), callData);
+        (ok, data) = impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
 
@@ -486,7 +533,7 @@ contract ErrorHandlerTest is Test {
         );
         vm.expectEmit();
         emit ErrorHandler.TargetError(address(target), "");
-        (ok, data) = impl.call(address(target), callData);
+        (ok, data) = impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
     }

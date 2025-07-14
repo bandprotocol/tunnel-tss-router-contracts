@@ -15,9 +15,10 @@ contract TestableErrorHandler is ErrorHandler, Ownable2StepUpgradeable {
 
     function call(
         address target,
+        uint256 callbackGasLimit,
         bytes memory data
     ) external returns (bool, bytes memory) {
-        return _callWithCustomErrorHandling(target, data);
+        return _callWithCustomErrorHandling(target, callbackGasLimit, data);
     }
 
     function registerError(

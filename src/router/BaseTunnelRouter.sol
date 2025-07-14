@@ -163,14 +163,11 @@ abstract contract BaseTunnelRouter is
 
         // forward the message to the target contract.
         uint256 gasLeft = gasleft();
-        bool isSuccess = true;
-        try
-            IPacketConsumer(tunnelDetail.targetAddr).process{
-                gas: callbackGasLimit
-            }(tssMessage)
-        {} catch {
-            isSuccess = false;
-        }
+        (bool isSuccess, ) = _callWithCustomErrorHandling(
+            tunnelDetail.targetAddr,
+            callbackGasLimit,
+            abi.encodeWithSelector(IPacketConsumer.process.selector, tssMessage)
+        );
 
         emit MessageProcessed(originatorHash_, packet.sequence, isSuccess);
 

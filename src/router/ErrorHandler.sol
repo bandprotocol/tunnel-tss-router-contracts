@@ -24,7 +24,11 @@ abstract contract ErrorHandler {
     /// @notice Maps each target address to its dedicated error registry.
     mapping(address => ErrorRegistry) private registries;
 
-    event ErrorRegistered(address indexed target, bytes4 errorSelector, string errorSignature);
+    event ErrorRegistered(
+        address indexed target,
+        bytes4 errorSelector,
+        string errorSignature
+    );
     event ErrorUnregistered(address indexed target, bytes4 errorSelector);
     event DeliverySuccess(address indexed target);
     event TargetError(address indexed target, bytes data);
@@ -32,9 +36,10 @@ abstract contract ErrorHandler {
     /// @dev Call target.call(callData). On revert, rethrow if selector registered; else log and continue.
     function _callWithCustomErrorHandling(
         address target,
+        uint256 callbackGasLimit,
         bytes memory callData
     ) internal returns (bool ok, bytes memory data) {
-        (ok, data) = target.call(callData);
+        (ok, data) = target.call{gas: callbackGasLimit}(callData);
         if (ok) {
             emit DeliverySuccess(target);
         } else {
@@ -97,7 +102,9 @@ abstract contract ErrorHandler {
         bytes32[] memory selectors32 = registries[target].selectors.values();
         signatures = new string[](selectors32.length);
         for (uint256 i = 0; i < selectors32.length; i++) {
-            signatures[i] = registries[target].selectorToStrings[bytes4(selectors32[i])];
+            signatures[i] = registries[target].selectorToStrings[
+                bytes4(selectors32[i])
+            ];
         }
     }
 

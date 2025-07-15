@@ -51,6 +51,6 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
     }
 
     function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
-        return gasFee.gasPrice * gasUsed;
+        return tx.gasprice * gasUsed;
     }
 }

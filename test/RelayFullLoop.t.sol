@@ -18,6 +18,7 @@ contract RelayFullLoopTest is Test, Constants {
     TssVerifier tssVerifier;
     Vault vault;
     bytes32 originatorHash;
+    uint256 gasPrice;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
@@ -34,6 +35,9 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.setWhitelist(whitelist, true);
 
         vault.setTunnelRouter(address(tunnelRouter));
+
+        gasPrice = 1;
+        vm.txGasPrice(gasPrice);
 
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(address(tunnelRouter), address(this));
@@ -64,7 +68,7 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain / tunnelRouter.gasFee() - tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain / gasPrice - tunnelRouter.additionalGasUsed();
 
         console.log("gas used during process message: ", gasUsedDuringProcessMsg);
         console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
@@ -72,7 +76,8 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testRelayMessageConsumerWithDeactivate() public {
         uint256 relayerBalance = address(this).balance;
-        tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
+        uint gasPrice = 50 gwei;
+        vm.txGasPrice(gasPrice);
 
         uint256 currentGas = gasleft();
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
@@ -84,7 +89,7 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain / tunnelRouter.gasFee() - tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain / gasPrice - tunnelRouter.additionalGasUsed();
 
         console.log("gas used during process message: ", gasUsedDuringProcessMsg);
         console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
@@ -109,7 +114,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayVaultNotEnoughToken() public {
-        tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(1 ether));
+        vm.txGasPrice(1 ether);
 
         vm.expectRevert(); // underflow error
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);

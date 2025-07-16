@@ -7,7 +7,7 @@ import {Script} from "forge-std/script.sol";
 
 import {TssVerifier} from "../src/TssVerifier.sol";
 
-contract Deployer is Script {
+contract Executer is Script {
     function run() external {
         address tssVerifierAddr = vm.envAddress("TSS_VERIFIER");
         uint64 transitionPeriod = uint64(vm.envUint("TRANSITION_PERIOD"));

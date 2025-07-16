@@ -9,7 +9,7 @@ import {PacketConsumer} from "../src/PacketConsumer.sol";
 import {BaseTunnelRouter} from "../src/router/BaseTunnelRouter.sol";
 import {Vault} from "../src/Vault.sol";
 
-contract Deployer is Script {
+contract Executer is Script {
     function run() external {
         uint256 withdrawAmount = vm.envUint("WITHDRAW_AMOUNT");
         address packetConsumerAddr = vm.envAddress("PACKET_CONSUMER");

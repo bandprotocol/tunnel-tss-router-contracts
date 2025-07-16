@@ -21,8 +21,7 @@ contract Executor is Script {
 
         vm.stopBroadcast();
 
-        uint256 publicKeysLength = TssVerifier(tssVerifierAddr)
-            .publicKeysLength();
+        uint256 publicKeysLength = tssVerifier.publicKeysLength();
 
         console.log("tssVerifier address:", tssVerifierAddr);
         console.log("group public keys length:", publicKeysLength);

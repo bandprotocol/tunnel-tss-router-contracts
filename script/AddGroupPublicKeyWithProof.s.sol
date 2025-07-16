@@ -12,7 +12,7 @@ contract Executor is Script {
         address tssVerifierAddr = vm.envAddress("TSS_VERIFIER");
         bytes memory message = vm.envBytes("MESSAGE");
         address randomAddr = vm.envAddress("RANDOM_ADDR");
-        bytes memory signature = vm.envBytes("SIGNATURE");
+        uint256 signature = vm.envUint("SIGNATURE");
 
         vm.startBroadcast();
 
@@ -21,8 +21,7 @@ contract Executor is Script {
 
         vm.stopBroadcast();
 
-        uint256 publicKeysLength = TssVerifier(tssVerifierAddr)
-            .publicKeysLength();
+        uint256 publicKeysLength = tssVerifier.publicKeysLength();
 
         console.log("tssVerifier address:", tssVerifierAddr);
         console.log("group public keys length:", publicKeysLength);

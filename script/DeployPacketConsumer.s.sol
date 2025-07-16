@@ -7,14 +7,16 @@ import {Script} from "forge-std/script.sol";
 
 import {PacketConsumer} from "../src/PacketConsumer.sol";
 
-contract DeployScript is Script {
+contract Executor is Script {
     function run() external {
-        uint256 privKey = vm.envUint("PRIVATE_KEY");
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
 
-        vm.startBroadcast(privKey);
+        vm.startBroadcast();
 
-        PacketConsumer packetConsumer = new PacketConsumer(tunnelRouterAddr, msg.sender);
+        PacketConsumer packetConsumer = new PacketConsumer(
+            tunnelRouterAddr,
+            msg.sender
+        );
 
         vm.stopBroadcast();
 

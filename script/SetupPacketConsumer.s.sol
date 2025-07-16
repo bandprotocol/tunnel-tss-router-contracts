@@ -9,7 +9,7 @@ import {Vault} from "../src/Vault.sol";
 import {PacketConsumer} from "../src/PacketConsumer.sol";
 import {BaseTunnelRouter} from "../src/router/BaseTunnelRouter.sol";
 
-contract Executer is Script {
+contract Executor is Script {
     function run() external {
         uint256 depositAmount = vm.envOr("DEPOSIT_AMOUNT", uint256(0));
         uint64 tunnelId = uint64(vm.envOr("TUNNEL_ID", uint256(0)));

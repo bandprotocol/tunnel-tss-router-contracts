@@ -9,7 +9,7 @@ import {PacketConsumer} from "../src/PacketConsumer.sol";
 import {BaseTunnelRouter} from "../src/router/BaseTunnelRouter.sol";
 import {Vault} from "../src/Vault.sol";
 
-contract Executer is Script {
+contract Executor is Script {
     function run() external {
         address packetConsumerAddr = vm.envAddress("PACKET_CONSUMER");
 

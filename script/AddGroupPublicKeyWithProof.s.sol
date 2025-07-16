@@ -7,7 +7,7 @@ import {Script} from "forge-std/script.sol";
 
 import {TssVerifier} from "../src/TssVerifier.sol";
 
-contract Executer is Script {
+contract Executor is Script {
     function run() external {
         address tssVerifierAddr = vm.envAddress("TSS_VERIFIER");
         bytes memory message = vm.envBytes("MESSAGE");

@@ -8,7 +8,7 @@ import {Script} from "forge-std/script.sol";
 import {BaseTunnelRouter} from "../src/router/BaseTunnelRouter.sol";
 import {TssVerifier} from "../src/TssVerifier.sol";
 
-contract Executer is Script {
+contract Executor is Script {
     function run() external {
         address tunnelRouterAddr = vm.envOr("TUNNEL_ROUTER", address(0));
         address tssVerifierAddr = vm.envOr("TSS_VERIFIER", address(0));

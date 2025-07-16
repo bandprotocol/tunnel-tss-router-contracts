@@ -7,7 +7,7 @@ import {Script} from "forge-std/script.sol";
 
 import {PacketConsumer} from "../src/PacketConsumer.sol";
 
-contract Executer is Script {
+contract Executor is Script {
     function run() external {
         address tunnelRouterAddr = vm.envAddress("TUNNEL_ROUTER");
 

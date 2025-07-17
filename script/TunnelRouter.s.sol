@@ -44,7 +44,7 @@ contract DeployScript is Script {
                     msg.sender,
                     100000,
                     300000,
-                    1,
+                    0.11 gwei,
                     keccak256(bytes(sourceChainId)),
                     keccak256(bytes(targetChainId))
                 )

@@ -12,7 +12,7 @@ contract Executor is Script {
         address tssVerifierAddr = vm.envAddress("TSS_VERIFIER");
         uint64 times = uint64(vm.envUint("TIMESTAMP"));
         uint8 parity = uint8(vm.envUint("PARITY"));
-        uint256 px = uint256(vm.envUint("PX"));
+        uint256 px = vm.envUint("PX");
 
         vm.startBroadcast();
 
@@ -29,8 +29,8 @@ contract Executor is Script {
         for (uint256 i = 0; i < publicKeysLength; i++) {
             console.log("--------------------------------");
 
-            (uint64 activeTime, uint8 parity, uint256 px) = tssVerifier
-                .publicKeys(i);
+            uint64 activeTime;
+            (activeTime, parity, px) = tssVerifier.publicKeys(i);
             console.log("activeTime:", activeTime);
             console.log("parity:", parity);
             console.log("px:", px);

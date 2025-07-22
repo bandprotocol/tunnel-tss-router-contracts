@@ -13,7 +13,7 @@ import {GasPriceTunnelRouter} from "../src/router/GasPriceTunnelRouter.sol";
 import {TssVerifier} from "../src/TssVerifier.sol";
 import {Vault} from "../src/Vault.sol";
 
-contract Executer is Script {
+contract Executor is Script {
     function run() external {
         uint64 transitionPeriod = uint64(vm.envUint("TRANSITION_PERIOD"));
         bytes32 transitionOriginatorHash = bytes32(

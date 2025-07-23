@@ -2,12 +2,16 @@
 
 pragma solidity ^0.8.13;
 
+import "forge-std/Test.sol";
 import "../../src/libraries/PacketDecoder.sol";
+import "./TssSignerHelper.sol";
 
-contract Constants {
-    uint8 CURRENT_GROUP_PARITY = 2;
-    uint256 CURRENT_GROUP_PX =
-        0xf885baa0c9853f95f41323a94de958ce15c178bc8e3efedb26e18ef1631b7650;
+contract Constants is Test, TssSignerHelper {
+    uint8 immutable CURRENT_GROUP_PARITY;
+    uint256 immutable CURRENT_GROUP_PX;
+    address immutable MOCK_SENDER;
+    address immutable SIGNATURE_NONCE_ADDR;
+    uint256 immutable MESSAGE_SIGNATURE;
 
     bytes constant TSS_RAW_MESSAGE =
         abi.encodePacked(
@@ -19,17 +23,28 @@ contract Constants {
             hex"0000000000000000000000000000000000000000000000000000000000000001",
             hex"0000000000000000000000000000000000000000000000000000000000000060",
             hex"00000000000000000000000000000000000000000000000000000000674c2ae0",
-            hex"0000000000000000000000000000000000000000000000000000000000000002",
+            hex"0000000000000000000000000000000000000000000000000000000000000003",
             hex"0000000000000000000000000000000000000000000043533a4254432d555344",
-            hex"0000000000000000000000000000000000000000000000000000000000000000",
+            hex"0000000000000000000000000000000000000000000000000000000000008765",
             hex"0000000000000000000000000000000000000000000043533a4554482d555344",
-            hex"0000000000000000000000000000000000000000000000000000000000000000"
+            hex"0000000000000000000000000000000000000000000000000000000000004321",
+            hex"00000000000000000000000000000000000000000043533a42414e442d555344",
+            hex"0000000000000000000000000000000000000000000000000000000000001234"
         );
-    uint256 constant MESSAGE_SIGNATURE =
-        0x27f9063d0e40e9e3ab3e0d819383efa68c39472c0708bd37313cde954d795ea5;
-    address constant SIGNATURE_NONCE_ADDR =
-        0x7BeBbc01C22D893dD71DC3D32c0D109f31556e4C;
-    address constant MOCK_SENDER = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4;
+
+    constructor() {
+        uint256 privateKey = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
+        MOCK_SENDER = vm.addr(privateKey);
+        (CURRENT_GROUP_PARITY, CURRENT_GROUP_PX) = getPubkey(privateKey);
+        (SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE) = sign(
+            CURRENT_GROUP_PARITY,
+            CURRENT_GROUP_PX,
+            getRandomNonce(privateKey),
+            keccak256(TSS_RAW_MESSAGE),
+            privateKey
+        );
+        assertEq(vm.addr(getRandomNonce(privateKey)), SIGNATURE_NONCE_ADDR);
+    }
 
     function DECODED_TSS_MESSAGE()
         public
@@ -37,14 +52,14 @@ contract Constants {
         returns (PacketDecoder.TssMessage memory)
     {
         PacketDecoder.SignalPrice[]
-            memory signalPriceInfos = new PacketDecoder.SignalPrice[](2);
+            memory signalPriceInfos = new PacketDecoder.SignalPrice[](3);
         bytes memory signalIDBtc = abi.encodePacked(
             hex"00000000000000000000000000000000000000000000",
             "CS:BTC-USD"
         );
         signalPriceInfos[0] = PacketDecoder.SignalPrice(
             bytes32(signalIDBtc),
-            0
+            0x8765
         );
 
         bytes memory signalIDEth = abi.encodePacked(
@@ -53,7 +68,16 @@ contract Constants {
         );
         signalPriceInfos[1] = PacketDecoder.SignalPrice(
             bytes32(signalIDEth),
-            0
+            0x4321
+        );
+
+        bytes memory signalIDBand = abi.encodePacked(
+            hex"000000000000000000000000000000000000000000",
+            "CS:BAND-USD"
+        );
+        signalPriceInfos[2] = PacketDecoder.SignalPrice(
+            bytes32(signalIDBand),
+            0x1234
         );
 
         PacketDecoder.Packet memory packet = PacketDecoder.Packet(
@@ -72,6 +96,4 @@ contract Constants {
 
         return tssMessage;
     }
-
-    constructor() {}
 }

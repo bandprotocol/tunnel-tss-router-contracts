@@ -25,7 +25,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     // will result in different address.
     uint64 public tunnelId;
     // Mapping between a signal ID and its corresponding latest price object.
-    mapping(bytes32 => Price) public prices;
+    mapping(bytes32 => Price) internal _prices;
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -39,12 +39,32 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     }
 
     /**
+     * @dev A helper function for converting a string to a bytes32 (right aligned)
+     */
+    function signalStringToBytes32RightAlign(
+        string memory _s
+    ) public pure returns (bytes32 s) {
+        assembly {
+            s := mload(add(_s, 32))
+        }
+        uint256 shift = (32 - bytes(_s).length) * 8;
+        s >>= shift;
+    }
+
+    /**
+     * @dev A helper function for query a price with a string of signal
+     */
+    function prices(string calldata _s) external view returns(Price memory) {
+        return _prices[signalStringToBytes32RightAlign(_s)];
+    }
+
+    /**
      * @dev See {IPacketConsumer-process}.
      */
     function process(PacketDecoder.TssMessage memory data) external onlyTunnelRouter {
         PacketDecoder.Packet memory packet = data.packet;
         for (uint256 i = 0; i < packet.signals.length; i++) {
-            prices[packet.signals[i].signal] = Price({price: packet.signals[i].price, timestamp: packet.timestamp});
+            _prices[packet.signals[i].signal] = Price({price: packet.signals[i].price, timestamp: packet.timestamp});
 
             emit SignalPriceUpdated(packet.signals[i].signal, packet.signals[i].price, packet.timestamp);
         }

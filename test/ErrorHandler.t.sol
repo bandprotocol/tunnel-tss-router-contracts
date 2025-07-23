@@ -10,7 +10,7 @@ import "./helper/TestableErrorHandler.sol";
 
 contract ErrorHandlerTest is Test {
     TestableErrorHandler impl;
-    MockTarget target;
+    address target;
 
     address owner;
     address stranger;
@@ -22,25 +22,56 @@ contract ErrorHandlerTest is Test {
 
         impl = new TestableErrorHandler();
         impl.initialize(owner);
-        target = new MockTarget();
+        target = address(new MockTarget());
     }
 
     /* ========== Initial State and Basics ========== */
 
-    function testBasics() public view {
-        assertEq(impl.owner(), owner);
-        bytes4[] memory fsigs = impl.getRegisteredErrorsBytes4(address(target));
-        bytes4[] memory expectedFsigs = new bytes4[](0);
-        assertEq(
-            keccak256(abi.encode(fsigs)),
-            keccak256(abi.encode(expectedFsigs))
-        );
-
+    function testBasics() public {
         assertEq(impl.stringToFsig("Err1()"), MockTarget.Err1.selector);
         assertEq(impl.stringToFsig("Err2()"), MockTarget.Err2.selector);
         assertEq(
             impl.stringToFsig("ErrWithParams(uint256,string)"),
             MockTarget.ErrWithParams.selector
+        );
+
+        // before
+        assertEq(
+            impl.getRegisteredError(target, impl.stringToFsig("Err1()")),
+            ""
+        );
+        assertEq(
+            impl.getRegisteredError(target, impl.stringToFsig("Err2()")),
+            ""
+        );
+        assertEq(
+            impl.getRegisteredError(
+                target,
+                impl.stringToFsig("ErrWithParams(uint256,string)")
+            ),
+            ""
+        );
+
+        // register
+        impl.registerError(target, "Err1()");
+        impl.registerError(target, "Err2()");
+        impl.registerError(target, "ErrWithParams(uint256,string)");
+
+        // after
+        assertEq(
+            impl.getRegisteredError(target, impl.stringToFsig("Err1()")),
+            "Err1()"
+        );
+        assertEq(
+            impl.getRegisteredError(target, impl.stringToFsig("Err2()")),
+            "Err2()"
+        );
+        assertEq(
+            impl.getRegisteredError(
+                target,
+                impl.stringToFsig("ErrWithParams(uint256,string)")
+            ),
+            "ErrWithParams(uint256,string)"
         );
     }
 
@@ -54,7 +85,7 @@ contract ErrorHandlerTest is Test {
                 stranger
             )
         );
-        impl.registerError(address(target), "Some random error");
+        impl.registerError(target, "Some random error");
 
         vm.prank(stranger);
         vm.expectRevert(
@@ -63,171 +94,106 @@ contract ErrorHandlerTest is Test {
                 stranger
             )
         );
-        impl.unregisterError(address(target), "Some random error");
+        impl.unregisterError(target, "Some random error");
     }
 
     /* ========== Registration and Unregistration Logic ========== */
 
     function test_RegisterAndUnregister_Flow() public {
-        assertFalse(impl.isErrorRegistered(address(target), "Err1()"));
-        assertFalse(impl.isErrorRegistered(address(target), "Err2()"));
+        assertFalse(impl.isErrorRegistered(target, "Err1()"));
+        assertFalse(impl.isErrorRegistered(target, "Err2()"));
         assertFalse(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
 
         // Register Err1()
-        impl.registerError(address(target), "Err1()");
-        assertTrue(impl.isErrorRegistered(address(target), "Err1()"));
-        bytes4[] memory regs = impl.getRegisteredErrorsBytes4(address(target));
-        string[] memory regStrs = impl.getRegisteredErrorsString(
-            address(target)
-        );
-        assertEq(impl.getRegisteredErrorsCount(address(target)), 1);
-        assertEq(regs.length, 1);
-        assertEq(regStrs.length, 1);
-        assertEq(regStrs[0], "Err1()");
-        assertTrue(impl.isErrorRegistered(address(target), "Err1()"));
-        assertFalse(impl.isErrorRegistered(address(target), "Err2()"));
+        impl.registerError(target, "Err1()");
+        assertTrue(impl.isErrorRegistered(target, "Err1()"));
+        assertTrue(impl.isErrorRegistered(target, "Err1()"));
+        assertFalse(impl.isErrorRegistered(target, "Err2()"));
         assertFalse(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
 
         // Register Err2()
-        impl.registerError(address(target), "Err2()");
-        assertTrue(impl.isErrorRegistered(address(target), "Err2()"));
-        regs = impl.getRegisteredErrorsBytes4(address(target));
-        regStrs = impl.getRegisteredErrorsString(address(target));
-        assertEq(impl.getRegisteredErrorsCount(address(target)), 2);
-        assertEq(regs.length, 2);
-        assertEq(regStrs.length, 2);
-        assertEq(regStrs[0], "Err1()");
-        assertEq(regStrs[1], "Err2()");
-        assertTrue(impl.isErrorRegistered(address(target), "Err1()"));
-        assertTrue(impl.isErrorRegistered(address(target), "Err2()"));
+        impl.registerError(target, "Err2()");
+        assertTrue(impl.isErrorRegistered(target, "Err2()"));
+        assertTrue(impl.isErrorRegistered(target, "Err1()"));
+        assertTrue(impl.isErrorRegistered(target, "Err2()"));
         assertFalse(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
 
         // Register ErrWithParams(uint256,string)
-        impl.registerError(address(target), "ErrWithParams(uint256,string)");
+        impl.registerError(target, "ErrWithParams(uint256,string)");
         assertTrue(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
-        regs = impl.getRegisteredErrorsBytes4(address(target));
-        regStrs = impl.getRegisteredErrorsString(address(target));
-        assertEq(impl.getRegisteredErrorsCount(address(target)), 3);
-        assertEq(regs.length, 3);
-        assertEq(regStrs.length, 3);
-        assertEq(regStrs[0], "Err1()");
-        assertEq(regStrs[1], "Err2()");
-        assertEq(regStrs[2], "ErrWithParams(uint256,string)");
-        assertTrue(impl.isErrorRegistered(address(target), "Err1()"));
-        assertTrue(impl.isErrorRegistered(address(target), "Err2()"));
+        assertTrue(impl.isErrorRegistered(target, "Err1()"));
+        assertTrue(impl.isErrorRegistered(target, "Err2()"));
         assertTrue(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
 
         // Unregister Err1()
         vm.expectEmit();
         emit ErrorHandler.ErrorUnregistered(
-            address(target),
-            MockTarget.Err1.selector
+            target,
+            MockTarget.Err1.selector,
+            "Err1()"
         );
-        impl.unregisterError(address(target), "Err1()");
-        assertFalse(impl.isErrorRegistered(address(target), "Err1()"));
-        regs = impl.getRegisteredErrorsBytes4(address(target));
-        regStrs = impl.getRegisteredErrorsString(address(target));
-        assertEq(impl.getRegisteredErrorsCount(address(target)), 2);
-        assertEq(regs.length, 2);
-        assertEq(regStrs.length, 2);
-        assertEq(regStrs[0], "ErrWithParams(uint256,string)");
-        assertEq(regStrs[1], "Err2()");
-        assertFalse(impl.isErrorRegistered(address(target), "Err1()"));
-        assertTrue(impl.isErrorRegistered(address(target), "Err2()"));
+        impl.unregisterError(target, "Err1()");
+        assertFalse(impl.isErrorRegistered(target, "Err1()"));
+        assertFalse(impl.isErrorRegistered(target, "Err1()"));
+        assertTrue(impl.isErrorRegistered(target, "Err2()"));
         assertTrue(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
 
         // Unregister Err2()
-        impl.unregisterError(address(target), "Err2()");
-        assertFalse(impl.isErrorRegistered(address(target), "Err2()"));
-        regs = impl.getRegisteredErrorsBytes4(address(target));
-        regStrs = impl.getRegisteredErrorsString(address(target));
-        assertEq(impl.getRegisteredErrorsCount(address(target)), 1);
-        assertEq(regs.length, 1);
-        assertEq(regStrs.length, 1);
-        assertEq(regStrs[0], "ErrWithParams(uint256,string)");
-        assertFalse(impl.isErrorRegistered(address(target), "Err1()"));
-        assertFalse(impl.isErrorRegistered(address(target), "Err2()"));
+        impl.unregisterError(target, "Err2()");
+        assertFalse(impl.isErrorRegistered(target, "Err2()"));
+        assertFalse(impl.isErrorRegistered(target, "Err1()"));
+        assertFalse(impl.isErrorRegistered(target, "Err2()"));
         assertTrue(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
 
         // Unregister ErrWithParams(uint256,string)
-        impl.unregisterError(address(target), "ErrWithParams(uint256,string)");
+        impl.unregisterError(target, "ErrWithParams(uint256,string)");
         assertFalse(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
-        regs = impl.getRegisteredErrorsBytes4(address(target));
-        regStrs = impl.getRegisteredErrorsString(address(target));
-        assertEq(impl.getRegisteredErrorsCount(address(target)), 0);
-        assertEq(regs.length, 0);
-        assertEq(regStrs.length, 0);
-        assertFalse(impl.isErrorRegistered(address(target), "Err1()"));
-        assertFalse(impl.isErrorRegistered(address(target), "Err2()"));
+        assertFalse(impl.isErrorRegistered(target, "Err1()"));
+        assertFalse(impl.isErrorRegistered(target, "Err2()"));
         assertFalse(
-            impl.isErrorRegistered(
-                address(target),
-                "ErrWithParams(uint256,string)"
-            )
+            impl.isErrorRegistered(target, "ErrWithParams(uint256,string)")
         );
     }
 
     function test_Revert_RegisterError_WhenAlreadyRegistered() public {
-        impl.registerError(address(target), "Err1()");
+        impl.registerError(target, "Err1()");
         vm.expectRevert(
             abi.encodeWithSelector(
                 ErrorHandler.ErrorAlreadyRegistered.selector,
-                address(target),
-                MockTarget.Err1.selector
+                target,
+                MockTarget.Err1.selector,
+                "Err1()"
             )
         );
-        impl.registerError(address(target), "Err1()");
+        impl.registerError(target, "Err1()");
     }
 
     function test_Revert_UnregisterError_WhenNotRegistered() public {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ErrorHandler.ErrorNotRegistered.selector,
-                address(target),
-                MockTarget.Err1.selector
+                target,
+                MockTarget.Err1.selector,
+                "Err1()"
             )
         );
-        impl.unregisterError(address(target), "Err1()");
+        impl.unregisterError(target, "Err1()");
     }
 
     /* ========== Handling Logic ========== */
@@ -237,9 +203,9 @@ contract ErrorHandlerTest is Test {
             MockTarget.succeed.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.DeliverySuccess(address(target));
+        emit ErrorHandler.DeliverySuccess(target);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -262,9 +228,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedRevertData);
+        emit ErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -272,9 +238,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Err1()");
+        impl.registerError(target, "Err1()");
         vm.expectRevert(impl.stringToFsig("Err1()"));
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_CustomError_WithParams() public {
@@ -291,9 +257,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedRevertData);
+        emit ErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -301,9 +267,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
-        impl.registerError(address(target), "ErrWithParams(uint256,string)");
+        impl.registerError(target, "ErrWithParams(uint256,string)");
         vm.expectRevert(expectedRevertData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_StringRequire() public {
@@ -317,9 +283,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedRevertData);
+        emit ErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -327,9 +293,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Error(string)");
+        impl.registerError(target, "Error(string)");
         vm.expectRevert(expectedRevertData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_StringRevert() public {
@@ -343,9 +309,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedRevertData);
+        emit ErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -353,9 +319,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedRevertData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Error(string)");
+        impl.registerError(target, "Error(string)");
         vm.expectRevert(expectedRevertData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_LowLevelRevert() public {
@@ -368,9 +334,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), customRevertData);
+        emit ErrorHandler.DeliveryError(target, customRevertData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -378,9 +344,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, customRevertData);
 
         // --- Registered ---
-        impl.registerError(address(target), "some random thing");
+        impl.registerError(target, "some random thing");
         vm.expectRevert(customRevertData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_Assert() public {
@@ -395,9 +361,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedPanicData);
+        emit ErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -405,9 +371,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Panic(uint256)");
+        impl.registerError(target, "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_Arithmetic() public {
@@ -422,9 +388,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedPanicData);
+        emit ErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -432,9 +398,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Panic(uint256)");
+        impl.registerError(target, "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_DivisionByZero() public {
@@ -450,9 +416,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedPanicData);
+        emit ErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -460,9 +426,9 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Panic(uint256)");
+        impl.registerError(target, "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     function test_Handle_Panic_IndexOutOfBounds() public {
@@ -477,9 +443,9 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), expectedPanicData);
+        emit ErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -487,22 +453,22 @@ contract ErrorHandlerTest is Test {
         assertEq(data, expectedPanicData);
 
         // --- Registered ---
-        impl.registerError(address(target), "Panic(uint256)");
+        impl.registerError(target, "Panic(uint256)");
         vm.expectRevert(expectedPanicData);
-        impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        impl.call(target, _CALLBACK_GAS_LIMIT, callData);
     }
 
     // Note: Empty reverts (revert data length < 4) cannot be registered to re-throw
-    // because they lack a selector. The ErrorHandler will always log them as TargetError.
+    // because they lack a selector. The ErrorHandler will always log them as DeliveryError.
     function test_Handle_EmptyReverts_AlwaysLogs() public {
         // Test require without reason
         bytes memory callData = abi.encodeWithSelector(
             MockTarget.failWithRequireNoReason.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), "");
+        emit ErrorHandler.DeliveryError(target, "");
         (bool ok, bytes memory data) = impl.call(
-            address(target),
+            target,
             _CALLBACK_GAS_LIMIT,
             callData
         );
@@ -514,16 +480,16 @@ contract ErrorHandlerTest is Test {
             MockTarget.failWithEmptyRevert.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), "");
-        (ok, data) = impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        emit ErrorHandler.DeliveryError(target, "");
+        (ok, data) = impl.call(target, _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
 
         // Test failed transfer
         callData = abi.encodeWithSelector(MockTarget.failWithTransfer.selector);
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), "");
-        (ok, data) = impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        emit ErrorHandler.DeliveryError(target, "");
+        (ok, data) = impl.call(target, _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
 
@@ -532,8 +498,21 @@ contract ErrorHandlerTest is Test {
             MockTarget.failWithCallUnknown.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.TargetError(address(target), "");
-        (ok, data) = impl.call(address(target), _CALLBACK_GAS_LIMIT, callData);
+        emit ErrorHandler.DeliveryError(target, "");
+        (ok, data) = impl.call(target, _CALLBACK_GAS_LIMIT, callData);
+        assertFalse(ok);
+        assertEq(data, hex"");
+
+        // Test failed because not enough callbackGasLimit
+        callData = abi.encodeWithSelector(MockTarget.succeed.selector);
+        vm.expectEmit();
+        emit ErrorHandler.DeliveryError(target, "");
+        (ok, data) = impl.call(
+            target,
+            // set callbackGasLimit = 10
+            10,
+            callData
+        );
         assertFalse(ok);
         assertEq(data, hex"");
     }

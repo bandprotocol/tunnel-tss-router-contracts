@@ -31,16 +31,248 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         packetConsumer.setTunnelId(1);
     }
 
+    function testsignalStringToBytes32RightAlign() public {
+        string memory s;
+
+        s = "";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"0000000000000000000000000000000000000000000000000000000000000000"
+            )
+        );
+        s = "0";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"00000000000000000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "01";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"000000000000000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "012";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"0000000000000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "0123";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"00000000000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "01234";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"000000000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "012345";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"0000000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "0123456";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"00000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "01234567";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"000000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "012345678";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"0000000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "0123456789";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(
+                hex"00000000000000000000000000000000000000000000",
+                s
+            )
+        );
+        s = "0123456789a";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000000000000000000000000000000000000000", s)
+        );
+        s = "0123456789ab";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000000000000000000000000000000000000000", s)
+        );
+        s = "0123456789abc";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00000000000000000000000000000000000000", s)
+        );
+        s = "0123456789abcd";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000000000000000000000000000000000", s)
+        );
+        s = "0123456789abcde";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000000000000000000000000000000000", s)
+        );
+        s = "0123456789abcdef";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00000000000000000000000000000000", s)
+        );
+        s = "0123456789abcdefg";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000000000000000000000000000", s)
+        );
+        s = "0123456789abcdefgh";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000000000000000000000000000", s)
+        );
+        s = "0123456789abcdefghi";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00000000000000000000000000", s)
+        );
+        s = "0123456789abcdefghij";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000000000000000000000", s)
+        );
+        s = "0123456789abcdefghijk";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000000000000000000000", s)
+        );
+        s = "0123456789abcdefghijkl";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00000000000000000000", s)
+        );
+        s = "0123456789abcdefghijklm";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000000000000000", s)
+        );
+        s = "0123456789abcdefghijklmn";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000000000000000", s)
+        );
+        s = "0123456789abcdefghijklmno";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00000000000000", s)
+        );
+        s = "0123456789abcdefghijklmnop";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000000000", s)
+        );
+        s = "0123456789abcdefghijklmnopq";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000000000", s)
+        );
+        s = "0123456789abcdefghijklmnopqr";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00000000", s)
+        );
+        s = "0123456789abcdefghijklmnopqrs";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"000000", s)
+        );
+        s = "0123456789abcdefghijklmnopqrst";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"0000", s)
+        );
+        s = "0123456789abcdefghijklmnopqrstu";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"00", s)
+        );
+        s = "0123456789abcdefghijklmnopqrstuv";
+        assertEq(
+            abi.encodePacked(packetConsumer.signalStringToBytes32RightAlign(s)),
+            abi.encodePacked(hex"", s)
+        );
+
+        s = "0123456789abcdefghijklmnopqrstuvw";
+        vm.expectRevert(stdError.arithmeticError);
+        packetConsumer.signalStringToBytes32RightAlign(s);
+
+        s = "0123456789abcdefghijklmnopqrstuvwx";
+        vm.expectRevert(stdError.arithmeticError);
+        packetConsumer.signalStringToBytes32RightAlign(s);
+
+        s = "0123456789abcdefghijklmnopqrstuvwxy";
+        vm.expectRevert(stdError.arithmeticError);
+        packetConsumer.signalStringToBytes32RightAlign(s);
+
+        s = "0123456789abcdefghijklmnopqrstuvwxyz";
+        vm.expectRevert(stdError.arithmeticError);
+        packetConsumer.signalStringToBytes32RightAlign(s);
+    }
+
     function testProcess() public {
+        PacketConsumer.Price memory p;
         PacketDecoder.TssMessage memory data = DECODED_TSS_MESSAGE();
         PacketDecoder.Packet memory packet = data.packet;
 
+        // check prices mapping.(before)
+        p = packetConsumer.prices("CS:BTC-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+
+        p = packetConsumer.prices("CS:ETH-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+
         packetConsumer.process(data);
 
-        // check prices mapping.
-        (uint64 price, int64 timestamp) = packetConsumer.prices(packet.signals[0].signal);
-        assertEq(price, packet.signals[0].price);
-        assertEq(timestamp, packet.timestamp);
+        // check prices mapping.(after)
+        p = packetConsumer.prices("CS:BTC-USD");
+        assertEq(p.price, packet.signals[0].price);
+        assertEq(p.timestamp, packet.timestamp);
+
+        p = packetConsumer.prices("CS:ETH-USD");
+        assertEq(p.price, packet.signals[1].price);
+        assertEq(p.timestamp, packet.timestamp);
     }
 }
 

@@ -12,12 +12,6 @@ import "./libraries/Address.sol";
 import "./libraries/PacketDecoder.sol";
 
 contract PacketConsumer is IPacketConsumer, Ownable2Step {
-    // An object that contains the price of a signal ID.
-    struct Price {
-        uint64 price;
-        int64 timestamp;
-    }
-
     // The tunnel router contract.
     address public immutable tunnelRouter;
 
@@ -25,7 +19,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     // will result in different address.
     uint64 public tunnelId;
     // Mapping between a signal ID and its corresponding latest price object.
-    mapping(bytes32 => Price) public prices;
+    mapping(bytes32 => Price) internal _prices;
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -34,19 +28,53 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
         _;
     }
 
-    constructor(address tunnelRouter_, address initialOwner) Ownable(initialOwner) {
+    constructor(
+        address tunnelRouter_,
+        address initialOwner
+    ) Ownable(initialOwner) {
         tunnelRouter = tunnelRouter_;
+    }
+
+    /**
+     * @dev Converts a string to a right-aligned bytes32 value
+     */
+    function stringToRightAlignedBytes32(
+        string memory _s
+    ) public pure returns (bytes32 s) {
+        if (bytes(_s).length > 32) {
+            revert StringInputExceedsBytes32(_s);
+        }
+        assembly {
+            s := mload(add(_s, 32))
+        }
+        s >>= (32 - bytes(_s).length) * 8;
+    }
+
+    /**
+     * @dev A helper function for query a price with a string of signal
+     */
+    function prices(string calldata _s) external view returns (Price memory) {
+        return _prices[stringToRightAlignedBytes32(_s)];
     }
 
     /**
      * @dev See {IPacketConsumer-process}.
      */
-    function process(PacketDecoder.TssMessage memory data) external onlyTunnelRouter {
+    function process(
+        PacketDecoder.TssMessage memory data
+    ) external onlyTunnelRouter {
         PacketDecoder.Packet memory packet = data.packet;
         for (uint256 i = 0; i < packet.signals.length; i++) {
-            prices[packet.signals[i].signal] = Price({price: packet.signals[i].price, timestamp: packet.timestamp});
+            _prices[packet.signals[i].signal] = Price({
+                price: packet.signals[i].price,
+                timestamp: packet.timestamp
+            });
 
-            emit SignalPriceUpdated(packet.signals[i].signal, packet.signals[i].price, packet.timestamp);
+            emit SignalPriceUpdated(
+                packet.signals[i].signal,
+                packet.signals[i].price,
+                packet.timestamp
+            );
         }
     }
 
@@ -54,7 +82,10 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
      * @dev See {IPacketConsumer-activate}.
      */
     function activate(uint64 latestSeq) external payable onlyOwner {
-        ITunnelRouter(tunnelRouter).activate{value: msg.value}(tunnelId, latestSeq);
+        ITunnelRouter(tunnelRouter).activate{value: msg.value}(
+            tunnelId,
+            latestSeq
+        );
     }
 
     /**

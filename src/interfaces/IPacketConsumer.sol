@@ -6,6 +6,16 @@ import "../libraries/PacketDecoder.sol";
 
 interface IPacketConsumer {
     // ========================================
+    // Structs
+    // ========================================
+
+    // An object that contains the price of a signal ID.
+    struct Price {
+        uint64 price;
+        int64 timestamp;
+    }
+
+    // ========================================
     // Events
     // ========================================
 
@@ -16,7 +26,11 @@ interface IPacketConsumer {
      * @param price The new price of the signal.
      * @param timestamp The timestamp of the updated prices.
      */
-    event SignalPriceUpdated(bytes32 indexed signalId, uint64 price, int64 timestamp);
+    event SignalPriceUpdated(
+        bytes32 indexed signalId,
+        uint64 price,
+        int64 timestamp
+    );
 
     // ========================================
     // Custom Errors
@@ -26,6 +40,9 @@ interface IPacketConsumer {
      * @notice Reverts if the caller is not the tunnelRouter contract.
      */
     error UnauthorizedTunnelRouter();
+
+    // Custom error for string length exceeding 32 bytes
+    error StringInputExceedsBytes32(string input);
 
     // ========================================
     // Functions

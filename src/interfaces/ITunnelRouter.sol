@@ -6,6 +6,24 @@ import "./IVault.sol";
 
 interface ITunnelRouter {
     // ========================================
+    // Structs
+    // ========================================
+
+    /**
+     * @dev Stores the core details of a tunnel, mapped by its originator hash.
+     * @param isActive A flag indicating if the tunnel is currently active
+     * @param sequence The current message sequence number for the tunnel
+     * @param tunnelId The unique identifier for the tunnel
+     * @param targetAddr The address of the target consumer contract for this tunnel.
+     */
+    struct TunnelDetail {
+        bool isActive;
+        uint64 sequence;
+        uint64 tunnelId;
+        address targetAddr;
+    }
+
+    // ========================================
     // Events
     // ========================================
 
@@ -32,7 +50,11 @@ interface ITunnelRouter {
      * @param sequence The sequence of the message.
      * @param isSuccess The flag indicating whether the message is successful execute.
      */
-    event MessageProcessed(bytes32 indexed originatorHash, uint64 indexed sequence, bool isSuccess);
+    event MessageProcessed(
+        bytes32 indexed originatorHash,
+        uint64 indexed sequence,
+        bool isSuccess
+    );
 
     /**
      * @notice Emitted when the target is activated.
@@ -144,7 +166,11 @@ interface ITunnelRouter {
      * @param randomAddr The random address used in signature.
      * @param signature The signature of the message.
      */
-    function relay(bytes calldata message, address randomAddr, uint256 signature) external;
+    function relay(
+        bytes calldata message,
+        address randomAddr,
+        uint256 signature
+    ) external;
 
     /**
      * @dev Activates the sender and associated tunnel ID.
@@ -179,7 +205,10 @@ interface ITunnelRouter {
      *
      * @return TunnelInfo The tunnel information.
      */
-    function tunnelInfo(uint64 tunnelId, address addr) external view returns (TunnelInfo memory);
+    function tunnelInfo(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (TunnelInfo memory);
 
     /**
      * @dev Returns the originator hash of the given tunnel ID and address.
@@ -189,7 +218,10 @@ interface ITunnelRouter {
      *
      * @return bytes32 The originator hash of the tunnel.
      */
-    function originatorHash(uint64 tunnelId, address addr) external view returns (bytes32);
+    function originatorHash(
+        uint64 tunnelId,
+        address addr
+    ) external view returns (bytes32);
 
     /**
      * @dev Returns the active status of the target contract.

@@ -5,6 +5,8 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
+import "../src/libraries/PacketDecoder.sol";
+import "../src/interfaces/ITunnelRouter.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/PacketConsumer.sol";
 import "../src/TssVerifier.sol";
@@ -18,10 +20,12 @@ contract RelayFullLoopTest is Test, Constants {
     TssVerifier tssVerifier;
     Vault vault;
     bytes32 originatorHash;
+    mapping(uint256 => PacketDecoder.SignalPrice) referencePrices;
+    int64 referenceTimestamp;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
-        tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY, CURRENT_GROUP_PX);
+        tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY - 25, CURRENT_GROUP_PX);
 
         vault = new Vault();
         vault.initialize(address(this), address(0x00));
@@ -50,13 +54,52 @@ contract RelayFullLoopTest is Test, Constants {
             tunnelRouter.sourceChainIdHash(), 1, tunnelRouter.targetChainIdHash(), address(packetConsumer)
         );
         assertEq(tunnelRouter.isActive(originatorHash), true);
+
+        PacketDecoder.TssMessage memory tssm = this.decodeTssMessage(TSS_RAW_MESSAGE);
+        assertTrue(tssm.packet.timestamp > 0);
+        assertTrue(tssm.packet.signals.length > 0);
+        referenceTimestamp = tssm.packet.timestamp;
+        for (uint256 i = 0; i < tssm.packet.signals.length; i++) {
+            assertTrue(tssm.packet.signals[i].price > 0);
+            referencePrices[i] = tssm.packet.signals[i];
+        }
     }
 
-    function testRelayMessageConsumerNotDeactivate() public {
+    function decodeTssMessage(bytes calldata message) public pure returns (PacketDecoder.TssMessage memory) {
+        return PacketDecoder.decodeTssMessage(message);
+    }
+
+    function testRelayMessageConsumerActivated() public {
+        PacketConsumer.Price memory p;
+
+        // Before
+        p = packetConsumer.prices("CS:BTC-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+        p = packetConsumer.prices("CS:ETH-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+        p = packetConsumer.prices("CS:BAND-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+
         uint256 relayerBalance = address(this).balance;
         uint256 currentGas = gasleft();
+        vm.expectEmit();
+        emit ITunnelRouter.MessageProcessed(originatorHash, 1, true);
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
+
+        // After
+        p = packetConsumer.prices("CS:BTC-USD");
+        assertEq(p.price, referencePrices[0].price);
+        assertEq(p.timestamp, referenceTimestamp);
+        p = packetConsumer.prices("CS:ETH-USD");
+        assertEq(p.price, referencePrices[1].price);
+        assertEq(p.timestamp, referenceTimestamp);
+        p = packetConsumer.prices("CS:BAND-USD");
+        assertEq(p.price, referencePrices[2].price);
+        assertEq(p.timestamp, referenceTimestamp);
 
         assertEq(tunnelRouter.sequence(originatorHash), 1);
         assertEq(tunnelRouter.isActive(originatorHash), true);
@@ -70,13 +113,38 @@ contract RelayFullLoopTest is Test, Constants {
         console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
     }
 
-    function testRelayMessageConsumerWithDeactivate() public {
+    function testRelayMessageConsumerDeactivated() public {
+        PacketConsumer.Price memory p;
         uint256 relayerBalance = address(this).balance;
         tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
 
+        // Before
+        p = packetConsumer.prices("CS:BTC-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+        p = packetConsumer.prices("CS:ETH-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+        p = packetConsumer.prices("CS:BAND-USD");
+        assertEq(p.price, 0);
+        assertEq(p.timestamp, 0);
+
         uint256 currentGas = gasleft();
+        vm.expectEmit();
+        emit ITunnelRouter.MessageProcessed(originatorHash, 1, true);
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
         uint256 gasUsed = currentGas - gasleft();
+
+        // After
+        p = packetConsumer.prices("CS:BTC-USD");
+        assertEq(p.price, referencePrices[0].price);
+        assertEq(p.timestamp, referenceTimestamp);
+        p = packetConsumer.prices("CS:ETH-USD");
+        assertEq(p.price, referencePrices[1].price);
+        assertEq(p.timestamp, referenceTimestamp);
+        p = packetConsumer.prices("CS:BAND-USD");
+        assertEq(p.price, referencePrices[2].price);
+        assertEq(p.timestamp, referenceTimestamp);
 
         assertEq(tunnelRouter.sequence(originatorHash), 1);
         assertEq(tunnelRouter.isActive(originatorHash), false);

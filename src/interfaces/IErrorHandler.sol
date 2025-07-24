@@ -65,7 +65,7 @@ interface IErrorHandler {
     );
 
     /**
-     * @notice Reverts when attempting to unregister an error that is not currently registered.
+     * @notice Reverts when attempting to get or to unregister an error that is not currently registered.
      * @param target The address of the target contract.
      * @param errorSelector The selector of the error that was not found.
      * @param errorSignature The signature of the error that was not found.

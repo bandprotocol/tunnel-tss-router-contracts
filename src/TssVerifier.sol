@@ -8,12 +8,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./interfaces/ITssVerifier.sol";
 
 contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
-    struct PublicKey {
-        uint64 activeTime; // The timestamp that the public key was activated at.
-        uint8 parity; // The parity value of the public key.
-        uint256 px; // The x-coordinate value of the public key.
-    }
-
     // The group order of secp256k1.
     uint256 constant _ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
     // The grace period for the public key.

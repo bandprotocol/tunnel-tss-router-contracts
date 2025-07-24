@@ -1,37 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import "../interfaces/IErrorHandler.sol";
+
 /// @title ErrorHandler
 /// @notice Inherit to safely call external targets with optional error bubbling.
-abstract contract ErrorHandler {
-    /// @dev Thrown when attempting to register an already-registered selector.
-    error ErrorAlreadyRegistered(
-        address target,
-        bytes4 errorSelector,
-        string errorSignature
-    );
-    /// @dev Thrown when attempting to unregister a non-registered selector.
-    error ErrorNotRegistered(
-        address target,
-        bytes4 errorSelector,
-        string errorSignature
-    );
-
+abstract contract ErrorHandler is IErrorHandler {
     /// @notice Maps each target address to its dedicated error registry.
     mapping(address => mapping(bytes4 => string)) internal registries;
-
-    event ErrorRegistered(
-        address indexed target,
-        bytes4 errorSelector,
-        string errorSignature
-    );
-    event ErrorUnregistered(
-        address indexed target,
-        bytes4 errorSelector,
-        string errorSignature
-    );
-    event DeliverySuccess(address indexed target);
-    event DeliveryError(address indexed target, bytes data);
 
     /// @dev Call target.call(callData). On revert, rethrow if selector registered; else log and continue.
     function _callWithCustomErrorHandling(
@@ -103,6 +79,9 @@ abstract contract ErrorHandler {
         address target,
         bytes4 sel
     ) external view returns (string memory errorSignature) {
+        if (!_isErrorRegistered(target, sel)) {
+            revert ErrorNotRegistered(target, sel, "");
+        }
         errorSignature = registries[target][sel];
     }
 

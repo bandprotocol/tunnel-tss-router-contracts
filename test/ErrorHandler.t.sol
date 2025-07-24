@@ -7,6 +7,7 @@ import "forge-std/console.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./helper/MockTarget.sol";
 import "./helper/TestableErrorHandler.sol";
+import "../src/interfaces/IErrorHandler.sol";
 
 contract ErrorHandlerTest is Test {
     TestableErrorHandler impl;
@@ -35,22 +36,41 @@ contract ErrorHandlerTest is Test {
             MockTarget.ErrWithParams.selector
         );
 
+        bytes4 sel;
+
         // before
-        assertEq(
-            impl.getRegisteredError(target, impl.stringToFsig("Err1()")),
-            ""
-        );
-        assertEq(
-            impl.getRegisteredError(target, impl.stringToFsig("Err2()")),
-            ""
-        );
-        assertEq(
-            impl.getRegisteredError(
+        sel = impl.stringToFsig("Err1()");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IErrorHandler.ErrorNotRegistered.selector,
                 target,
-                impl.stringToFsig("ErrWithParams(uint256,string)")
-            ),
-            ""
+                sel,
+                ""
+            )
         );
+        impl.getRegisteredError(target, sel);
+
+        sel = impl.stringToFsig("Err2()");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IErrorHandler.ErrorNotRegistered.selector,
+                target,
+                sel,
+                ""
+            )
+        );
+        impl.getRegisteredError(target, sel);
+
+        sel = impl.stringToFsig("ErrWithParams(uint256,string)");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IErrorHandler.ErrorNotRegistered.selector,
+                target,
+                sel,
+                ""
+            )
+        );
+        impl.getRegisteredError(target, sel);
 
         // register
         impl.registerError(target, "Err1()");
@@ -137,7 +157,7 @@ contract ErrorHandlerTest is Test {
 
         // Unregister Err1()
         vm.expectEmit();
-        emit ErrorHandler.ErrorUnregistered(
+        emit IErrorHandler.ErrorUnregistered(
             target,
             MockTarget.Err1.selector,
             "Err1()"
@@ -175,7 +195,7 @@ contract ErrorHandlerTest is Test {
         impl.registerError(target, "Err1()");
         vm.expectRevert(
             abi.encodeWithSelector(
-                ErrorHandler.ErrorAlreadyRegistered.selector,
+                IErrorHandler.ErrorAlreadyRegistered.selector,
                 target,
                 MockTarget.Err1.selector,
                 "Err1()"
@@ -187,7 +207,7 @@ contract ErrorHandlerTest is Test {
     function test_Revert_UnregisterError_WhenNotRegistered() public {
         vm.expectRevert(
             abi.encodeWithSelector(
-                ErrorHandler.ErrorNotRegistered.selector,
+                IErrorHandler.ErrorNotRegistered.selector,
                 target,
                 MockTarget.Err1.selector,
                 "Err1()"
@@ -203,7 +223,7 @@ contract ErrorHandlerTest is Test {
             MockTarget.succeed.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.DeliverySuccess(target);
+        emit IErrorHandler.DeliverySuccess(target);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -228,7 +248,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedRevertData);
+        emit IErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -257,7 +277,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedRevertData);
+        emit IErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -283,7 +303,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedRevertData);
+        emit IErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -309,7 +329,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedRevertData);
+        emit IErrorHandler.DeliveryError(target, expectedRevertData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -334,7 +354,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, customRevertData);
+        emit IErrorHandler.DeliveryError(target, customRevertData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -361,7 +381,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedPanicData);
+        emit IErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -388,7 +408,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedPanicData);
+        emit IErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -416,7 +436,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedPanicData);
+        emit IErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -443,7 +463,7 @@ contract ErrorHandlerTest is Test {
 
         // --- Unregistered ---
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, expectedPanicData);
+        emit IErrorHandler.DeliveryError(target, expectedPanicData);
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -466,7 +486,7 @@ contract ErrorHandlerTest is Test {
             MockTarget.failWithRequireNoReason.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, "");
+        emit IErrorHandler.DeliveryError(target, "");
         (bool ok, bytes memory data) = impl.call(
             target,
             _CALLBACK_GAS_LIMIT,
@@ -480,7 +500,7 @@ contract ErrorHandlerTest is Test {
             MockTarget.failWithEmptyRevert.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, "");
+        emit IErrorHandler.DeliveryError(target, "");
         (ok, data) = impl.call(target, _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
@@ -488,7 +508,7 @@ contract ErrorHandlerTest is Test {
         // Test failed transfer
         callData = abi.encodeWithSelector(MockTarget.failWithTransfer.selector);
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, "");
+        emit IErrorHandler.DeliveryError(target, "");
         (ok, data) = impl.call(target, _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
@@ -498,7 +518,7 @@ contract ErrorHandlerTest is Test {
             MockTarget.failWithCallUnknown.selector
         );
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, "");
+        emit IErrorHandler.DeliveryError(target, "");
         (ok, data) = impl.call(target, _CALLBACK_GAS_LIMIT, callData);
         assertFalse(ok);
         assertEq(data, hex"");
@@ -506,7 +526,7 @@ contract ErrorHandlerTest is Test {
         // Test failed because not enough callbackGasLimit
         callData = abi.encodeWithSelector(MockTarget.succeed.selector);
         vm.expectEmit();
-        emit ErrorHandler.DeliveryError(target, "");
+        emit IErrorHandler.DeliveryError(target, "");
         (ok, data) = impl.call(
             target,
             // set callbackGasLimit = 10

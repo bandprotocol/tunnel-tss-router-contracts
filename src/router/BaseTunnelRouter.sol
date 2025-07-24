@@ -28,14 +28,6 @@ abstract contract BaseTunnelRouter is
     ITssVerifier public tssVerifier;
     IVault public vault;
 
-    // Store information of the tunnel based on its hashOriginator.
-    struct TunnelDetail {
-        bool isActive;
-        uint64 sequence;
-        uint64 tunnelId;
-        address targetAddr;
-    }
-
     // Additional gas estimated for relaying the message;
     // does not include the gas cost for executing the target contract.
     uint256 public additionalGasUsed;

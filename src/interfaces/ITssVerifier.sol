@@ -4,6 +4,22 @@ pragma solidity ^0.8.23;
 
 interface ITssVerifier {
     // ========================================
+    // Structs
+    // ========================================
+
+    /**
+     * @notice Represents a group public key used for signature verification.
+     * @param activeTime The Unix timestamp from which this public key is considered active.
+     * @param parity The parity of the y-coordinate, used for public key recovery.
+     * @param px The x-coordinate of the public key.
+     */
+    struct PublicKey {
+        uint64 activeTime;
+        uint8 parity;
+        uint256 px;
+    }
+
+    // ========================================
     // Events
     // ========================================
 

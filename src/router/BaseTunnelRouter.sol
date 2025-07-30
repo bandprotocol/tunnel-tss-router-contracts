@@ -14,24 +14,19 @@ import "../interfaces/IVault.sol";
 import "../libraries/PacketDecoder.sol";
 import "../libraries/Originator.sol";
 
+import "./ErrorHandler.sol";
+
 abstract contract BaseTunnelRouter is
     Initializable,
     Ownable2StepUpgradeable,
     PausableUpgradeable,
-    ITunnelRouter
+    ITunnelRouter,
+    ErrorHandler
 {
     using PacketDecoder for bytes;
 
     ITssVerifier public tssVerifier;
     IVault public vault;
-
-    // Store information of the tunnel based on its hashOriginator.
-    struct TunnelDetail {
-        bool isActive;
-        uint64 sequence;
-        uint64 tunnelId;
-        address targetAddr;
-    }
 
     // Additional gas estimated for relaying the message;
     // does not include the gas cost for executing the target contract.
@@ -160,14 +155,11 @@ abstract contract BaseTunnelRouter is
 
         // forward the message to the target contract.
         uint256 gasLeft = gasleft();
-        bool isSuccess = true;
-        try
-            IPacketConsumer(tunnelDetail.targetAddr).process{
-                gas: callbackGasLimit
-            }(tssMessage)
-        {} catch {
-            isSuccess = false;
-        }
+        (bool isSuccess, ) = _callWithCustomErrorHandling(
+            tunnelDetail.targetAddr,
+            callbackGasLimit,
+            abi.encodeWithSelector(IPacketConsumer.process.selector, tssMessage)
+        );
 
         emit MessageProcessed(originatorHash_, packet.sequence, isSuccess);
 
@@ -286,6 +278,26 @@ abstract contract BaseTunnelRouter is
             isAllowed[senders[i]] = flag;
             emit SetWhitelist(senders[i], flag);
         }
+    }
+
+    /**
+     * @dev Register/Add a new custom error for the consumer.
+     */
+    function registerError(
+        address target,
+        string calldata fsigStr
+    ) external onlyOwner {
+        _registerError(target, fsigStr);
+    }
+
+    /**
+     * @dev Unregister/Remove an existed custom error for the consumer.
+     */
+    function unregisterError(
+        address target,
+        string calldata fsigStr
+    ) external onlyOwner {
+        _unregisterError(target, fsigStr);
     }
 
     /**

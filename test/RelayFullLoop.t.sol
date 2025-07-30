@@ -22,7 +22,6 @@ contract RelayFullLoopTest is Test, Constants {
     bytes32 originatorHash;
     mapping(uint256 => PacketDecoder.SignalPrice) referencePrices;
     int64 referenceTimestamp;
-    uint256 gasPrice;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
@@ -71,8 +70,8 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerActivated() public {
-        // gasPrice is less than gas price set by user
-        gasPrice = 1;
+        // gasPrice is lower than the user-defined gas fee
+        uint256 gasPrice = 1;
         vm.txGasPrice(gasPrice);
 
         PacketConsumer.Price memory p;
@@ -119,8 +118,8 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerDeactivated() public {
-        // gasPrice is more than gas price set by user
-        gasPrice = 100 gwei;
+        // gasPrice is more than the user-defined gas fee
+        uint256 gasPrice = 100 gwei;
         vm.txGasPrice(gasPrice);
 
         PacketConsumer.Price memory p;

@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.23;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../interfaces/IVault.sol";
 import "./BaseTunnelRouter.sol";
 
@@ -51,6 +52,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
     }
 
     function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
-        return gasFee.gasPrice * gasUsed;
+        uint256 effectiveGasPrice = Math.min(tx.gasprice, gasFee.gasPrice);
+        return effectiveGasPrice * gasUsed;
     }
 }

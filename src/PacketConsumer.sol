@@ -51,10 +51,29 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     }
 
     /**
-     * @dev A helper function for query a price with a string of signal
+     * @dev See {IPacketConsumer-prices}.
      */
-    function prices(string calldata _s) external view returns (Price memory) {
-        return _prices[stringToRightAlignedBytes32(_s)];
+    function prices(string calldata _signalId) external view returns (Price memory) {
+        Price memory price = _prices[stringToRightAlignedBytes32(_signalId)];
+        if (price.price == 0) {
+            revert SignalIdNotAvailable(_signalId);
+        }
+        return price;
+    }
+
+    /**
+     * @dev See {IPacketConsumer-batchPrices}.
+     */
+    function batchPrices(string[] calldata _signalIds) external view returns (Price[] memory) {
+        Price[] memory priceList = new Price[](_signalIds.length);
+        for (uint i = 0; i < _signalIds.length; i++) {
+            Price memory price = _prices[stringToRightAlignedBytes32(_signalIds[i])];
+            if (price.price == 0) {
+                revert SignalIdNotAvailable(_signalIds[i]);
+            }
+            priceList[i] = price;
+        }
+        return priceList;
     }
 
     /**

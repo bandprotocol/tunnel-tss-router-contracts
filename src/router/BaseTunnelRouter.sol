@@ -5,6 +5,7 @@ pragma solidity ^0.8.23;
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 import "../interfaces/IPacketConsumer.sol";
 import "../interfaces/ITssVerifier.sol";
@@ -20,6 +21,7 @@ abstract contract BaseTunnelRouter is
     Initializable,
     Ownable2StepUpgradeable,
     PausableUpgradeable,
+    AccessControlUpgradeable,
     ITunnelRouter,
     ErrorHandler
 {
@@ -43,7 +45,10 @@ abstract contract BaseTunnelRouter is
     // A list of senders allowed to relay packets.
     mapping(address => bool) public isAllowed; // sender address => isAllowed
 
-    uint256[49] __gap;
+    /// @notice Role identifier for accounts allowed to update gas fee.
+    bytes32 public constant GAS_FEE_ROLE = keccak256("GAS_FEE_ROLE");
+
+    uint256[48] __gap;
 
     modifier onlyWhitelisted() {
         if (!isAllowed[msg.sender]) {
@@ -64,6 +69,9 @@ abstract contract BaseTunnelRouter is
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
         __Pausable_init();
+        __AccessControl_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(GAS_FEE_ROLE, initialOwner);
 
         tssVerifier = tssVerifier_;
         vault = vault_;
@@ -352,5 +360,19 @@ abstract contract BaseTunnelRouter is
     function _setAdditionalGasUsed(uint256 additionalGasUsed_) internal {
         additionalGasUsed = additionalGasUsed_;
         emit AdditionalGasUsedSet(additionalGasUsed_);
+    }
+
+    /// @dev Grants `GAS_FEE_ROLE` to `accounts`
+    function grantGasFee(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _grantRole(GAS_FEE_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Revokes `GAS_FEE_ROLE` from  `accounts`
+    function revokeGasFee(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _revokeRole(GAS_FEE_ROLE, accounts[i]);
+        }
     }
 }

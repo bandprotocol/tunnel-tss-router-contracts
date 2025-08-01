@@ -42,7 +42,7 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
      * @dev Sets the gas fee information.
      * @param gasFee_ The new gas fee information.
      */
-    function setGasFee(GasFeeInfo memory gasFee_) public onlyOwner {
+    function setGasFee(GasFeeInfo memory gasFee_) public onlyRole(GAS_FEE_ROLE) {
         _setGasFee(gasFee_);
     }
 

@@ -46,7 +46,7 @@ abstract contract BaseTunnelRouter is
     mapping(address => bool) public isAllowed; // sender address => isAllowed
 
     /// @notice Role identifier for accounts allowed to update gas fee.
-    bytes32 public constant GAS_FEE_ROLE = keccak256("GAS_FEE_ROLE");
+    bytes32 public constant GAS_FEE_UPDATER_ROLE = keccak256("GAS_FEE_UPDATER_ROLE");
 
     uint256[48] __gap;
 
@@ -71,7 +71,7 @@ abstract contract BaseTunnelRouter is
         __Pausable_init();
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
-        _grantRole(GAS_FEE_ROLE, initialOwner);
+        _grantRole(GAS_FEE_UPDATER_ROLE, initialOwner);
 
         tssVerifier = tssVerifier_;
         vault = vault_;
@@ -362,17 +362,17 @@ abstract contract BaseTunnelRouter is
         emit AdditionalGasUsedSet(additionalGasUsed_);
     }
 
-    /// @dev Grants `GAS_FEE_ROLE` to `accounts`
+    /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`
     function grantGasFee(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
-            _grantRole(GAS_FEE_ROLE, accounts[i]);
+            _grantRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
         }
     }
 
-    /// @dev Revokes `GAS_FEE_ROLE` from  `accounts`
+    /// @dev Revokes `GAS_FEE_UPDATER_ROLE` from  `accounts`
     function revokeGasFee(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
-            _revokeRole(GAS_FEE_ROLE, accounts[i]);
+            _revokeRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
         }
     }
 }

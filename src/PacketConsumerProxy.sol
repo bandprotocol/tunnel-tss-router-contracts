@@ -18,7 +18,7 @@ contract PacketConsumerProxy is Ownable {
     }
 
     /// @dev Returns the price for a given `signalId`, reverting if it does not exist.
-    function getPrice(string memory signalId)
+    function getPrice(string calldata signalId)
         public
         view
         returns (IPacketConsumer.Price memory)
@@ -27,7 +27,7 @@ contract PacketConsumerProxy is Ownable {
     }
 
     /// @dev Returns the prices for the given `signalIds`, reverting if any do not exist.
-    function getPriceBatch(string[] memory signalIds)
+    function getPriceBatch(string[] calldata signalIds)
         public
         view
         returns (IPacketConsumer.Price[] memory)

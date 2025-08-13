@@ -44,6 +44,9 @@ interface IPacketConsumer {
     // Custom error for string length exceeding 32 bytes
     error StringInputExceedsBytes32(string input);
 
+    // Custom error for signal Id input that is not available.
+    error SignalIdNotAvailable(string signalId);
+
     // ========================================
     // Functions
     // ========================================
@@ -109,4 +112,18 @@ interface IPacketConsumer {
      * @dev Returns The tunnelId of the contract.
      */
     function tunnelId() external view returns (uint64);
+
+    /**
+     * @dev Returns the price for the given string of signal, reverting if it does not exist.
+     *
+     * @param _signalId The signal ID to retrieve the price for.
+     */
+    function getPrice(string calldata _signalId) external view returns (Price memory);
+
+    /**
+     * @dev Returns the prices for the given array of string of signal, reverting if any do not exist.
+     *
+     * @param _signalIds The list of signal IDs to retrieve prices for.
+     */
+    function getPriceBatch(string[] calldata _signalIds) external view returns (Price[] memory);
 }

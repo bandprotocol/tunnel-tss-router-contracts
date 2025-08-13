@@ -3,8 +3,6 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
-
 import "../src/libraries/PacketDecoder.sol";
 import "../src/interfaces/ITunnelRouter.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
@@ -31,7 +29,7 @@ contract RelayFullLoopTest is Test, Constants {
         vault.initialize(address(this), address(0x00));
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
-            tssVerifier, vault, address(this), 75000, 75000, 10, keccak256("bandchain"), keccak256("testnet-evm")
+            tssVerifier, vault, address(this), 75000, 150000, 1, keccak256("bandchain"), keccak256("testnet-evm")
         );
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(this);
@@ -77,15 +75,15 @@ contract RelayFullLoopTest is Test, Constants {
         PacketConsumer.Price memory p;
 
         // Before
-        p = packetConsumer.prices("CS:BTC-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
-        p = packetConsumer.prices("CS:ETH-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
-        p = packetConsumer.prices("CS:BAND-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
+        bytes memory expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:BTC-USD");
+        vm.expectRevert(expectedErr);
+        packetConsumer.getPrice("CS:BTC-USD");
+        expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:ETH-USD");
+        vm.expectRevert(expectedErr);
+        packetConsumer.getPrice("CS:ETH-USD");
+        expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:BAND-USD");
+        vm.expectRevert(expectedErr);
+        packetConsumer.getPrice("CS:BAND-USD");
 
         uint256 relayerBalance = address(this).balance;
         uint256 currentGas = gasleft();
@@ -95,13 +93,13 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 gasUsed = currentGas - gasleft();
 
         // After
-        p = packetConsumer.prices("CS:BTC-USD");
+        p = packetConsumer.getPrice("CS:BTC-USD");
         assertEq(p.price, referencePrices[0].price);
         assertEq(p.timestamp, referenceTimestamp);
-        p = packetConsumer.prices("CS:ETH-USD");
+        p = packetConsumer.getPrice("CS:ETH-USD");
         assertEq(p.price, referencePrices[1].price);
         assertEq(p.timestamp, referenceTimestamp);
-        p = packetConsumer.prices("CS:BAND-USD");
+        p = packetConsumer.getPrice("CS:BAND-USD");
         assertEq(p.price, referencePrices[2].price);
         assertEq(p.timestamp, referenceTimestamp);
 
@@ -127,15 +125,15 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
 
         // Before
-        p = packetConsumer.prices("CS:BTC-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
-        p = packetConsumer.prices("CS:ETH-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
-        p = packetConsumer.prices("CS:BAND-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
+        bytes memory expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:BTC-USD");
+        vm.expectRevert(expectedErr);
+        p = packetConsumer.getPrice("CS:BTC-USD");
+        expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:ETH-USD");
+        vm.expectRevert(expectedErr);
+        p = packetConsumer.getPrice("CS:ETH-USD");
+        expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:BAND-USD");
+        vm.expectRevert(expectedErr);
+        p = packetConsumer.getPrice("CS:BAND-USD");
 
         uint256 currentGas = gasleft();
         vm.expectEmit();
@@ -144,13 +142,13 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 gasUsed = currentGas - gasleft();
 
         // After
-        p = packetConsumer.prices("CS:BTC-USD");
+        p = packetConsumer.getPrice("CS:BTC-USD");
         assertEq(p.price, referencePrices[0].price);
         assertEq(p.timestamp, referenceTimestamp);
-        p = packetConsumer.prices("CS:ETH-USD");
+        p = packetConsumer.getPrice("CS:ETH-USD");
         assertEq(p.price, referencePrices[1].price);
         assertEq(p.timestamp, referenceTimestamp);
-        p = packetConsumer.prices("CS:BAND-USD");
+        p = packetConsumer.getPrice("CS:BAND-USD");
         assertEq(p.price, referencePrices[2].price);
         assertEq(p.timestamp, referenceTimestamp);
 

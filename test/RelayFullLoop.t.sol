@@ -41,7 +41,7 @@ contract RelayFullLoopTest is Test, Constants {
             address(this),
             75000,
             75000,
-            1,
+            10,
             keccak256("bandchain"),
             keccak256("testnet-evm")
         );
@@ -95,6 +95,10 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerActivated() public {
+        // gasPrice is lower than the user-defined gas fee
+        uint256 gasPrice = 1;
+        vm.txGasPrice(gasPrice);
+
         PacketConsumer.Price memory p;
 
         // Before
@@ -137,7 +141,7 @@ contract RelayFullLoopTest is Test, Constants {
         assertGt(feeGain, 0);
 
         uint256 gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasFee() -
+            gasPrice -
             tunnelRouter.additionalGasUsed();
 
         console.log(
@@ -151,6 +155,10 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayMessageConsumerDeactivated() public {
+        // gasPrice is more than the user-defined gas fee
+        uint256 gasPrice = 100 gwei;
+        vm.txGasPrice(gasPrice);
+
         PacketConsumer.Price memory p;
         uint256 relayerBalance = address(this).balance;
         tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(50 gwei));
@@ -242,6 +250,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     function testRelayVaultNotEnoughToken() public {
         tunnelRouter.setGasFee(GasPriceTunnelRouter.GasFeeInfo(1 ether));
+        vm.txGasPrice(1 ether);
 
         vm.expectRevert(); // underflow error
         tunnelRouter.relay(

@@ -40,6 +40,8 @@ contract VaultTest is Test, Constants {
 
         vault.setTunnelRouter(address(tunnelRouter));
 
+        vm.txGasPrice(1);
+
         // deploy packet Consumer with specific address.
         bytes memory packetConsumerArgs = abi.encode(
             address(tunnelRouter),

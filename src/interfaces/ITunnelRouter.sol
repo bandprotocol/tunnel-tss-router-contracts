@@ -113,12 +113,6 @@ interface ITunnelRouter {
     error InvalidSequence(uint64 expected, uint64 input);
 
     /**
-     * @notice Reverts if the tunnel ID of the target contract doesn't match
-     * the information of the originator hash.
-     */
-    error InvalidTunnelId(uint64 expected, uint64 input);
-
-    /**
      * @notice Reverts if the message and its signature doesn't match.
      */
     error InvalidSignature();

@@ -67,46 +67,51 @@ interface IPacketConsumer {
      *
      * This function should be called by the contract owner.
      *
+     * @param tunnelId The tunnel ID that the sender contract is activating.
      * @param latestSeq The new sequence of the tunnel.
      */
-    function activate(uint64 latestSeq) external payable;
+    function activate(uint64 tunnelId, uint64 latestSeq) external payable;
 
     /**
      * @dev Deactivates the tunnel on tunnelRouter contract.
      *
      * This function should be called by the contract owner.
+     *
+     * @param tunnelId The tunnel ID that the sender contract is deactivating.
      */
-    function deactivate() external;
+    function deactivate(uint64 tunnelId) external;
 
     /**
-     * @dev Deposits the native tokens into the vault on behalf of the given account and tunnelId.
+     * @dev Deposits the native tokens into the vault on behalf of the contract address and tunnelId.
      * The amount of tokens to be deposited is provided as msg.value in the transaction.
      *
      * The contract calls the vault to deposit the tokens.
+     *
+     * @param tunnelId The tunnel ID that the sender contract is depositing.
      */
-    function deposit() external payable;
+    function deposit(uint64 tunnelId) external payable;
 
     /**
      * @dev Withdraws the native tokens from the vault contract with specific amount.
      *
      * This function should be called by the contract owner.
+     *
+     * @param tunnelId The tunnel ID that the sender contract is withdrawing.
+     * @param amount The amount of tokens to be withdrawn.
      */
-    function withdraw(uint256 amount) external;
+    function withdraw(uint64 tunnelId, uint256 amount) external;
 
     /**
      * @dev Withdraws all native tokens from the vault contract.
      *
      * This function should be called by the contract owner.
+     *
+     * @param tunnelId The tunnel ID that the sender contract is withdrawing.
      */
-    function withdrawAll() external;
+    function withdrawAll(uint64 tunnelId) external;
 
     /**
      * @dev Returns The tunnelRouter contract address.
      */
     function tunnelRouter() external view returns (address);
-
-    /**
-     * @dev Returns The tunnelId of the contract.
-     */
-    function tunnelId() external view returns (uint64);
 }

@@ -11,7 +11,7 @@ contract Constants is Test, TssSignerHelper {
     uint256 immutable CURRENT_GROUP_PX;
     address immutable MOCK_SENDER;
     address immutable MOCK_VALID_GAS_FEE_UPDATER_ROLE;
-    address immutable MOCK_INVALID_GAS_FEE_ROLE;
+    address immutable MOCK_INVALID_GAS_FEE_UPDATER_ROLE;
     address immutable SIGNATURE_NONCE_ADDR;
     uint256 immutable MESSAGE_SIGNATURE;
 
@@ -40,7 +40,7 @@ contract Constants is Test, TssSignerHelper {
         privateKey = 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a;
         MOCK_VALID_GAS_FEE_UPDATER_ROLE = vm.addr(privateKey);
         privateKey = 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6;
-        MOCK_INVALID_GAS_FEE_ROLE = vm.addr(privateKey);
+        MOCK_INVALID_GAS_FEE_UPDATER_ROLE = vm.addr(privateKey);
         (CURRENT_GROUP_PARITY, CURRENT_GROUP_PX) = getPubkey(privateKey);
         (SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE) = sign(
             CURRENT_GROUP_PARITY,

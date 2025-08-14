@@ -322,7 +322,7 @@ contract RelayFullLoopTest is Test, Constants {
             GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
         );
 
-        vm.prank(MOCK_INVALID_GAS_FEE_ROLE);
+        vm.prank(MOCK_INVALID_GAS_FEE_UPDATER_ROLE);
         vm.expectRevert();
         tunnelRouter.setGasFee(
             GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})

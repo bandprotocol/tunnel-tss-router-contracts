@@ -363,14 +363,14 @@ abstract contract BaseTunnelRouter is
     }
 
     /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`
-    function grantGasFee(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function grantGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
             _grantRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
         }
     }
 
     /// @dev Revokes `GAS_FEE_UPDATER_ROLE` from  `accounts`
-    function revokeGasFee(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function revokeGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
             _revokeRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
         }

@@ -7,6 +7,7 @@ import "../../src/libraries/PacketDecoder.sol";
 import "./TssSignerHelper.sol";
 
 contract Constants is Test, TssSignerHelper {
+    uint256 constant PRIVATE_KEY = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
     uint8 immutable CURRENT_GROUP_PARITY;
     uint256 immutable CURRENT_GROUP_PX;
     address immutable MOCK_SENDER;
@@ -33,6 +34,16 @@ contract Constants is Test, TssSignerHelper {
             hex"00000000000000000000000000000000000000000043533a42414e442d555344",
             hex"0000000000000000000000000000000000000000000000000000000000001234"
         );
+
+    function signTssm(bytes memory tssm, uint256 randomSeed) public view returns(address rAddr, uint256 s) {
+        (rAddr, s) = sign(
+            CURRENT_GROUP_PARITY,
+            CURRENT_GROUP_PX,
+            getRandomNonce(uint256(keccak256((abi.encode(PRIVATE_KEY, randomSeed))))),
+            keccak256(tssm),
+            PRIVATE_KEY
+        );
+    }
 
     constructor() {
         uint256 privateKey = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;

@@ -7,6 +7,7 @@ import "../../src/libraries/PacketDecoder.sol";
 import "./TssSignerHelper.sol";
 
 contract Constants is Test, TssSignerHelper {
+    uint256 constant PRIVATE_KEY = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
     uint8 immutable CURRENT_GROUP_PARITY;
     uint256 immutable CURRENT_GROUP_PX;
     address immutable MOCK_SENDER;
@@ -32,18 +33,27 @@ contract Constants is Test, TssSignerHelper {
             hex"0000000000000000000000000000000000000000000000000000000000001234"
         );
 
+    function signTssm(bytes memory tssm, uint256 randomSeed) public view returns(address rAddr, uint256 s) {
+        (rAddr, s) = sign(
+            CURRENT_GROUP_PARITY,
+            CURRENT_GROUP_PX,
+            getRandomNonce(uint256(keccak256((abi.encode(PRIVATE_KEY, randomSeed))))),
+            keccak256(tssm),
+            PRIVATE_KEY
+        );
+    }
+
     constructor() {
-        uint256 privateKey = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
-        MOCK_SENDER = vm.addr(privateKey);
-        (CURRENT_GROUP_PARITY, CURRENT_GROUP_PX) = getPubkey(privateKey);
+        MOCK_SENDER = vm.addr(PRIVATE_KEY);
+        (CURRENT_GROUP_PARITY, CURRENT_GROUP_PX) = getPubkey(PRIVATE_KEY);
         (SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE) = sign(
             CURRENT_GROUP_PARITY,
             CURRENT_GROUP_PX,
-            getRandomNonce(privateKey),
+            getRandomNonce(PRIVATE_KEY),
             keccak256(TSS_RAW_MESSAGE),
-            privateKey
+            PRIVATE_KEY
         );
-        assertEq(vm.addr(getRandomNonce(privateKey)), SIGNATURE_NONCE_ADDR);
+        assertEq(vm.addr(getRandomNonce(PRIVATE_KEY)), SIGNATURE_NONCE_ADDR);
     }
 
     function DECODED_TSS_MESSAGE()

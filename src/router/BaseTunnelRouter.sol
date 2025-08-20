@@ -30,6 +30,8 @@ abstract contract BaseTunnelRouter is
 
     // Additional gas estimated for relaying the message;
     // does not include the gas cost for executing the target contract.
+    // The additionalGasUsed consists of three uint80 quadratic coefficients (c2, c1, c0),
+    // each representing a fixed-point number with 18 decimals of precision.
     uint256 public additionalGasUsed;
     // The maximum gas limit can be used when calling the target contract.
     uint256 public callbackGasLimit;
@@ -134,6 +136,9 @@ abstract contract BaseTunnelRouter is
             revert InvalidSequence(tunnelDetail.sequence + 1, packet.sequence);
         }
 
+        // update the sequence.
+        tunnelDetails[originatorHash_].sequence = packet.sequence;
+
         uint64 targetTunnelId = IPacketConsumer(tunnelDetail.targetAddr)
             .tunnelId();
         if (targetTunnelId != tunnelDetail.tunnelId) {
@@ -150,21 +155,28 @@ abstract contract BaseTunnelRouter is
             revert InvalidSignature();
         }
 
-        // update the sequence.
-        tunnelDetails[originatorHash_].sequence = packet.sequence;
-
         // forward the message to the target contract.
-        uint256 gasLeft = gasleft();
+        uint256 beginGasleft = gasleft();
         (bool isSuccess, ) = _callWithCustomErrorHandling(
             tunnelDetail.targetAddr,
             callbackGasLimit,
             abi.encodeWithSelector(IPacketConsumer.process.selector, tssMessage)
         );
+        uint256 targetGasUsed = beginGasleft - gasleft();
 
         emit MessageProcessed(originatorHash_, packet.sequence, isSuccess);
 
         // charge a fee from the target contract and send to caller.
-        uint256 fee = _routerFee(gasLeft - gasleft() + additionalGasUsed);
+        uint256 c2 = (additionalGasUsed >> 160) & ((1 << 80) - 1);
+        uint256 c1 = (additionalGasUsed >> 80) & ((1 << 80) - 1);
+        uint256 c0 = additionalGasUsed & ((1 << 80) - 1);
+        uint256 x;
+        assembly {
+            x := calldatasize()
+        }
+        uint256 fee = _routerFee(
+            targetGasUsed + ((c2 * x * x + c1 * x + c0) / 1e18)
+        );
         vault.collectFee(originatorHash_, msg.sender, fee);
 
         // deactivate the target contract if the remaining balance is under the threshold.

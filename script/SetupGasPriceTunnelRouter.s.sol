@@ -67,6 +67,7 @@ contract Executor is Script {
                     IVault(proxyVaultAddr),
                     msg.sender,
                     100000,
+                    14000,
                     300000,
                     gasPrice,
                     keccak256(bytes(sourceChainId)),

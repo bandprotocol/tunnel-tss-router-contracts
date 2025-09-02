@@ -16,25 +16,20 @@ import "../libraries/PacketDecoder.sol";
 import "../libraries/Originator.sol";
 
 import "./ErrorHandler.sol";
+import "./L1RouterGasCalculator.sol";
 
 abstract contract BaseTunnelRouter is
-    Initializable,
-    Ownable2StepUpgradeable,
     PausableUpgradeable,
     AccessControlUpgradeable,
     ITunnelRouter,
-    ErrorHandler
+    ErrorHandler,
+    L1RouterGasCalculator
 {
     using PacketDecoder for bytes;
 
     ITssVerifier public tssVerifier;
     IVault public vault;
 
-    // Additional gas estimated for relaying the message;
-    // does not include the gas cost for executing the target contract.
-    // The additionalGasUsed consists of three uint80 quadratic coefficients (c2, c1, c0),
-    // each representing a fixed-point number with 18 decimals of precision.
-    uint256 public additionalGasUsed;
     // The maximum gas limit can be used when calling the target contract.
     uint256 public callbackGasLimit;
     // The hash of the source chain ID.
@@ -62,7 +57,8 @@ abstract contract BaseTunnelRouter is
         ITssVerifier tssVerifier_,
         IVault vault_,
         address initialOwner,
-        uint256 additionalGasUsed_,
+        uint256 packedAdditionalGasFuncCoeffs,
+        uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
         bytes32 sourceChainIdHash_,
         bytes32 targetChainIdHash_
@@ -73,24 +69,27 @@ abstract contract BaseTunnelRouter is
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
         _grantRole(GAS_FEE_UPDATER_ROLE, initialOwner);
+        __L1RouterGasCalculator_init(
+            packedAdditionalGasFuncCoeffs,
+            maxCalldataBytes_
+        ); // UPDATED
 
         tssVerifier = tssVerifier_;
         vault = vault_;
         sourceChainIdHash = sourceChainIdHash_;
         targetChainIdHash = targetChainIdHash_;
 
-        _setAdditionalGasUsed(additionalGasUsed_);
         _setCallbackGasLimit(callbackGasLimit_);
     }
 
     /**
-     * @dev Sets the additionalGasUsed being used in relaying message.
-     * @param additionalGasUsed_ The new additional gas used amount.
+     * @dev Sets the packedCoeffs being used in relaying message.
+     * @param packedCoeffs The new additional gas used amount.
      */
-    function setAdditionalGasUsed(
-        uint256 additionalGasUsed_
+    function setPackedAdditionalGasFuncCoeffs(
+        uint256 packedCoeffs
     ) external onlyOwner {
-        _setAdditionalGasUsed(additionalGasUsed_);
+        _setPackedAdditionalGasFuncCoeffs(packedCoeffs);
     }
 
     /**
@@ -146,12 +145,6 @@ abstract contract BaseTunnelRouter is
         // update the sequence.
         tunnelDetails[originatorHash_].sequence = packet.sequence;
 
-        uint64 targetTunnelId = IPacketConsumer(tunnelDetail.targetAddr)
-            .tunnelId();
-        if (targetTunnelId != tunnelDetail.tunnelId) {
-            revert InvalidTunnelId(targetTunnelId, tunnelDetail.tunnelId);
-        }
-
         // verify signature.
         bool isValid = tssVerifier.verify(
             keccak256(message),
@@ -174,15 +167,12 @@ abstract contract BaseTunnelRouter is
         emit MessageProcessed(originatorHash_, packet.sequence, isSuccess);
 
         // charge a fee from the target contract and send to caller.
-        uint256 c2 = (additionalGasUsed >> 160) & ((1 << 80) - 1);
-        uint256 c1 = (additionalGasUsed >> 80) & ((1 << 80) - 1);
-        uint256 c0 = additionalGasUsed & ((1 << 80) - 1);
-        uint256 x;
+        uint256 calldataSize;
         assembly {
-            x := calldatasize()
+            calldataSize := calldatasize()
         }
         uint256 fee = _routerFee(
-            targetGasUsed + ((c2 * x * x + c1 * x + c0) / 1e18)
+            targetGasUsed + _additionalGasForCalldata(calldataSize)
         );
         vault.collectFee(originatorHash_, msg.sender, fee);
 
@@ -240,7 +230,10 @@ abstract contract BaseTunnelRouter is
      * @dev See {ITunnelRouter-minimumBalanceThreshold}.
      */
     function minimumBalanceThreshold() public view override returns (uint256) {
-        return _routerFee(additionalGasUsed + callbackGasLimit);
+        return
+            _routerFee(
+                callbackGasLimit + _additionalGasForCalldata(maxCalldataBytes)
+            );
     }
 
     /**
@@ -365,12 +358,6 @@ abstract contract BaseTunnelRouter is
     function _setCallbackGasLimit(uint256 callbackGasLimit_) internal {
         callbackGasLimit = callbackGasLimit_;
         emit CallbackGasLimitSet(callbackGasLimit_);
-    }
-
-    /// @dev Sets additionalGasUsed and emit an event.
-    function _setAdditionalGasUsed(uint256 additionalGasUsed_) internal {
-        additionalGasUsed = additionalGasUsed_;
-        emit AdditionalGasUsedSet(additionalGasUsed_);
     }
 
     /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`

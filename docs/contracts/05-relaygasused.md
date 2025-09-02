@@ -193,7 +193,7 @@ We gather `(x, baseGas)` from **two sources**:
 **Calibrating the router**
 
   * Fit a quadratic $c_2x^2 + c_1x + c_0$ to the `baseGas(x)` where `x = calldataLen`,
-  * Pack coefficients (e.g., 3×80-bit) and call `tunnelRouter.setAdditionalGasUsed(...)`,
+  * Pack coefficients (e.g., 3×80-bit) and call `tunnelRouter.setPackedAdditionalGasFuncCoeffs(...)`,
   * Verify the **residual gap** between compensated router payout and measured gas shrinks (we assert a small bound, e.g., < \~50 gas).
 
 Foundry data is great for router calibration and sanity checks, but our production coefficients are ultimately fit to **on-chain receipts** below.
@@ -1431,10 +1431,10 @@ uint256 fee = _routerFee(gasLeft - gasleft() + additionalGasUsed);
 This assumes the router’s + EVM overhead is a *constant* “bias,” independent of calldata size. We therefore changed the fee computation to a **quadratic in calldata size** `x = calldatasize()` and add it to the measured consumer cost `targetGasUsed`:
 
 ```solidity
-// new: pack c2|c1|c0 as 3 × 80-bit coefficients into additionalGasUsed
-uint256 c2 = (additionalGasUsed >> 160) & ((1 << 80) - 1);
-uint256 c1 = (additionalGasUsed >>  80) & ((1 << 80) - 1);
-uint256 c0 =  additionalGasUsed        & ((1 << 80) - 1);
+// new: pack c2|c1|c0 as 3 × 80-bit coefficients into packedAdditionalGasFuncCoeffs
+uint256 c2 = (packedAdditionalGasFuncCoeffs >> 160) & ((1 << 80) - 1);
+uint256 c1 = (packedAdditionalGasFuncCoeffs >>  80) & ((1 << 80) - 1);
+uint256 c0 =  packedAdditionalGasFuncCoeffs        & ((1 << 80) - 1);
 
 uint256 x;
 assembly { x := calldatasize() }
@@ -1819,7 +1819,7 @@ Each point is `(n, ε)`, where `n` is the number of signals in the packet and
 
 **L2 Results (Post-calibration)**
 
-<details> <summary><code>Reference transactions on Hoodi testnet</code> — click to expand</summary>
+<details> <summary><code>Reference transactions on OP Sepolia testnet</code> — click to expand</summary>
 
 ```json
 [
@@ -1885,15 +1885,27 @@ Each point is `(n, ε)`, where `n` is the number of signals in the packet and
 
 <br>
 
-(calldatasize, l2_gas_used)
-```
-[(356, 97456), (420, 98562), (484, 99644), (548, 100714), (612, 101796), (676, 102878), (740, 103960), (804, 105055), (868, 106137), (932, 107220), (996, 108278), (1060, 109361), (1124, 110444), (1188, 111539), (1252, 112634), (1316, 113705), (1380, 114800), (1444, 115884), (1508, 116955), (1572, 118051), (1636, 119134), (1700, 120218), (1764, 121302), (1828, 122374), (1892, 123458), (1956, 124518), (2020, 125626), (2084, 126722), (2148, 127795), (2212, 128867), (2276, 129952), (2340, 131061), (2404, 132097), (2468, 133230), (2532, 134315), (2596, 135388), (2660, 136461), (2724, 137511), (2788, 138632), (2852, 139718), (2916, 140815), (2980, 141877), (3044, 142963), (3108, 144061), (3172, 145147), (3236, 146209), (3300, 147319), (3364, 148405), (3428, 149503), (3492, 150578), (3556, 151664), (3620, 152763), (3684, 153862), (3748, 154913), (3812, 156012)]
-```
+[(calldatasize, l2_gas_used)]
 
-(calldatasize, l1_gas_used)
-```
-[(356, 2972), (420, 3641), (484, 3869), (548, 4096), (612, 4324), (676, 4551), (740, 4752), (804, 5006), (868, 5234), (932, 5461), (996, 5676), (1060, 5916), (1124, 6131), (1188, 6331), (1252, 6519), (1316, 6719), (1380, 6934), (1444, 7148), (1508, 7322), (1572, 7549), (1636, 7710), (1700, 7964), (1764, 8152), (1828, 8379), (1892, 8593), (1956, 8754), (2020, 8955), (2084, 9155), (2148, 9396), (2212, 9584), (2276, 9704), (2340, 9972), (2404, 10266), (2468, 10373), (2532, 10628), (2596, 10802), (2660, 11002), (2724, 11283), (2788, 11457), (2852, 11578), (2916, 11805), (2980, 12006), (3044, 12301), (3108, 12475), (3172, 12729), (3236, 12809), (3300, 13077), (3364, 13237), (3428, 13425), (3492, 13773), (3556, 13893), (3620, 14067), (3684, 14308), (3748, 14509), (3812, 14696)]
-```
+    [(356, 97456), (420, 98562), (484, 99644), (548, 100714), (612, 101796), (676, 102878), (740, 103960), (804, 105055), (868, 106137), (932, 107220), (996, 108278), (1060, 109361), (1124, 110444), (1188, 111539), (1252, 112634), (1316, 113705), (1380, 114800), (1444, 115884), (1508, 116955), (1572, 118051), (1636, 119134), (1700, 120218), (1764, 121302), (1828, 122374), (1892, 123458), (1956, 124518), (2020, 125626), (2084, 126722), (2148, 127795), (2212, 128867), (2276, 129952), (2340, 131061), (2404, 132097), (2468, 133230), (2532, 134315), (2596, 135388), (2660, 136461), (2724, 137511), (2788, 138632), (2852, 139718), (2916, 140815), (2980, 141877), (3044, 142963), (3108, 144061), (3172, 145147), (3236, 146209), (3300, 147319), (3364, 148405), (3428, 149503), (3492, 150578), (3556, 151664), (3620, 152763), (3684, 153862), (3748, 154913), (3812, 156012)]
+
+L2 actual vs quadratic fit
+![l2_calldatasize_gas](./images/l2_calldatasize_gas.png)
+
+L2 residuals (actual_gasUsed - pred_gasUsed)
+![l2_err](./images/l2_err.png)
+
+[(calldatasize, l1_gas_used)]
+
+    [(356, 2972), (420, 3641), (484, 3869), (548, 4096), (612, 4324), (676, 4551), (740, 4752), (804, 5006), (868, 5234), (932, 5461), (996, 5676), (1060, 5916), (1124, 6131), (1188, 6331), (1252, 6519), (1316, 6719), (1380, 6934), (1444, 7148), (1508, 7322), (1572, 7549), (1636, 7710), (1700, 7964), (1764, 8152), (1828, 8379), (1892, 8593), (1956, 8754), (2020, 8955), (2084, 9155), (2148, 9396), (2212, 9584), (2276, 9704), (2340, 9972), (2404, 10266), (2468, 10373), (2532, 10628), (2596, 10802), (2660, 11002), (2724, 11283), (2788, 11457), (2852, 11578), (2916, 11805), (2980, 12006), (3044, 12301), (3108, 12475), (3172, 12729), (3236, 12809), (3300, 13077), (3364, 13237), (3428, 13425), (3492, 13773), (3556, 13893), (3620, 14067), (3684, 14308), (3748, 14509), (3812, 14696)]
+
+L1 actual vs quadratic fit
+![l1_calldatasize_gas](./images/l1_calldatasize_gas.png)
+
+L1 residuals (actual_gasUsed - pred_gasUsed)
+![l1_err](./images/l1_err.png)
+*L1-data costs depend on compression of the payload and per-byte zero/non-zero patterns*
+
 
 ---
 

@@ -18,7 +18,7 @@ import "./helper/RegressionTestHelper.sol";
  * @title RelayGasMeasurementTest
  * @notice Measures router-internal gas for `relay(...)`, fits simple models (linear/quadratic/cubic)
  *         against calldata size, and validates model quality via cross-validation. Also calibrates
- *         `additionalGasUsed` on the router from a quadratic fit and checks the residual error.
+ *         `packedAdditionalGasFuncCoeffs` on the router from a quadratic fit and checks the residual error.
  *
  *         ⚠️ This test measures *nested-call* gas (not a standalone transaction).
  *         It excludes tx intrinsic (21k), tx.data gas, and per-tx cold penalties.
@@ -48,6 +48,7 @@ contract RelayGasMeasurementTest is Test, Constants {
     address immutable relayer = makeAddr("relayer");
 
     // --- Workload shape & time seeds ---
+    uint64 constant tunnelId = 1;
     uint256 constant TOTAL_SIGNALS = 200; // max signals per synthetic packet
     int64 timestamp = 1753867982; // synthetic timestamp seed
     uint64 sequence = 1;
@@ -108,6 +109,7 @@ contract RelayGasMeasurementTest is Test, Constants {
             vault,
             address(this),
             0,
+            14000,
             // relaying 200 signals simultaneously will consume a significant amount of gas
             10_000_000,
             1,
@@ -134,10 +136,9 @@ contract RelayGasMeasurementTest is Test, Constants {
         );
 
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
-        packetConsumer.setTunnelId(1);
 
         // set latest nonce.
-        packetConsumer.activate{value: 1 ether}(0);
+        packetConsumer.activate{value: 1 ether}(tunnelId, 0);
 
         assertEq(
             originatorHash,
@@ -499,12 +500,12 @@ contract RelayGasMeasurementTest is Test, Constants {
         return i >= TOTAL_SIGNALS / 2;
     }
 
-    function _isFirstQuintile(uint256 i) internal pure returns (bool) {
-        return i < TOTAL_SIGNALS / 5;
+    function _isFirstQuartile(uint256 i) internal pure returns (bool) {
+        return i < TOTAL_SIGNALS / 4;
     }
 
-    function _isLastQuintile(uint256 i) internal pure returns (bool) {
-        return i >= (4 * TOTAL_SIGNALS) / 5;
+    function _isLastQuartile(uint256 i) internal pure returns (bool) {
+        return i >= (3 * TOTAL_SIGNALS) / 4;
     }
 
     // --- Tests using the cross-validation ---
@@ -517,20 +518,20 @@ contract RelayGasMeasurementTest is Test, Constants {
         _crossValidate(_isLastHalf);
     }
 
-    function testFit_FirstQuintile_vs_Rest() public {
-        _crossValidate(_isFirstQuintile);
+    function testFit_FirstQuartile_vs_Rest() public {
+        _crossValidate(_isFirstQuartile);
     }
 
-    function testFit_LastQuintile_vs_Rest() public {
-        _crossValidate(_isLastQuintile);
+    function testFit_LastQuartile_vs_Rest() public {
+        _crossValidate(_isLastQuartile);
     }
 
     // ------------------------------------------------------------------------
-    // Calibration test for `additionalGasUsed`
+    // Calibration test for `packedAdditionalGasFuncCoeffs`
     // ------------------------------------------------------------------------
 
     /**
-     * @notice Fit a quadratic model on baseline data to derive `additionalGasUsed`, set it on the router,
+     * @notice Fit a quadratic model on baseline data to derive `packedAdditionalGasFuncCoeffs`, set it on the router,
      *         and verify the residual error against `targetGasUsed` is small after compensating for
      *         empirical warm/cold deltas.
      *
@@ -579,10 +580,10 @@ contract RelayGasMeasurementTest is Test, Constants {
             uint256 c0 = uint256(quad.c0);
             require(c0 < (1 << 80), "c0 too large");
 
-            uint256 additionalGasUsed = (c2 << 160) | (c1 << 80) | c0;
+            uint256 packedCoeffs = (c2 << 160) | (c1 << 80) | c0;
 
             // NOTE: This call warms router storage for the rest of THIS transaction.
-            tunnelRouter.setAdditionalGasUsed(additionalGasUsed);
+            tunnelRouter.setPackedAdditionalGasFuncCoeffs(packedCoeffs);
         }
 
         // -------- Phase 2: verify compensation --------
@@ -613,9 +614,9 @@ contract RelayGasMeasurementTest is Test, Constants {
                 }
 
                 // The expected delta is mostly from account/slot cold→warm and/or extra code path changes.
-                // For many cases 4.0k..4.5k is a reasonable envelope as it was derived from this test itself.
+                // For many cases 6.4k..6.6k is a reasonable envelope as it was derived from this test itself.
                 require(
-                    relayGasDiff >= 4000 && relayGasDiff <= 4500,
+                    relayGasDiff >= 6400 && relayGasDiff <= 6600,
                     "relayGasDiff out of bound"
                 );
 

@@ -56,7 +56,7 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
 
             bytes32 originatorHash = Originator.hash(
                 tunnelRouter.sourceChainIdHash(),
-                1,
+                i,
                 tunnelRouter.targetChainIdHash(),
                 address(packetConsumer)
             );

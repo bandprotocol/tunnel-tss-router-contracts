@@ -2,9 +2,6 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
-
-import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
-
 import "../src/PacketConsumerFactory.sol";
 import "../src/PacketConsumer.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
@@ -35,7 +32,7 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
             vault,
             address(this),
             75000,
-            75000,
+            100000,
             1,
             keccak256("bandchain"),
             keccak256("testnet-evm")
@@ -135,9 +132,9 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
             assertEq(tunnelInfo.latestSequence, 1);
 
             // reset the price of the contract.
-            packetConsumer.setPrice(_toByte32("CS:BTC-USD"), 0, 0);
-            packetConsumer.setPrice(_toByte32("CS:ETH-USD"), 0, 0);
-            packetConsumer.setPrice(_toByte32("CS:BAND-USD"), 0, 0);
+            packetConsumer.setPrice(_toBytes32("CS:BTC-USD"), 0, 0);
+            packetConsumer.setPrice(_toBytes32("CS:ETH-USD"), 0, 0);
+            packetConsumer.setPrice(_toBytes32("CS:BAND-USD"), 0, 0);
         }
     }
 
@@ -181,7 +178,7 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
         tunnelRouter.relay(message, mockRandomAddr, mockSignature);
     }
 
-    function _toByte32(string memory s) internal view returns (bytes32) {
+    function _toBytes32(string memory s) internal view returns (bytes32) {
         return packetConsumer.stringToRightAlignedBytes32(s);
     }
 

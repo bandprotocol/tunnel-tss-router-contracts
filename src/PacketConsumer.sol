@@ -8,7 +8,6 @@ import "./interfaces/IPacketConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
 
-import "./libraries/Address.sol";
 import "./libraries/PacketDecoder.sol";
 
 contract PacketConsumer is IPacketConsumer, Ownable2Step {

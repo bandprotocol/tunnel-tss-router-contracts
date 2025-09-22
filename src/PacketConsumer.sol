@@ -8,16 +8,12 @@ import "./interfaces/IPacketConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
 
-import "./libraries/Address.sol";
 import "./libraries/PacketDecoder.sol";
 
 contract PacketConsumer is IPacketConsumer, Ownable2Step {
     // The tunnel router contract.
     address public immutable tunnelRouter;
 
-    // The tunnel ID that this contract is consuming; cannot be immutable or else the create2
-    // will result in different address.
-    uint64 public tunnelId;
     // Mapping between a signal ID and its corresponding latest price object.
     mapping(bytes32 => Price) internal _prices;
 
@@ -81,7 +77,10 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     /**
      * @dev See {IPacketConsumer-activate}.
      */
-    function activate(uint64 latestSeq) external payable onlyOwner {
+    function activate(
+        uint64 tunnelId,
+        uint64 latestSeq
+    ) external payable onlyOwner {
         ITunnelRouter(tunnelRouter).activate{value: msg.value}(
             tunnelId,
             latestSeq
@@ -91,14 +90,14 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     /**
      * @dev See {IPacketConsumer-deactivate}.
      */
-    function deactivate() external onlyOwner {
+    function deactivate(uint64 tunnelId) external onlyOwner {
         ITunnelRouter(tunnelRouter).deactivate(tunnelId);
     }
 
     /**
      * @dev See {IPacketConsumer-deposit}.
      */
-    function deposit() external payable {
+    function deposit(uint64 tunnelId) external payable {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.deposit{value: msg.value}(tunnelId, address(this));
@@ -107,7 +106,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     /**
      * @dev See {IPacketConsumer-withdraw}.
      */
-    function withdraw(uint256 amount) external onlyOwner {
+    function withdraw(uint64 tunnelId, uint256 amount) external onlyOwner {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.withdraw(tunnelId, msg.sender, amount);
@@ -116,14 +115,9 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     /**
      * @dev See {IPacketConsumer-withdrawAll}.
      */
-    function withdrawAll() external onlyOwner {
+    function withdrawAll(uint64 tunnelId) external onlyOwner {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.withdrawAll(tunnelId, msg.sender);
-    }
-
-    ///@dev Sets the tunnel ID of the contract.
-    function setTunnelId(uint64 tunnelId_) external onlyOwner {
-        tunnelId = tunnelId_;
     }
 }

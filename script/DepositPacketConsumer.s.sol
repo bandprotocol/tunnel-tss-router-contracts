@@ -13,11 +13,12 @@ contract Executor is Script {
     function run() external {
         uint256 depositAmount = vm.envUint("DEPOSIT_AMOUNT");
         address packetConsumerAddr = vm.envAddress("PACKET_CONSUMER");
+        uint64 tunnelId = uint64(vm.envUint("TUNNEL_ID"));
 
         vm.startBroadcast();
 
         PacketConsumer packetConsumer = PacketConsumer(packetConsumerAddr);
-        packetConsumer.deposit{value: depositAmount}();
+        packetConsumer.deposit{value: depositAmount}(tunnelId);
 
         vm.stopBroadcast();
 
@@ -27,10 +28,7 @@ contract Executor is Script {
         );
 
         Vault vault = Vault(payable(address(tunnelRouter.vault())));
-        uint256 balance = vault.balance(
-            packetConsumer.tunnelId(),
-            packetConsumerAddr
-        );
+        uint256 balance = vault.balance(tunnelId, packetConsumerAddr);
 
         console.log("consumer address:", packetConsumerAddr);
         console.log(

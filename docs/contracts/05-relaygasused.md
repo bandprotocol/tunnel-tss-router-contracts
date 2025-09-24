@@ -1,5 +1,9 @@
 # Estimating Tunnel Relay Gas
 
+### Status & Scope (Work-in-Progress)
+
+> 💡 **Heads-up:** This document is an active working draft. It captures what we’ve tried, what worked, and what still needs decisions. Structure and naming are still being tuned, so please read it as a technical lab note rather than a finalized spec.
+
 This document explains the **Foundry** test design, the **polynomial models** (linear / quadratic / cubic), the **Monte-Carlo** validation, and the **conclusions** for the on-chain environment.
 
 > **Goal.** Let a relayer with *minimal native balance* relay forever by paying the **entire transaction gas** from the **consumer’s vault**.

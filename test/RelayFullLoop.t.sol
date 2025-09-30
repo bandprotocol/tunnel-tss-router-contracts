@@ -22,9 +22,15 @@ contract RelayFullLoopTest is Test, Constants {
     bytes32 originatorHash;
     mapping(uint256 => PacketDecoder.SignalPrice) referencePrices;
     int64 referenceTimestamp;
+    uint64 constant tunnelId = 1;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
+        tssVerifier.addPubKeyByOwner(
+            0,
+            CURRENT_GROUP_PARITY - 25,
+            CURRENT_GROUP_PX
+        );
         tssVerifier.addPubKeyByOwner(
             0,
             CURRENT_GROUP_PARITY - 25,
@@ -63,14 +69,13 @@ contract RelayFullLoopTest is Test, Constants {
         );
 
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
-        packetConsumer.setTunnelId(1);
 
         // set latest nonce.
-        packetConsumer.activate{value: 0.01 ether}(0);
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 0);
 
         originatorHash = Originator.hash(
             tunnelRouter.sourceChainIdHash(),
-            1,
+            tunnelId,
             tunnelRouter.targetChainIdHash(),
             address(packetConsumer)
         );
@@ -216,9 +221,9 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayInvalidSequence() public {
-        packetConsumer.deactivate();
+        packetConsumer.deactivate(tunnelId);
 
-        packetConsumer.activate{value: 0.01 ether}(3);
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 3);
 
         bytes memory expectedErr = abi.encodeWithSelector(
             ITunnelRouter.InvalidSequence.selector,
@@ -234,7 +239,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testRelayInactiveTunnel() public {
-        packetConsumer.deactivate();
+        packetConsumer.deactivate(tunnelId);
 
         bytes memory expectedErr = abi.encodeWithSelector(
             ITunnelRouter.TunnelNotActive.selector,
@@ -266,7 +271,7 @@ contract RelayFullLoopTest is Test, Constants {
             originatorHash
         );
         vm.expectRevert(expectedErr);
-        packetConsumer.activate(1);
+        packetConsumer.activate(tunnelId, 1);
     }
 
     function testSenderNotInWhitelist() public {

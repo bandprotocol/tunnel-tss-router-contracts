@@ -142,12 +142,6 @@ abstract contract BaseTunnelRouter is
             revert InvalidSequence(tunnelDetail.sequence + 1, packet.sequence);
         }
 
-        uint64 targetTunnelId = IPacketConsumer(tunnelDetail.targetAddr)
-            .tunnelId();
-        if (targetTunnelId != tunnelDetail.tunnelId) {
-            revert InvalidTunnelId(targetTunnelId, tunnelDetail.tunnelId);
-        }
-
         // verify signature.
         bool isValid = tssVerifier.verify(
             keccak256(message),

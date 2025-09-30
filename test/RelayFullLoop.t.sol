@@ -31,11 +31,6 @@ contract RelayFullLoopTest is Test, Constants {
             CURRENT_GROUP_PARITY - 25,
             CURRENT_GROUP_PX
         );
-        tssVerifier.addPubKeyByOwner(
-            0,
-            CURRENT_GROUP_PARITY - 25,
-            CURRENT_GROUP_PX
-        );
 
         vault = new Vault();
         vault.initialize(address(this), address(0x00));
@@ -46,7 +41,7 @@ contract RelayFullLoopTest is Test, Constants {
             address(this),
             75000,
             75000,
-            1,
+            10,
             keccak256("bandchain"),
             keccak256("testnet-evm")
         );
@@ -146,7 +141,7 @@ contract RelayFullLoopTest is Test, Constants {
         assertGt(feeGain, 0);
 
         uint256 gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasFee() -
+            gasPrice -
             tunnelRouter.additionalGasUsed();
 
         console.log(

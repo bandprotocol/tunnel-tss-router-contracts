@@ -14,6 +14,7 @@ import "./helper/Constants.sol";
 
 contract PacketConsumerMockTunnelRouterTest is Test, Constants {
     PacketConsumer public packetConsumer;
+    uint64 constant tunnelId = 1;
 
     function sourceChainIdHash() public pure returns (bytes32) {
         return keccak256("bandchain");
@@ -36,7 +37,6 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
             packetConsumerAddr
         );
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
-        packetConsumer.setTunnelId(1);
     }
 
     function teststringToRightAlignedBytes32() public {
@@ -318,6 +318,7 @@ contract PacketConsumerTest is Test, Constants {
     GasPriceTunnelRouter tunnelRouter;
     TssVerifier tssVerifier;
     Vault vault;
+    uint64 constant tunnelId = 1;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
@@ -354,28 +355,23 @@ contract PacketConsumerTest is Test, Constants {
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
 
         // set latest nonce.
-        packetConsumer.activate{value: 0.01 ether}(1);
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 1);
     }
 
     function testDeposit() public {
         uint256 depositedAmtBefore = vault.balance(
-            packetConsumer.tunnelId(),
+            tunnelId,
             address(packetConsumer)
         );
         uint256 balanceVaultBefore = address(vault).balance;
 
-        packetConsumer.deposit{value: 0.01 ether}();
+        packetConsumer.deposit{value: 0.01 ether}(tunnelId);
 
         assertEq(
-            vault.balance(packetConsumer.tunnelId(), address(packetConsumer)),
+            vault.balance(tunnelId, address(packetConsumer)),
             depositedAmtBefore + 0.01 ether
         );
 
         assertEq(address(vault).balance, balanceVaultBefore + 0.01 ether);
-    }
-
-    function testSetTunnelID() public {
-        packetConsumer.setTunnelId(1);
-        assertEq(packetConsumer.tunnelId(), 1);
     }
 }

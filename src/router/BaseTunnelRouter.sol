@@ -5,6 +5,7 @@ pragma solidity ^0.8.23;
 import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 import "../interfaces/IPacketConsumer.sol";
 import "../interfaces/ITssVerifier.sol";
@@ -20,6 +21,7 @@ abstract contract BaseTunnelRouter is
     Initializable,
     Ownable2StepUpgradeable,
     PausableUpgradeable,
+    AccessControlUpgradeable,
     ITunnelRouter,
     ErrorHandler
 {
@@ -37,6 +39,8 @@ abstract contract BaseTunnelRouter is
     bytes32 public sourceChainIdHash;
     // The hash of the target chain ID (the chain id where the contract is deployed).
     bytes32 public targetChainIdHash;
+    // Role identifier for accounts allowed to update gas fee.
+    bytes32 public constant GAS_FEE_UPDATER_ROLE = keccak256("GAS_FEE_UPDATER_ROLE");
 
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
@@ -64,6 +68,9 @@ abstract contract BaseTunnelRouter is
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
         __Pausable_init();
+        __AccessControl_init();
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(GAS_FEE_UPDATER_ROLE, initialOwner);
 
         tssVerifier = tssVerifier_;
         vault = vault_;
@@ -132,12 +139,6 @@ abstract contract BaseTunnelRouter is
 
         if (tunnelDetail.sequence + 1 != packet.sequence) {
             revert InvalidSequence(tunnelDetail.sequence + 1, packet.sequence);
-        }
-
-        uint64 targetTunnelId = IPacketConsumer(tunnelDetail.targetAddr)
-            .tunnelId();
-        if (targetTunnelId != tunnelDetail.tunnelId) {
-            revert InvalidTunnelId(targetTunnelId, tunnelDetail.tunnelId);
         }
 
         // verify signature.
@@ -352,5 +353,19 @@ abstract contract BaseTunnelRouter is
     function _setAdditionalGasUsed(uint256 additionalGasUsed_) internal {
         additionalGasUsed = additionalGasUsed_;
         emit AdditionalGasUsedSet(additionalGasUsed_);
+    }
+
+    /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`
+    function grantGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _grantRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Revokes `GAS_FEE_UPDATER_ROLE` from  `accounts`
+    function revokeGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _revokeRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
+        }
     }
 }

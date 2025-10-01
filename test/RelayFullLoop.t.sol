@@ -20,16 +20,28 @@ contract RelayFullLoopTest is Test, Constants {
     bytes32 originatorHash;
     mapping(uint256 => PacketDecoder.SignalPrice) referencePrices;
     int64 referenceTimestamp;
+    uint64 constant tunnelId = 1;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
-        tssVerifier.addPubKeyByOwner(0, CURRENT_GROUP_PARITY - 25, CURRENT_GROUP_PX);
+        tssVerifier.addPubKeyByOwner(
+            0,
+            CURRENT_GROUP_PARITY - 25,
+            CURRENT_GROUP_PX
+        );
 
         vault = new Vault();
         vault.initialize(address(this), address(0x00));
         tunnelRouter = new GasPriceTunnelRouter();
         tunnelRouter.initialize(
-            tssVerifier, vault, address(this), 75000, 150000, 1, keccak256("bandchain"), keccak256("testnet-evm")
+            tssVerifier,
+            vault,
+            address(this),
+            75000,
+            150000,
+            10,
+            keccak256("bandchain"),
+            keccak256("testnet-evm")
         );
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(this);
@@ -38,22 +50,33 @@ contract RelayFullLoopTest is Test, Constants {
         vault.setTunnelRouter(address(tunnelRouter));
 
         // deploy packet Consumer with specific address.
-        bytes memory packetConsumerArgs = abi.encode(address(tunnelRouter), address(this));
+        bytes memory packetConsumerArgs = abi.encode(
+            address(tunnelRouter),
+            address(this)
+        );
         address packetConsumerAddr = makeAddr("PacketConsumer");
-        deployCodeTo("PacketConsumer.sol:PacketConsumer", packetConsumerArgs, packetConsumerAddr);
+        deployCodeTo(
+            "PacketConsumer.sol:PacketConsumer",
+            packetConsumerArgs,
+            packetConsumerAddr
+        );
 
         packetConsumer = PacketConsumer(payable(packetConsumerAddr));
-        packetConsumer.setTunnelId(1);
 
         // set latest nonce.
-        packetConsumer.activate{value: 0.01 ether}(0);
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 0);
 
         originatorHash = Originator.hash(
-            tunnelRouter.sourceChainIdHash(), 1, tunnelRouter.targetChainIdHash(), address(packetConsumer)
+            tunnelRouter.sourceChainIdHash(),
+            tunnelId,
+            tunnelRouter.targetChainIdHash(),
+            address(packetConsumer)
         );
         assertEq(tunnelRouter.isActive(originatorHash), true);
 
-        PacketDecoder.TssMessage memory tssm = this.decodeTssMessage(TSS_RAW_MESSAGE);
+        PacketDecoder.TssMessage memory tssm = this.decodeTssMessage(
+            TSS_RAW_MESSAGE
+        );
         assertTrue(tssm.packet.timestamp > 0);
         assertTrue(tssm.packet.signals.length > 0);
         referenceTimestamp = tssm.packet.timestamp;
@@ -63,7 +86,9 @@ contract RelayFullLoopTest is Test, Constants {
         }
     }
 
-    function decodeTssMessage(bytes calldata message) public pure returns (PacketDecoder.TssMessage memory) {
+    function decodeTssMessage(
+        bytes calldata message
+    ) public pure returns (PacketDecoder.TssMessage memory) {
         return PacketDecoder.decodeTssMessage(message);
     }
 
@@ -89,7 +114,11 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 currentGas = gasleft();
         vm.expectEmit();
         emit ITunnelRouter.MessageProcessed(originatorHash, 1, true);
-        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
         uint256 gasUsed = currentGas - gasleft();
 
         // After
@@ -109,10 +138,18 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain / gasPrice - tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain /
+            gasPrice -
+            tunnelRouter.additionalGasUsed();
 
-        console.log("gas used during process message: ", gasUsedDuringProcessMsg);
-        console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
+        console.log(
+            "gas used during process message: ",
+            gasUsedDuringProcessMsg
+        );
+        console.log(
+            "gas used during others step: ",
+            gasUsed - gasUsedDuringProcessMsg
+        );
     }
 
     function testRelayMessageConsumerDeactivated() public {
@@ -138,7 +175,11 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 currentGas = gasleft();
         vm.expectEmit();
         emit ITunnelRouter.MessageProcessed(originatorHash, 1, true);
-        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
         uint256 gasUsed = currentGas - gasleft();
 
         // After
@@ -158,28 +199,51 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain / tunnelRouter.gasFee() - tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain /
+            tunnelRouter.gasFee() -
+            tunnelRouter.additionalGasUsed();
 
-        console.log("gas used during process message: ", gasUsedDuringProcessMsg);
-        console.log("gas used during others step: ", gasUsed - gasUsedDuringProcessMsg);
+        console.log(
+            "gas used during process message: ",
+            gasUsedDuringProcessMsg
+        );
+        console.log(
+            "gas used during others step: ",
+            gasUsed - gasUsedDuringProcessMsg
+        );
     }
 
     function testRelayInvalidSequence() public {
-        packetConsumer.deactivate();
+        packetConsumer.deactivate(tunnelId);
 
-        packetConsumer.activate{value: 0.01 ether}(3);
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 3);
 
-        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.InvalidSequence.selector, 4, 1);
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.InvalidSequence.selector,
+            4,
+            1
+        );
         vm.expectRevert(expectedErr);
-        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
     }
 
     function testRelayInactiveTunnel() public {
-        packetConsumer.deactivate();
+        packetConsumer.deactivate(tunnelId);
 
-        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.TunnelNotActive.selector, originatorHash);
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.TunnelNotActive.selector,
+            originatorHash
+        );
         vm.expectRevert(expectedErr);
-        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
     }
 
     function testRelayVaultNotEnoughToken() public {
@@ -187,13 +251,20 @@ contract RelayFullLoopTest is Test, Constants {
         vm.txGasPrice(1 ether);
 
         vm.expectRevert(); // underflow error
-        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
     }
 
     function testReactivateAlreadyActive() public {
-        bytes memory expectedErr = abi.encodeWithSelector(ITunnelRouter.TunnelAlreadyActive.selector, originatorHash);
+        bytes memory expectedErr = abi.encodeWithSelector(
+            ITunnelRouter.TunnelAlreadyActive.selector,
+            originatorHash
+        );
         vm.expectRevert(expectedErr);
-        packetConsumer.activate(1);
+        packetConsumer.activate(tunnelId, 1);
     }
 
     function testSenderNotInWhitelist() public {
@@ -222,6 +293,57 @@ contract RelayFullLoopTest is Test, Constants {
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(0);
         tunnelRouter.setWhitelist(whitelist, true);
+    }
+
+    function testNonAdminCannotGrantGasFeeUpdater() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_GAS_FEE_UPDATER_ROLE;
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.grantGasFeeUpdater(accounts);
+    }
+
+    function testGrantGasFeeUpdaterRoleAllowsSetGasFee() public {
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_GAS_FEE_UPDATER_ROLE;
+        tunnelRouter.grantGasFeeUpdater(accounts);
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+
+        vm.prank(MOCK_INVALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+    }
+
+    function testRevokeGasFeeUpdaterRolePreventsSetGasFee() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_GAS_FEE_UPDATER_ROLE;
+        tunnelRouter.grantGasFeeUpdater(accounts);
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+
+        tunnelRouter.revokeGasFeeUpdater(accounts);
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
     }
 
     receive() external payable {}

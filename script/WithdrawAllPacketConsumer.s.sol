@@ -12,11 +12,14 @@ import {Vault} from "../src/Vault.sol";
 contract Executor is Script {
     function run() external {
         address packetConsumerAddr = vm.envAddress("PACKET_CONSUMER");
+        uint64 tunnelId = uint64(vm.envUint("TUNNEL_ID"));
+
+        require(tunnelId != 0, "tunnel id is not set");
 
         vm.startBroadcast();
 
         PacketConsumer packetConsumer = PacketConsumer(packetConsumerAddr);
-        packetConsumer.withdrawAll();
+        packetConsumer.withdrawAll(tunnelId);
 
         vm.stopBroadcast();
 
@@ -24,10 +27,7 @@ contract Executor is Script {
         BaseTunnelRouter tunnelRouter = BaseTunnelRouter(tunnelRouterAddr);
 
         Vault vault = Vault(payable(address(tunnelRouter.vault())));
-        uint256 balance = vault.balance(
-            packetConsumer.tunnelId(),
-            packetConsumerAddr
-        );
+        uint256 balance = vault.balance(tunnelId, packetConsumerAddr);
 
         console.log("consumer address:", packetConsumerAddr);
         console.log(

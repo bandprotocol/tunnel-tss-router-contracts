@@ -297,5 +297,56 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.setWhitelist(whitelist, true);
     }
 
+    function testNonAdminCannotGrantGasFeeUpdater() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_GAS_FEE_UPDATER_ROLE;
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.grantGasFeeUpdater(accounts);
+    }
+
+    function testGrantGasFeeUpdaterRoleAllowsSetGasFee() public {
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_GAS_FEE_UPDATER_ROLE;
+        tunnelRouter.grantGasFeeUpdater(accounts);
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+
+        vm.prank(MOCK_INVALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+    }
+
+    function testRevokeGasFeeUpdaterRolePreventsSetGasFee() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_GAS_FEE_UPDATER_ROLE;
+        tunnelRouter.grantGasFeeUpdater(accounts);
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+
+        tunnelRouter.revokeGasFeeUpdater(accounts);
+
+        vm.prank(MOCK_VALID_GAS_FEE_UPDATER_ROLE);
+        vm.expectRevert();
+        tunnelRouter.setGasFee(
+            GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
+        );
+    }
+
     receive() external payable {}
 }

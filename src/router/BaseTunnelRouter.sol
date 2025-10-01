@@ -39,16 +39,15 @@ abstract contract BaseTunnelRouter is
     bytes32 public sourceChainIdHash;
     // The hash of the target chain ID (the chain id where the contract is deployed).
     bytes32 public targetChainIdHash;
+    // Role identifier for accounts allowed to update gas fee.
+    bytes32 public constant GAS_FEE_UPDATER_ROLE = keccak256("GAS_FEE_UPDATER_ROLE");
 
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
     // A list of senders allowed to relay packets.
     mapping(address => bool) public isAllowed; // sender address => isAllowed
 
-    /// @notice Role identifier for accounts allowed to update gas fee.
-    bytes32 public constant GAS_FEE_UPDATER_ROLE = keccak256("GAS_FEE_UPDATER_ROLE");
-
-    uint256[48] __gap;
+    uint256[49] __gap;
 
     modifier onlyWhitelisted() {
         if (!isAllowed[msg.sender]) {

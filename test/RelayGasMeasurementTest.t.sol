@@ -403,7 +403,7 @@ contract RelayGasMeasurementTest is Test, Constants {
 
         PacketConsumer.Price memory p;
         for (uint256 i = 0; i < numberOfSignals; i++) {
-            p = packetConsumer.prices(string(abi.encodePacked(_signal(i))));
+            p = packetConsumer.getPrice(string(abi.encodePacked(_signal(i))));
             assertEq(p.price, _price(i, priceRandomSeed_));
             assertEq(p.timestamp, timestamp_);
         }

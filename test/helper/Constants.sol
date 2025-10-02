@@ -7,7 +7,12 @@ import "../../src/libraries/PacketDecoder.sol";
 import "./TssSignerHelper.sol";
 
 contract Constants is Test, TssSignerHelper {
-    uint256 constant PRIVATE_KEY = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
+    uint256 constant PRIVATE_KEY_1 =
+        0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
+    uint256 constant PRIVATE_KEY_2 =
+        0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a;
+    uint256 constant PRIVATE_KEY_3 =
+        0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6;
     uint8 immutable CURRENT_GROUP_PARITY;
     uint256 immutable CURRENT_GROUP_PX;
     address immutable MOCK_SENDER;
@@ -35,32 +40,35 @@ contract Constants is Test, TssSignerHelper {
             hex"0000000000000000000000000000000000000000000000000000000000001234"
         );
 
-    function signTssm(bytes memory tssm, uint256 randomSeed) public view returns(address rAddr, uint256 s) {
+    function signTssm(
+        bytes memory tssm,
+        uint256 randomSeed
+    ) public view returns (address rAddr, uint256 s) {
         (rAddr, s) = sign(
             CURRENT_GROUP_PARITY,
             CURRENT_GROUP_PX,
-            getRandomNonce(uint256(keccak256((abi.encode(PRIVATE_KEY, randomSeed))))),
+            getRandomNonce(
+                uint256(keccak256((abi.encode(PRIVATE_KEY_1, randomSeed))))
+            ),
             keccak256(tssm),
-            PRIVATE_KEY
+            PRIVATE_KEY_1
         );
     }
 
     constructor() {
-        uint256 privateKey = 0x1988eae609ced9c1121aa2fdb8ba899de41b4970a3cee58ad5692b5187e702b2;
-        MOCK_SENDER = vm.addr(privateKey);
-        privateKey = 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a;
-        MOCK_VALID_GAS_FEE_UPDATER_ROLE = vm.addr(privateKey);
-        privateKey = 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6;
-        MOCK_INVALID_GAS_FEE_UPDATER_ROLE = vm.addr(privateKey);
-        (CURRENT_GROUP_PARITY, CURRENT_GROUP_PX) = getPubkey(privateKey);
+        MOCK_SENDER = vm.addr(PRIVATE_KEY_1);
+        (CURRENT_GROUP_PARITY, CURRENT_GROUP_PX) = getPubkey(PRIVATE_KEY_1);
         (SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE) = sign(
             CURRENT_GROUP_PARITY,
             CURRENT_GROUP_PX,
-            getRandomNonce(privateKey),
+            getRandomNonce(PRIVATE_KEY_1),
             keccak256(TSS_RAW_MESSAGE),
-            privateKey
+            PRIVATE_KEY_1
         );
-        assertEq(vm.addr(getRandomNonce(privateKey)), SIGNATURE_NONCE_ADDR);
+        assertEq(vm.addr(getRandomNonce(PRIVATE_KEY_1)), SIGNATURE_NONCE_ADDR);
+
+        MOCK_VALID_GAS_FEE_UPDATER_ROLE = vm.addr(PRIVATE_KEY_2);
+        MOCK_INVALID_GAS_FEE_UPDATER_ROLE = vm.addr(PRIVATE_KEY_3);
     }
 
     function DECODED_TSS_MESSAGE()

@@ -35,14 +35,6 @@ interface ITunnelRouter {
     event CallbackGasLimitSet(uint256 callbackGasLimit);
 
     /**
-     * @notice Emitted when the additional gas used is set.
-     *
-     * @param additionalGasUsed The additional gas estimated for relaying the message;
-     * does not include the gas cost for executing the target contract.
-     */
-    event AdditionalGasUsedSet(uint256 additionalGasUsed);
-
-    /**
      * @notice Emitted after the message is relayed to the target contract
      * to indicate the result of the process.
      *

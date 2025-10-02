@@ -74,15 +74,30 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
             assertEq(tunnelInfo.latestSequence, 0);
 
             // verify price of the contract before relay.
-            p = packetConsumer.prices("CS:BTC-USD");
-            assertEq(p.price, 0);
-            assertEq(p.timestamp, 0);
-            p = packetConsumer.prices("CS:ETH-USD");
-            assertEq(p.price, 0);
-            assertEq(p.timestamp, 0);
-            p = packetConsumer.prices("CS:BAND-USD");
-            assertEq(p.price, 0);
-            assertEq(p.timestamp, 0);
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IPacketConsumer.SignalIdNotAvailable.selector,
+                    "CS:BTC-USD"
+                )
+            );
+            p = packetConsumer.getPrice("CS:BTC-USD");
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IPacketConsumer.SignalIdNotAvailable.selector,
+                    "CS:ETH-USD"
+                )
+            );
+            p = packetConsumer.getPrice("CS:ETH-USD");
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IPacketConsumer.SignalIdNotAvailable.selector,
+                    "CS:BAND-USD"
+                )
+            );
+            p = packetConsumer.getPrice("CS:BAND-USD");
 
             // generate a new message for a relay.
             bytes32 originatorHash = Originator.hash(
@@ -115,13 +130,13 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
             tunnelRouter.relay(message, mockRandomAddr, mockSignature);
 
             // verify the price after relay.
-            p = packetConsumer.prices("CS:BTC-USD");
+            p = packetConsumer.getPrice("CS:BTC-USD");
             assertEq(p.price, 34661);
             assertEq(p.timestamp, 1733044960);
-            p = packetConsumer.prices("CS:ETH-USD");
+            p = packetConsumer.getPrice("CS:ETH-USD");
             assertEq(p.price, 17185);
             assertEq(p.timestamp, 1733044960);
-            p = packetConsumer.prices("CS:BAND-USD");
+            p = packetConsumer.getPrice("CS:BAND-USD");
             assertEq(p.price, 4660);
             assertEq(p.timestamp, 1733044960);
 

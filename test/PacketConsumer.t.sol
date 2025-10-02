@@ -274,24 +274,42 @@ contract PacketConsumerMockTunnelRouterTest is Test, Constants {
         PacketDecoder.Packet memory packet = data.packet;
 
         // check prices mapping.(before)
-        p = packetConsumer.prices("CS:BTC-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
-
-        p = packetConsumer.prices("CS:ETH-USD");
-        assertEq(p.price, 0);
-        assertEq(p.timestamp, 0);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPacketConsumer.SignalIdNotAvailable.selector,
+                "CS:BTC-USD"
+            )
+        );
+        p = packetConsumer.getPrice("CS:BTC-USD");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPacketConsumer.SignalIdNotAvailable.selector,
+                "CS:ETH-USD"
+            )
+        );
+        p = packetConsumer.getPrice("CS:ETH-USD");
 
         packetConsumer.process(data);
 
         // check prices mapping.(after)
-        p = packetConsumer.prices("CS:BTC-USD");
+        p = packetConsumer.getPrice("CS:BTC-USD");
         assertEq(p.price, packet.signals[0].price);
         assertEq(p.timestamp, packet.timestamp);
 
-        p = packetConsumer.prices("CS:ETH-USD");
+        p = packetConsumer.getPrice("CS:ETH-USD");
         assertEq(p.price, packet.signals[1].price);
         assertEq(p.timestamp, packet.timestamp);
+
+        // check batchPrices
+        string[] memory signalIds = new string[](2);
+        signalIds[0] = "CS:BTC-USD";
+        signalIds[1] = "CS:ETH-USD";
+
+        PacketConsumer.Price[] memory prices = packetConsumer.getPriceBatch(signalIds);
+        for (uint i = 0; i < 2; i++) {
+            assertEq(prices[i].price, packet.signals[i].price);
+            assertEq(prices[i].timestamp, packet.timestamp);
+        }
     }
 }
 

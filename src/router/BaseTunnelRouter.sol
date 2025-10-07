@@ -84,7 +84,7 @@ abstract contract BaseTunnelRouter is
 
     /**
      * @dev Sets the packedCoeffs being used in relaying message.
-     * @param packedCoeffs The new additional gas used amount.
+     * @param packedCoeffs The new packed value [c2|c1|c0] (fixed-point 1e18 lanes).
      */
     function setPackedAdditionalGasFuncCoeffs(
         uint256 packedCoeffs

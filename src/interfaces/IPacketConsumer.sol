@@ -16,23 +16,6 @@ interface IPacketConsumer {
     }
 
     // ========================================
-    // Events
-    // ========================================
-
-    /**
-     * @notice Emitted when the signal price is updated.
-     *
-     * @param signalId The Id of the signal whose price is updated.
-     * @param price The new price of the signal.
-     * @param timestamp The timestamp of the updated prices.
-     */
-    event SignalPriceUpdated(
-        bytes32 indexed signalId,
-        uint64 price,
-        int64 timestamp
-    );
-
-    // ========================================
     // Custom Errors
     // ========================================
 

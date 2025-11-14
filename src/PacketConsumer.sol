@@ -84,12 +84,6 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
                 price: packet.signals[i].price,
                 timestamp: packet.timestamp
             });
-
-            emit SignalPriceUpdated(
-                packet.signals[i].signal,
-                packet.signals[i].price,
-                packet.timestamp
-            );
         }
     }
 

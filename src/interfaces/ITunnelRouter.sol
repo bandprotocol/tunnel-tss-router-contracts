@@ -35,6 +35,13 @@ interface ITunnelRouter {
     event CallbackGasLimitSet(uint256 callbackGasLimit);
 
     /**
+     * @notice Emitted when the tssVerifier is set.
+     *
+     * @param tssVerifier The address of TssVerifier contract.
+     */
+    event TssVerifierSet(address tssVerifier );
+
+    /**
      * @notice Emitted after the message is relayed to the target contract
      * to indicate the result of the process.
      *

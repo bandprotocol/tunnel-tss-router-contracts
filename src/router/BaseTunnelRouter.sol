@@ -102,6 +102,15 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
+     * @dev Sets the tssVerifier.
+     *
+     * @param tssVerifier_ the address of TssVerifier contract.
+     */
+    function setTssVerifier(address tssVerifier_) external onlyOwner {
+        _setTssVerifier(tssVerifier_);
+    }
+
+    /**
      * @dev Pauses the contract.
      */
     function pause() external onlyOwner {
@@ -358,6 +367,12 @@ abstract contract BaseTunnelRouter is
     function _setCallbackGasLimit(uint256 callbackGasLimit_) internal {
         callbackGasLimit = callbackGasLimit_;
         emit CallbackGasLimitSet(callbackGasLimit_);
+    }
+
+    /// @dev Sets tssVerifier and emit an event.
+    function _setTssVerifier(address tssVerifier_) internal {
+        tssVerifier = tssVerifier_;
+        emit TssVerifierSet(tssVerifier_);
     }
 
     /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`

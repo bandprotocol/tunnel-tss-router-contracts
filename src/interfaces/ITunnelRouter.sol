@@ -39,7 +39,7 @@ interface ITunnelRouter {
      *
      * @param tssVerifier The address of TssVerifier contract.
      */
-    event TssVerifierSet(address tssVerifier );
+    event TssVerifierSet(address tssVerifier);
 
     /**
      * @notice Emitted after the message is relayed to the target contract

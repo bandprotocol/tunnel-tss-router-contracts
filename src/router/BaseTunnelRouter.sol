@@ -74,7 +74,7 @@ abstract contract BaseTunnelRouter is
             maxCalldataBytes_
         ); // UPDATED
 
-        tssVerifier = tssVerifier_;
+        _setTssVerifier(tssVerifier_);
         vault = vault_;
         sourceChainIdHash = sourceChainIdHash_;
         targetChainIdHash = targetChainIdHash_;

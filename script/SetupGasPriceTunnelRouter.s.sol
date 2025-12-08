@@ -19,7 +19,7 @@ contract Executor is Script {
         bytes32 transitionOriginatorHash = bytes32(
             vm.envUint("TRANSITION_ORIGINATOR_HASH")
         );
-        uint256 gasPrice = vm.envUint("GAS_PRICE");
+    uint256 gasPrice = vm.envUint("GAS_PRICE");
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
 
@@ -66,8 +66,8 @@ contract Executor is Script {
                     tssVerifier,
                     IVault(proxyVaultAddr),
                     msg.sender,
-                    100000,
-                    14000,
+                    17369806436495577561272982365083344973333337688717046180703435,
+                    4000,
                     300000,
                     gasPrice,
                     keccak256(bytes(sourceChainId)),

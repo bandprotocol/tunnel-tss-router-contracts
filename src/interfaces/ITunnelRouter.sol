@@ -3,6 +3,7 @@
 pragma solidity ^0.8.23;
 
 import "./IVault.sol";
+import "../interfaces/ITssVerifier.sol";
 
 interface ITunnelRouter {
     // ========================================
@@ -39,7 +40,7 @@ interface ITunnelRouter {
      *
      * @param tssVerifier The address of TssVerifier contract.
      */
-    event TssVerifierSet(address tssVerifier);
+    event TssVerifierSet(ITssVerifier tssVerifier);
 
     /**
      * @notice Emitted after the message is relayed to the target contract

@@ -106,7 +106,7 @@ abstract contract BaseTunnelRouter is
      *
      * @param tssVerifier_ the address of TssVerifier contract.
      */
-    function setTssVerifier(address tssVerifier_) external onlyOwner {
+    function setTssVerifier(ITssVerifier tssVerifier_) external onlyOwner {
         _setTssVerifier(tssVerifier_);
     }
 
@@ -370,7 +370,7 @@ abstract contract BaseTunnelRouter is
     }
 
     /// @dev Sets tssVerifier and emit an event.
-    function _setTssVerifier(address tssVerifier_) internal {
+    function _setTssVerifier(ITssVerifier tssVerifier_) internal {
         tssVerifier = tssVerifier_;
         emit TssVerifierSet(tssVerifier_);
     }

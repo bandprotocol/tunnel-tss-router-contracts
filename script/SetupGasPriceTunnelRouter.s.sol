@@ -19,7 +19,7 @@ contract Executor is Script {
         bytes32 transitionOriginatorHash = bytes32(
             vm.envUint("TRANSITION_ORIGINATOR_HASH")
         );
-    uint256 gasPrice = vm.envUint("GAS_PRICE");
+        uint256 gasPrice = vm.envUint("GAS_PRICE");
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
 

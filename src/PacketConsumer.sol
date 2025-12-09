@@ -3,6 +3,7 @@
 pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./interfaces/IPacketConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
@@ -10,12 +11,15 @@ import "./interfaces/IVault.sol";
 
 import "./libraries/PacketDecoder.sol";
 
-contract PacketConsumer is IPacketConsumer, Ownable2Step {
+contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
     // The tunnel router contract.
     address public immutable tunnelRouter;
 
     // Mapping between a signal ID and its corresponding latest price object.
     mapping(bytes32 => Price) internal _prices;
+
+    // Role identifier for accounts allowed to activate/deactivate tunnel.
+    bytes32 public constant TUNNEL_ACTIVATOR_ROLE = keccak256("TUNNEL_ACTIVATOR_ROLE");
 
     modifier onlyTunnelRouter() {
         if (msg.sender != tunnelRouter) {
@@ -29,6 +33,9 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
         address initialOwner
     ) Ownable(initialOwner) {
         tunnelRouter = tunnelRouter_;
+
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(TUNNEL_ACTIVATOR_ROLE, initialOwner);
     }
 
     /**
@@ -99,7 +106,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     function activate(
         uint64 tunnelId,
         uint64 latestSeq
-    ) external payable onlyOwner {
+    ) external payable onlyRole(TUNNEL_ACTIVATOR_ROLE) {
         ITunnelRouter(tunnelRouter).activate{value: msg.value}(
             tunnelId,
             latestSeq
@@ -109,7 +116,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
     /**
      * @dev See {IPacketConsumer-deactivate}.
      */
-    function deactivate(uint64 tunnelId) external onlyOwner {
+    function deactivate(uint64 tunnelId) external onlyRole(TUNNEL_ACTIVATOR_ROLE)  {
         ITunnelRouter(tunnelRouter).deactivate(tunnelId);
     }
 
@@ -138,5 +145,19 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.withdrawAll(tunnelId, msg.sender);
+    }
+
+    /// @dev Grants `TUNNEL_ACTIVATOR_ROLE` to `accounts`
+    function grantTunnelActivatorRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _grantRole(TUNNEL_ACTIVATOR_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Revokes `TUNNEL_ACTIVATOR_ROLE` from  `accounts`
+    function revokeTunnelActivatorRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _revokeRole(TUNNEL_ACTIVATOR_ROLE, accounts[i]);
+        }
     }
 }

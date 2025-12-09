@@ -116,7 +116,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
     /**
      * @dev See {IPacketConsumer-deactivate}.
      */
-    function deactivate(uint64 tunnelId) external onlyRole(TUNNEL_ACTIVATOR_ROLE)  {
+    function deactivate(uint64 tunnelId) external onlyRole(TUNNEL_ACTIVATOR_ROLE) {
         ITunnelRouter(tunnelRouter).deactivate(tunnelId);
     }
 
@@ -154,7 +154,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
         }
     }
 
-    /// @dev Revokes `TUNNEL_ACTIVATOR_ROLE` from  `accounts`
+    /// @dev Revokes `TUNNEL_ACTIVATOR_ROLE` from `accounts`
     function revokeTunnelActivatorRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
             _revokeRole(TUNNEL_ACTIVATOR_ROLE, accounts[i]);

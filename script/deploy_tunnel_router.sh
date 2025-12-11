@@ -6,9 +6,8 @@ set -e
 # Environment variables; EDIT THIS
 # ================================================
 
-TSS_PUBLIC_KEY_BASE64=
 RPC_URL=
-PRIVATE_KEY=
+BANDCHAIN_RPC_URL=
 RELAYER_ADDR=
 SOURCE_CHAIN_ID=
 TARGET_CHAIN_ID=
@@ -16,6 +15,8 @@ TRANSITION_ORIGINATOR_HASH=
 PRIORITY_FEE=
 TRANSITION_PERIOD=
 RELAYER_BALANCE=
+
+TSS_PUBLIC_KEY_BASE64=$(bandd q bandtss current-group --node $BANDCHAIN_RPC_URL --output json | jq -r '.pub_key')
 
 # ================================================
 # Deploy contracts
@@ -33,9 +34,11 @@ export PRIORITY_FEE=$PRIORITY_FEE
 MSG=$(forge script script/SetupPriorityFeeTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast  --optimize true --optimizer-runs 200)
 VAULT=$( echo "$MSG" | grep "Vault Proxy" | awk '{print $5}' | xargs)
 VAULT_IMPL=$( echo "$MSG" | grep "Vault Implementation deployed at:" | awk '{print $5}' | xargs)
+VAULT_ADMIN=$( echo "$MSG" | grep "Vault Admin deployed at:" | awk '{print $5}' | xargs)
 TSS_VERIFIER=$( echo "$MSG" | grep "TssVerifier deployed at: " | awk '{print $4}' | xargs)
 TUNNEL_ROUTER=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Proxy deployed at:" | awk '{print $5}' | xargs)
 TUNNEL_ROUTER_IMPL=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Implementation deployed at:" | awk '{print $5}' | xargs)
+TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deployed at:" | awk '{print $5}' | xargs)
 
 # ================================================
 # Set up contracts
@@ -65,7 +68,9 @@ echo "================================================"
 echo "Deployed contracts:"
 echo "VAULT(proxy): $VAULT"
 echo "VAULT(impl): $VAULT_IMPL"
+echo "VAULT(admin): $VAULT_ADMIN"
 echo "TSS_VERIFIER: $TSS_VERIFIER"
 echo "TUNNEL_ROUTER(proxy): $TUNNEL_ROUTER"
 echo "TUNNEL_ROUTER(impl): $TUNNEL_ROUTER_IMPL"
+echo "TUNNEL_ROUTER(admin): $TUNNEL_ROUTER_ADMIN"
 echo "================================================"

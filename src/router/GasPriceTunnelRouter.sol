@@ -19,7 +19,8 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         ITssVerifier tssVerifier_,
         IVault vault_,
         address initialOwner,
-        uint256 additionalGas_,
+        uint256 packedAdditionalGasFuncCoeffs,
+        uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
         uint256 gasPrice_,
         bytes32 sourceChainIdHash_,
@@ -29,7 +30,8 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
             tssVerifier_,
             vault_,
             initialOwner,
-            additionalGas_,
+            packedAdditionalGasFuncCoeffs,
+            maxCalldataBytes_,
             callbackGasLimit_,
             sourceChainIdHash_,
             targetChainIdHash_
@@ -51,7 +53,9 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         emit SetGasFee(gasFee_);
     }
 
-    function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
+    function _routerFee(
+        uint256 gasUsed
+    ) internal view virtual override returns (uint256) {
         uint256 effectiveGasPrice = Math.min(tx.gasprice, gasFee.gasPrice);
         return effectiveGasPrice * gasUsed;
     }

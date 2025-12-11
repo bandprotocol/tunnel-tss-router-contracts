@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import "../src/libraries/PacketDecoder.sol";
 import "../src/interfaces/ITunnelRouter.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
+import "../src/router/L1RouterGasCalculator.sol";
 import "../src/PacketConsumer.sol";
 import "../src/TssVerifier.sol";
 import "../src/Vault.sol";
@@ -37,8 +38,9 @@ contract RelayFullLoopTest is Test, Constants {
             tssVerifier,
             vault,
             address(this),
-            75000,
-            150000,
+            75000 * 1e18,
+            14000,
+            175000,
             10,
             keccak256("bandchain"),
             keccak256("testnet-evm")
@@ -138,9 +140,7 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain /
-            gasPrice -
-            tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain / gasPrice - tunnelRouter.additionalGasForCalldata(0);
 
         console.log(
             "gas used during process message: ",
@@ -194,14 +194,13 @@ contract RelayFullLoopTest is Test, Constants {
         assertEq(p.timestamp, referenceTimestamp);
 
         assertEq(tunnelRouter.sequence(originatorHash), 1);
+        console.log("tunnelRouter.additionalGasForCalldata(0) =", tunnelRouter.additionalGasForCalldata(0));
         assertEq(tunnelRouter.isActive(originatorHash), false);
 
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain /
-            tunnelRouter.gasFee() -
-            tunnelRouter.additionalGasUsed();
+        uint256 gasUsedDuringProcessMsg = feeGain / tunnelRouter.gasFee() - tunnelRouter.additionalGasForCalldata(0);
 
         console.log(
             "gas used during process message: ",
@@ -344,6 +343,16 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.setGasFee(
             GasPriceTunnelRouter.GasFeeInfo({gasPrice: 2 gwei})
         );
+    }
+
+    function testRelayCalldataSizeTooLarge() public {
+        bytes memory relayMessage = abi.encodeWithSelector(tunnelRouter.relay.selector, TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+        uint256 maxCalldataByte = 10;
+        tunnelRouter.setMaxCalldataBytes(maxCalldataByte);
+
+        bytes memory expectedErr = abi.encodeWithSelector(L1RouterGasCalculator.CalldataSizeTooLarge.selector, relayMessage.length, maxCalldataByte);
+        vm.expectRevert(expectedErr);
+        tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
     }
 
     receive() external payable {}

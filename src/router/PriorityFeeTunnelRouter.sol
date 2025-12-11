@@ -18,7 +18,8 @@ contract PriorityFeeTunnelRouter is BaseTunnelRouter {
         ITssVerifier tssVerifier_,
         IVault vault_,
         address initialOwner,
-        uint256 additionalGas_,
+        uint256 packedAdditionalGasFuncCoeffs,
+        uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
         uint256 priorityFee_,
         bytes32 sourceChainIdHash_,
@@ -28,7 +29,8 @@ contract PriorityFeeTunnelRouter is BaseTunnelRouter {
             tssVerifier_,
             vault_,
             initialOwner,
-            additionalGas_,
+            packedAdditionalGasFuncCoeffs,
+            maxCalldataBytes_,
             callbackGasLimit_,
             sourceChainIdHash_,
             targetChainIdHash_
@@ -50,8 +52,13 @@ contract PriorityFeeTunnelRouter is BaseTunnelRouter {
         emit SetGasFee(gasFee_);
     }
 
-    function _routerFee(uint256 gasUsed) internal view virtual override returns (uint256) {
-        uint256 effectiveGasPrice = Math.min(tx.gasprice, gasFee.priorityFee + block.basefee);
+    function _routerFee(
+        uint256 gasUsed
+    ) internal view virtual override returns (uint256) {
+        uint256 effectiveGasPrice = Math.min(
+            tx.gasprice,
+            gasFee.priorityFee + block.basefee
+        );
         return effectiveGasPrice * gasUsed;
     }
 }

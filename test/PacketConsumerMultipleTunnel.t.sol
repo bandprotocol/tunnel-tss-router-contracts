@@ -31,6 +31,7 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
             vault,
             address(this),
             75000,
+            14000,
             100000,
             1,
             keccak256("bandchain"),

@@ -72,11 +72,32 @@ Built on threshold signature technology and a custom signing procedure, the proj
 
 ## Deployment Scripts
 
+Before running any deployment scripts, **you must first configure the required environment variables at the top of each script file**. Open the script in an editor, review the list of variables, and set them according to your network and deployment needs. Sample values and their meanings are described below.
+
+---
+
 ### `script/deploy_tunnel_router.sh`
 
-This script deploys the full set of Tunnel Router components, including the TunnelRouter, Vault, TSSVerifier contracts, as well as proxy contracts for the TunnelRouter and Vault, to your configured Ethereum-compatible network.
+This script deploys the full set of Tunnel Router components, including the TunnelRouter, Vault, and TSSVerifier contracts, as well as proxy contracts for both TunnelRouter and Vault to your configured Ethereum-compatible network.
 
-**Usage:**
+**Step 1: Configure Variables**
+
+Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a description of each variable you need to set, along with example values.
+
+| Variable            | Description                                                         | Example                                    |
+|---------------------|---------------------------------------------------------------------|--------------------------------------------|
+| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                | `https://sepolia.infura.io/v3/XXXX`        |
+| `TARGET_CHAIN_ID`   | Chain ID of the target EVM network                                 | `11155111`                                 |
+| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple        | `0xabc123...,0xdef456...`                  |
+| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)               | `0.1ether`                                 |
+| `PRIORITY_FEE`      | Default tip for priority-fee-based networks                        | `1wei`                                     |
+| `TRANSITION_PERIOD` | Time in seconds for transition period                              | `172800`                                   |
+| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                     | `https://laozi1.bandchain.org:443`         |
+
+_Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
+
+**Step 2: Run the Script**
+
 ```sh
 export PRIVATE_KEY=<your_private_key>
 bash script/deploy_tunnel_router.sh
@@ -95,9 +116,31 @@ bash script/deploy_tunnel_router.sh
 
 ### `script/deploy_tunnel_consumer.sh`
 
-This script automates the full deployment of the Tunnel Consumer component. It deploys the PacketConsumer contract, also sets up a separate proxy contract that serves as a interface to query the PacketConsumer, and initiates the tunnel on BandChain.
+This script automates the full deployment of the Tunnel Consumer component. It deploys the PacketConsumer 
+contract, also sets up a separate proxy contract that serves as a interface to query the PacketConsumer, and 
+initiates the tunnel on BandChain.
 
-**Usage:**
+**Step 1: Configure Variables**
+
+Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
+
+| Variable                     | Description                                                         | Example                                         |
+|------------------------------|---------------------------------------------------------------------|-------------------------------------------------|
+| `RPC_URL`                    | RPC endpoint of the target Ethereum-compatible chain                | `https://sepolia.infura.io/v3/XXXX`             |
+| `TARGET_CHAIN_ID`            | Target chain ID (should match the target EVM network)               | `11155111`                                      |
+| `TUNNEL_ROUTER`              | Deployed TunnelRouter contract address                              | `0x1234abcd....`                                |
+| `VAULT_BALANCE`              | ETH or coin value to fund the consumer's vault (for fees)           | `0.05ether`                                     |
+| `BANDCHAIN_RPC_URL`          | RPC endpoint for BandChain node                                     | `https://laozi1.bandchain.org:443`              |
+| `WALLET_NAME`                | Name of the BandChain wallet                                        | `alice`                                         |
+| `BANDCHAIN_KEYRING_BACKEND`  | BandChain key storage backend (`os`, `file`, or `test`)             | `os`                                            |
+| `PRICE_INTERVAL`             | Seconds between oracle price reports                                | `300`                                           |
+| `PRICE_DEVIATION_JSON_FILE`  | JSON file with allowed price deviation thresholds                   | `deviation.json`                                |
+| `FEE_PAYER_BALANCE`          | Amount to send to BandChain fee payer, with denom                   | `1000000uband`                                  |
+
+_Note: You must also `export PRIVATE_KEY=<your_private_key>` in your shell, as with the router script._
+
+**Step 2: Run the Script**
+
 ```sh
 export PRIVATE_KEY=<your_private_key>
 bash script/deploy_tunnel_consumer.sh
@@ -107,10 +150,9 @@ bash script/deploy_tunnel_consumer.sh
 - `PRIVATE_KEY`: The private key used to sign all deployment transactions. _This variable must be set for the script to work._
 
 **What it does:**
-- Uses the specified `PRIVATE_KEY` as the deployer account
-- Deploys the `PacketConsumer` contract to the target EVM network
-- Deploys and configures a proxy contract for the `PacketConsumer`, acting as a query-forwarding interface
-- Deploys and configures the corresponding tunnel on BandChain, ensuring the EVM and BandChain sides are linked and operational
+- Deploys the PacketConsumer contract (and proxy) to your target EVM chain
+- Executes necessary BandChain CLI commands to set up and activate the tunnel linking both chains
+- Funds the tunnel on both sides for correct operation
 
 ---
 

@@ -11,12 +11,19 @@ BANDCHAIN_RPC_URL=
 RELAYER_ADDR=
 SOURCE_CHAIN_ID=
 TARGET_CHAIN_ID=
-TRANSITION_ORIGINATOR_HASH=
 PRIORITY_FEE=
 TRANSITION_PERIOD=
 RELAYER_BALANCE=
 
 TSS_PUBLIC_KEY_BASE64=$(bandd q bandtss current-group --node $BANDCHAIN_RPC_URL --output json | jq -r '.pub_key')
+TRANSITION_ORIGINATOR_HASH=$({
+  printf '%s' "DirectOriginator" | cast keccak | sed 's/^0x//' | xxd -r -p | head -c 4 
+  printf '%s' "$SOURCE_CHAIN_ID" | cast keccak | sed 's/^0x//' | xxd -r -p
+  printf '%s' "band1z4nmm3dvy47nfc4jyf6p8hnd3j3fz6lwjf0rfm" | cast keccak | sed 's/^0x//' | xxd -r -p
+  printf '%s' ""            | cast keccak | sed 's/^0x//' | xxd -r -p
+} | cast keccak)
+
+echo $TRANSITION_ORIGINATOR_HASH
 
 # ================================================
 # Deploy contracts

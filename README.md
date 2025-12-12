@@ -93,6 +93,7 @@ Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a de
 | `PRIORITY_FEE`      | Default tip for priority-fee-based networks                        | `1wei`                                     |
 | `TRANSITION_PERIOD` | Time in seconds for transition period                              | `172800`                                   |
 | `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                     | `http://rpc.laozi1.bandchain.org/`         |
+| `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple                | `0x0fedcba9876543210fedcba9876543210fedcba9` |
 
 _Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
 
@@ -136,6 +137,7 @@ Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 | `PRICE_INTERVAL`             | Seconds between oracle price reports                                | `300`                                           |
 | `PRICE_DEVIATION_JSON_FILE`  | JSON file with allowed price deviation thresholds                   | `deviation.json`                                |
 | `FEE_PAYER_BALANCE`          | Amount to send to BandChain fee payer, with denom                   | `1000000uband`                                  |
+| `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple                | `0x0fedcba9876543210fedcba9876543210fedcba9` |
 
 _Note: You must also `export PRIVATE_KEY=<your_private_key>` in your shell, as with the router script._
 

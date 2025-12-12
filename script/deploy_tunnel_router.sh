@@ -15,6 +15,7 @@ RELAYER_ADDR=
 RELAYER_BALANCE=
 export PRIORITY_FEE=1wei
 export TRANSITION_PERIOD=172800
+OPERATOR_ADDRESS=
 
 # Bandchain
 BANDCHAIN_RPC_URL=http://rpc.laozi1.bandchain.org/
@@ -70,6 +71,10 @@ sleep 2
 
 echo "========== Setting whitelist in TunnelRouter =========="
 cast send $TUNNEL_ROUTER "setWhitelist(address[], bool)" "[$RELAYER_ADDR]" true --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+sleep 2
+
+echo "========== Granting GasFeeUpdater role to operator =========="
+cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 echo "========== Sending initial balance to relayer(s) =========="

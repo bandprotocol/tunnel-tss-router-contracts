@@ -11,6 +11,7 @@ RPC_URL=
 TARGET_CHAIN_ID=
 export TUNNEL_ROUTER=
 VAULT_BALANCE=
+OPERATOR_ADDRESS=
 
 # Bandchain
 BANDCHAIN_RPC_URL=http://rpc.laozi1.bandchain.org/
@@ -71,6 +72,10 @@ bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
      -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
 
 sleep 5
+
+echo "========== Granting Tunnel Activator role to operator =========="
+cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+sleep 2
 
 # ================================================
 # Activate tunnel on band chain

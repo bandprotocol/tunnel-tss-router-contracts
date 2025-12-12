@@ -70,5 +70,56 @@ Built on threshold signature technology and a custom signing procedure, the proj
 5. 🏛️ **Enhanced Decentralization**
     - Eliminates the need for centralized multisig validators
 
+## Deployment Scripts
+
+### `script/deploy_tunnel_router.sh`
+
+This script deploys the full set of Tunnel Router components, including the TunnelRouter, Vault, TSSVerifier contracts, as well as proxy contracts for the TunnelRouter and Vault, to your configured Ethereum-compatible network.
+
+**Usage:**
+```sh
+export PRIVATE_KEY=<your_private_key>
+bash script/deploy_tunnel_router.sh
+```
+
+**Environment Variables:**
+- `PRIVATE_KEY`: The private key used to sign the deployment transactions. _This environment variable must be set for the script to work._
+
+**What it does:**
+- Sets up the deployment environment with your provided `PRIVATE_KEY`
+- Deploys the `TunnelRouter` contract, the `Vault` contract, and the `TSSVerifier` contract
+- Deploys proxy contracts for both `TunnelRouter` and `Vault`
+- Configures each component to work together in the Tunnel-TSS-Router system
+
+---
+
+### `script/deploy_tunnel_consumer.sh`
+
+This script automates the full deployment of the Tunnel Consumer component. It deploys the PacketConsumer contract, also sets up a separate proxy contract that serves as a interface to query the PacketConsumer, and initiates the tunnel on BandChain.
+
+**Usage:**
+```sh
+export PRIVATE_KEY=<your_private_key>
+bash script/deploy_tunnel_consumer.sh
+```
+
+**Environment Variables:**
+- `PRIVATE_KEY`: The private key used to sign all deployment transactions. _This variable must be set for the script to work._
+
+**What it does:**
+- Uses the specified `PRIVATE_KEY` as the deployer account
+- Deploys the `PacketConsumer` contract to the target EVM network
+- Deploys and configures a proxy contract for the `PacketConsumer`, acting as a query-forwarding interface
+- Deploys and configures the corresponding tunnel on BandChain, ensuring the EVM and BandChain sides are linked and operational
+
+---
+
+**Note:**  
+Both of the following accounts must have a sufficient balance of the native token (e.g. ETH) on the target network to cover deployment and operational transaction fees:
+- The account corresponding to your `PRIVATE_KEY` (used for deployment on the EVM chain)
+- The account used for BandChain interactions (i.e., your Band wallet specified by wallet name or address)
+
+If either account lacks sufficient balance, deployment or subsequent operations may fail.
+
 ## Contribution
 We welcome and encourage contributions to the project. If you have suggestions or feedback, please open an issue or submit a pull request. We appreciate your contributions and look forward to collaborating to improve the Tunnel-TSS-Router.

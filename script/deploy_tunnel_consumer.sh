@@ -9,11 +9,11 @@ set -e
 # Destination Chain
 RPC_URL=
 TARGET_CHAIN_ID=
-TUNNEL_ROUTER=
+export TUNNEL_ROUTER=
 VAULT_BALANCE=
 
-# Band Chain
-BANDCHAIN_RPC_URL=
+# Bandchain
+BANDCHAIN_RPC_URL=http://rpc.laozi1.bandchain.org/
 WALLET_NAME=
 BANDCHAIN_KEYRING_BACKEND=
 PRICE_INTERVAL=
@@ -21,8 +21,6 @@ PRICE_DEVIATION_JSON_FILE=
 FEE_PAYER_BALANCE=
 
 CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
-
-export TUNNEL_ROUTER=$TUNNEL_ROUTER
 
 # ================================================
 # Setup consumer
@@ -33,8 +31,7 @@ forge clean & forge build --optimize true --optimizer-runs 200
 
 echo "========== Deploying PacketConsumer contract =========="
 MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
-PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
-export PACKET_CONSUMER=$PACKET_CONSUMER
+export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
 
 echo "========== Deploying PacketConsumerProxy contract =========="
 MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)

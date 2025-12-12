@@ -92,7 +92,7 @@ Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a de
 | `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)               | `0.1ether`                                 |
 | `PRIORITY_FEE`      | Default tip for priority-fee-based networks                        | `1wei`                                     |
 | `TRANSITION_PERIOD` | Time in seconds for transition period                              | `172800`                                   |
-| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                     | `https://laozi1.bandchain.org:443`         |
+| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                     | `http://rpc.laozi1.bandchain.org/`         |
 
 _Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
 
@@ -130,7 +130,7 @@ Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 | `TARGET_CHAIN_ID`            | Target chain ID (should match the target EVM network)               | `11155111`                                      |
 | `TUNNEL_ROUTER`              | Deployed TunnelRouter contract address                              | `0x1234abcd....`                                |
 | `VAULT_BALANCE`              | ETH or coin value to fund the consumer's vault (for fees)           | `0.05ether`                                     |
-| `BANDCHAIN_RPC_URL`          | RPC endpoint for BandChain node                                     | `https://laozi1.bandchain.org:443`              |
+| `BANDCHAIN_RPC_URL`          | RPC endpoint for BandChain node                                     | `http://rpc.laozi1.bandchain.org/`              |
 | `WALLET_NAME`                | Name of the BandChain wallet                                        | `alice`                                         |
 | `BANDCHAIN_KEYRING_BACKEND`  | BandChain key storage backend (`os`, `file`, or `test`)             | `os`                                            |
 | `PRICE_INTERVAL`             | Seconds between oracle price reports                                | `300`                                           |

@@ -10,32 +10,26 @@ echo "========== Setting environment variables =========="
 
 # Destination Chain
 RPC_URL=
-TARGET_CHAIN_ID=
+export TARGET_CHAIN_ID=
 RELAYER_ADDR=
 RELAYER_BALANCE=
-PRIORITY_FEE=1wei
-TRANSITION_PERIOD=172800
+export PRIORITY_FEE=1wei
+export TRANSITION_PERIOD=172800
 
-# Band Chain
-BANDCHAIN_RPC_URL=
+# Bandchain
+BANDCHAIN_RPC_URL=http://rpc.laozi1.bandchain.org/
 
 echo "Getting SOURCE_CHAIN_ID from BandChain node $BANDCHAIN_RPC_URL ..."
-SOURCE_CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
+export SOURCE_CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
 echo "Getting TSS public key from BandChain ..."
 TSS_PUBLIC_KEY_BASE64=$(bandd q bandtss current-group --node $BANDCHAIN_RPC_URL --output json | jq -r '.pub_key')
 echo "Computing TRANSITION_ORIGINATOR_HASH ..."
-TRANSITION_ORIGINATOR_HASH=$({
+export TRANSITION_ORIGINATOR_HASH=$({
   printf '%s' "DirectOriginator" | cast keccak | sed 's/^0x//' | xxd -r -p | head -c 4 
   printf '%s' "$SOURCE_CHAIN_ID" | cast keccak | sed 's/^0x//' | xxd -r -p
   printf '%s' "band1z4nmm3dvy47nfc4jyf6p8hnd3j3fz6lwjf0rfm" | cast keccak | sed 's/^0x//' | xxd -r -p
   printf '%s' ""            | cast keccak | sed 's/^0x//' | xxd -r -p
 } | cast keccak)
-
-export TRANSITION_PERIOD=$TRANSITION_PERIOD
-export TARGET_CHAIN_ID=$TARGET_CHAIN_ID
-export SOURCE_CHAIN_ID=$SOURCE_CHAIN_ID
-export TRANSITION_ORIGINATOR_HASH=$TRANSITION_ORIGINATOR_HASH
-export PRIORITY_FEE=$PRIORITY_FEE
 
 # ================================================
 # Deploy contracts

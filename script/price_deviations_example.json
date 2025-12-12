@@ -1,0 +1,24 @@
+{
+	"signal_deviations": [
+        {
+            "signal_id": "CS:BTC-USD",
+            "deviation_bps": 200
+        },
+        {
+            "signal_id": "CS:ETH-USD",
+            "deviation_bps": 200
+        },
+        {
+            "signal_id": "CS:BAND-USD",
+            "deviation_bps": 200
+        },
+        {
+            "signal_id": "CS:USDC-USD",
+            "deviation_bps": 50
+        },
+        {
+            "signal_id": "CS:USDT-USD",
+            "deviation_bps": 50
+        }
+    ]
+}

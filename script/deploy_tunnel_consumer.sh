@@ -6,29 +6,37 @@ set -e
 # Environment variables; EDIT THIS
 # ================================================
 
+# Destination Chain
 RPC_URL=
 TARGET_CHAIN_ID=
-PRICE_DEVIATION_JSON_FILE=
-PRICE_INTERVAL=
 TUNNEL_ROUTER=
+VAULT_BALANCE=
+
+# Band Chain
 BANDCHAIN_RPC_URL=
 WALLET_NAME=
-BAND_KEYRING_BACKEND=
+BANDCHAIN_KEYRING_BACKEND=
+PRICE_INTERVAL=
+PRICE_DEVIATION_JSON_FILE=
 FEE_PAYER_BALANCE=
-VAULT_BALANCE=
+
+CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
+
+export TUNNEL_ROUTER=$TUNNEL_ROUTER
 
 # ================================================
 # Setup consumer
 # ================================================
 
+echo "========== Cleaning and Building contracts =========="
 forge clean & forge build --optimize true --optimizer-runs 200
 
-export TUNNEL_ROUTER=$TUNNEL_ROUTER
-export PRIVATE_KEY=$PRIVATE_KEY
+echo "========== Deploying PacketConsumer contract =========="
 MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
 PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
-
 export PACKET_CONSUMER=$PACKET_CONSUMER
+
+echo "========== Deploying PacketConsumerProxy contract =========="
 MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
 PACKET_CONSUMER_PROXY=$( echo "$MSG" | grep "PacketConsumerProxy deployed at:" | awk '{print $4}' | xargs)
 
@@ -41,8 +49,7 @@ echo "================================================"
 # Setup tunnel on Bandchain
 # ================================================
 
-CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
-
+echo "========== Creating tunnel on BandChain =========="
 bandd tx tunnel create-tunnel tss \
     $TARGET_CHAIN_ID $PACKET_CONSUMER 1 500000000uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
     --from $WALLET_NAME --keyring-backend $BAND_KEYRING_BACKEND --gas-prices 0.0025uband \
@@ -50,6 +57,7 @@ bandd tx tunnel create-tunnel tss \
 
 sleep 5
 
+echo "========== Querying TUNNEL_ID after creation =========="
 TUNNEL_ID=$(bandd q tunnel tunnels --page-count-total --page-limit 1 --output json --node $BANDCHAIN_RPC_URL | jq -r '.pagination.total')
 
 echo "================================================"
@@ -57,8 +65,10 @@ echo "TUNNEL_ID: $TUNNEL_ID is created"
 echo "================================================"
 
 # transfer token to fee payer
+echo "========== Querying tunnel fee payer address =========="
 fee_payer=$(bandd q tunnel tunnel $TUNNEL_ID --node $BANDCHAIN_RPC_URL --output json | jq -r '.tunnel.fee_payer') 
 
+echo "========== Transferring $FEE_PAYER_BALANCE to tunnel fee payer: $fee_payer =========="
 bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
     --from $WALLET_NAME --keyring-backend $BAND_KEYRING_BACKEND --gas-prices 0.0025uband \
      -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
@@ -69,6 +79,7 @@ sleep 5
 # Activate tunnel on band chain
 # ================================================
 
+echo "========== Activating tunnel $TUNNEL_ID on BandChain =========="
 bandd tx tunnel activate-tunnel $TUNNEL_ID \
     --from $WALLET_NAME --keyring-backend $BAND_KEYRING_BACKEND \
     --gas-prices 0.0025uband \
@@ -79,6 +90,7 @@ sleep 5
 # Activate tunnel on target chain
 # ================================================
 
+echo "========== Activating tunnel $TUNNEL_ID on target chain via PacketConsumer =========="
 cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 
 echo "================================================"

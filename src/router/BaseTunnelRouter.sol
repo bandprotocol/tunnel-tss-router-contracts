@@ -74,7 +74,7 @@ abstract contract BaseTunnelRouter is
             maxCalldataBytes_
         ); // UPDATED
 
-        tssVerifier = tssVerifier_;
+        _setTssVerifier(tssVerifier_);
         vault = vault_;
         sourceChainIdHash = sourceChainIdHash_;
         targetChainIdHash = targetChainIdHash_;
@@ -99,6 +99,15 @@ abstract contract BaseTunnelRouter is
      */
     function setCallbackGasLimit(uint256 callbackGasLimit_) external onlyOwner {
         _setCallbackGasLimit(callbackGasLimit_);
+    }
+
+    /**
+     * @dev Sets the tssVerifier.
+     *
+     * @param tssVerifier_ the address of TssVerifier contract.
+     */
+    function setTssVerifier(ITssVerifier tssVerifier_) external onlyOwner {
+        _setTssVerifier(tssVerifier_);
     }
 
     /**
@@ -358,6 +367,12 @@ abstract contract BaseTunnelRouter is
     function _setCallbackGasLimit(uint256 callbackGasLimit_) internal {
         callbackGasLimit = callbackGasLimit_;
         emit CallbackGasLimitSet(callbackGasLimit_);
+    }
+
+    /// @dev Sets tssVerifier and emit an event.
+    function _setTssVerifier(ITssVerifier tssVerifier_) internal {
+        tssVerifier = tssVerifier_;
+        emit TssVerifierSet(tssVerifier_);
     }
 
     /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`

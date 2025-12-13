@@ -3,6 +3,7 @@
 pragma solidity ^0.8.23;
 
 import "./IVault.sol";
+import "../interfaces/ITssVerifier.sol";
 
 interface ITunnelRouter {
     // ========================================
@@ -33,6 +34,13 @@ interface ITunnelRouter {
      * @param callbackGasLimit The maximum gas limit can be used when calling the target contract.
      */
     event CallbackGasLimitSet(uint256 callbackGasLimit);
+
+    /**
+     * @notice Emitted when the tssVerifier is set.
+     *
+     * @param tssVerifier The address of TssVerifier contract.
+     */
+    event TssVerifierSet(ITssVerifier tssVerifier);
 
     /**
      * @notice Emitted after the message is relayed to the target contract

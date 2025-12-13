@@ -86,6 +86,9 @@ contract RelayFullLoopTest is Test, Constants {
             assertTrue(tssm.packet.signals[i].price > 0);
             referencePrices[i] = tssm.packet.signals[i];
         }
+
+        vm.deal(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE, 10 ether);
+        vm.deal(MOCK_INVALID_TUNNEL_ACTIVATOR_ROLE, 10 ether);
     }
 
     function decodeTssMessage(
@@ -353,6 +356,78 @@ contract RelayFullLoopTest is Test, Constants {
         bytes memory expectedErr = abi.encodeWithSelector(L1RouterGasCalculator.CalldataSizeTooLarge.selector, relayMessage.length, maxCalldataByte);
         vm.expectRevert(expectedErr);
         tunnelRouter.relay(TSS_RAW_MESSAGE, SIGNATURE_NONCE_ADDR, MESSAGE_SIGNATURE);
+    }
+
+    // ============= TUNNEL ACTIVATOR ROLE TESTS ================
+
+    function testNonAdminCannotGrantTunnelActivatorRole() public {
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_TUNNEL_ACTIVATOR_ROLE;
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.grantTunnelActivatorRole(accounts);
+    }
+
+    function testGrantTunnelActivatorRoleAllowsActivateAndDeactivateTunnel() public {
+        // Should not be able to activate or deactivate tunnel before having the role
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 10);
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.deactivate(tunnelId);
+
+        // Grant the activator role
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_TUNNEL_ACTIVATOR_ROLE;
+        packetConsumer.grantTunnelActivatorRole(accounts);
+
+        // Activate should succeed with the role (deactivate first to allow)
+        packetConsumer.deactivate(tunnelId);
+
+        vm.prank(MOCK_INVALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 20);
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        // Should now be able to activate and deactivate
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 20);
+        assertEq(tunnelRouter.isActive(originatorHash), true);
+
+        vm.prank(MOCK_INVALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.deactivate(tunnelId);
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        packetConsumer.deactivate(tunnelId);
+        assertEq(tunnelRouter.isActive(originatorHash), false);
+    }
+
+    function testRevokeTunnelActivatorRolePreventsActivateAndDeactivateTunnel() public {
+        // Grant role first
+        address[] memory accounts = new address[](1);
+        accounts[0] = MOCK_VALID_TUNNEL_ACTIVATOR_ROLE;
+        packetConsumer.grantTunnelActivatorRole(accounts);
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        packetConsumer.deactivate(tunnelId);
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 99);
+
+        // Revoke the activator role
+        packetConsumer.revokeTunnelActivatorRole(accounts);
+
+        // Now, it should revert for both activate and deactivate
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.deactivate(tunnelId);
+
+        vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
+        vm.expectRevert();
+        packetConsumer.activate{value: 0.01 ether}(tunnelId, 123);
     }
 
     receive() external payable {}

@@ -1,4 +1,4 @@
-# !/bin/bash
+#!/bin/bash
 
 set -e
 
@@ -18,7 +18,7 @@ export TRANSITION_PERIOD=172800
 OPERATOR_ADDRESS=
 
 # Bandchain
-BANDCHAIN_RPC_URL=http://rpc.laozi1.bandchain.org/
+BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
 
 echo "Getting SOURCE_CHAIN_ID from BandChain node $BANDCHAIN_RPC_URL ..."
 export SOURCE_CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
@@ -37,7 +37,7 @@ export TRANSITION_ORIGINATOR_HASH=$({
 # ================================================
 
 echo "========== Cleaning and Building contracts =========="
-forge clean & forge build --optimize true --optimizer-runs 200
+forge clean && forge build --optimize true --optimizer-runs 200
 
 echo "========== Running deployment script to deploy contracts =========="
 MSG=$(forge script script/SetupPriorityFeeTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast  --optimize true --optimizer-runs 200)

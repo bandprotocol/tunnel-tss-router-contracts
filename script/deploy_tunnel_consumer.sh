@@ -1,4 +1,4 @@
-# !/bin/bash
+#!/bin/bash
 
 set -e
 
@@ -14,7 +14,7 @@ VAULT_BALANCE=
 OPERATOR_ADDRESS=
 
 # Bandchain
-BANDCHAIN_RPC_URL=http://rpc.laozi1.bandchain.org/
+BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
 WALLET_NAME=
 BANDCHAIN_KEYRING_BACKEND=
 PRICE_INTERVAL=
@@ -28,7 +28,7 @@ CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_i
 # ================================================
 
 echo "========== Cleaning and Building contracts =========="
-forge clean & forge build --optimize true --optimizer-runs 200
+forge clean && forge build --optimize true --optimizer-runs 200
 
 echo "========== Deploying PacketConsumer contract =========="
 MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
@@ -50,7 +50,7 @@ echo "================================================"
 echo "========== Creating tunnel on BandChain =========="
 bandd tx tunnel create-tunnel tss \
     $TARGET_CHAIN_ID $PACKET_CONSUMER 1 500000000uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
-    --from $WALLET_NAME --keyring-backend $BAND_KEYRING_BACKEND --gas-prices 0.0025uband \
+    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
     -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
 
 sleep 5
@@ -68,7 +68,7 @@ fee_payer=$(bandd q tunnel tunnel $TUNNEL_ID --node $BANDCHAIN_RPC_URL --output 
 
 echo "========== Transferring $FEE_PAYER_BALANCE to tunnel fee payer: $fee_payer =========="
 bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
-    --from $WALLET_NAME --keyring-backend $BAND_KEYRING_BACKEND --gas-prices 0.0025uband \
+    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
      -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
 
 sleep 5
@@ -83,7 +83,7 @@ sleep 2
 
 echo "========== Activating tunnel $TUNNEL_ID on BandChain =========="
 bandd tx tunnel activate-tunnel $TUNNEL_ID \
-    --from $WALLET_NAME --keyring-backend $BAND_KEYRING_BACKEND \
+    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND \
     --gas-prices 0.0025uband \
     -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
 sleep 5

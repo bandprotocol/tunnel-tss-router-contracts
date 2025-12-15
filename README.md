@@ -118,7 +118,7 @@ bash script/deploy_tunnel_router.sh
 ### `script/deploy_tunnel_consumer.sh`
 
 This script automates the full deployment of the Tunnel Consumer component. It deploys the PacketConsumer 
-contract, also sets up a separate proxy contract that serves as a interface to query the PacketConsumer, and 
+contract, also sets up a separate proxy contract that serves as an interface to query the PacketConsumer, and 
 initiates the tunnel on BandChain.
 
 **Step 1: Configure Variables**

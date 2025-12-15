@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "./helper/MockTssVerifier.sol";
 import "../src/Vault.sol";
 import "../src/router/PriorityFeeTunnelRouter.sol";
+import "../src/interfaces/ITunnelRouter.sol";
 
 contract TunnelRouterTest is Test {
     PriorityFeeTunnelRouter router;
@@ -32,6 +33,8 @@ contract TunnelRouterTest is Test {
         vm.expectRevert();
         router.setTssVerifier(newVerifier);
 
+        vm.expectEmit(true, false, false, true);
+        emit ITunnelRouter.TssVerifierSet(newVerifier);
         router.setTssVerifier(newVerifier);
         assertEq(address(router.tssVerifier()), address(newVerifier));
     }

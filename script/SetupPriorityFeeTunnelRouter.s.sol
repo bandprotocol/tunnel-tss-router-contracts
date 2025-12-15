@@ -48,6 +48,9 @@ contract Executor is Script {
         address implVaultAddr = Upgrades.getImplementationAddress(
             proxyVaultAddr
         );
+        address adminVaultAddr = Upgrades.getAdminAddress(
+            proxyVaultAddr
+        );
 
         // Deploy the TssVerifier contract
         TssVerifier tssVerifier = new TssVerifier(
@@ -79,6 +82,10 @@ contract Executor is Script {
             proxyTunnelRouterAddr
         );
 
+        address adminTunnelRouterAddr = Upgrades.getAdminAddress(
+            proxyTunnelRouterAddr
+        );
+
         // Set the tunnel router address in the vault
         Vault(payable(proxyVaultAddr)).setTunnelRouter(proxyTunnelRouterAddr);
 
@@ -86,6 +93,7 @@ contract Executor is Script {
 
         console.log("Vault Proxy deployed at:", proxyVaultAddr);
         console.log("Vault Implementation deployed at:", implVaultAddr);
+        console.log("Vault Admin deployed at:", adminVaultAddr);
         console.log("TssVerifier deployed at:", address(tssVerifier));
         console.log(
             "PriorityFeeTunnelRouter Proxy deployed at:",
@@ -94,6 +102,10 @@ contract Executor is Script {
         console.log(
             "PriorityFeeTunnelRouter Implementation deployed at:",
             implTunnelRouterAddr
+        );
+        console.log(
+            "PriorityFeeTunnelRouter Admin deployed at:",
+            adminTunnelRouterAddr
         );
     }
 }

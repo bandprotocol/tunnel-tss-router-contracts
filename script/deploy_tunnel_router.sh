@@ -32,6 +32,11 @@ export TRANSITION_ORIGINATOR_HASH=$({
   printf '%s' ""            | cast keccak | sed 's/^0x//' | xxd -r -p
 } | cast keccak)
 
+# convert base64 to concatenated hex 
+TSS_PUBLIC_KEY_HEX=$(echo $TSS_PUBLIC_KEY_BASE64 | base64 -d | xxd -p | tr -d '\n')
+export TSS_PARITY=$(echo $TSS_PUBLIC_KEY_HEX | cut -c 2)
+export TSS_PUBLIC_KEY=0x$(echo $TSS_PUBLIC_KEY_HEX | cut -c 3-)
+
 # ================================================
 # Deploy contracts
 # ================================================
@@ -54,20 +59,6 @@ TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deploye
 # ================================================
 # Set up contracts
 # ================================================
-
-# convert base64 to concatenated hex 
-TSS_PUBLIC_KEY_HEX=$(echo $TSS_PUBLIC_KEY_BASE64 | base64 -d | xxd -p | tr -d '\n')
-TSS_PARITY=$(echo $TSS_PUBLIC_KEY_HEX | cut -c 2)
-TSS_PUBLIC_KEY=0x$(echo $TSS_PUBLIC_KEY_HEX | cut -c 3-)
-TIMESTAMP=0
-
-echo "========== Adding TSS public key to TssVerifier =========="
-cast send $TSS_VERIFIER "addPubKeyByOwner(uint64, uint8, uint256)" $TIMESTAMP $TSS_PARITY $TSS_PUBLIC_KEY --private-key $PRIVATE_KEY --rpc-url $RPC_URL
-sleep 2
-
-echo "========== Linking Vault to TunnelRouter =========="
-cast send $VAULT "setTunnelRouter(address)" $TUNNEL_ROUTER --private-key $PRIVATE_KEY --rpc-url $RPC_URL
-sleep 2
 
 echo "========== Setting whitelist in TunnelRouter =========="
 cast send $TUNNEL_ROUTER "setWhitelist(address[], bool)" "[$RELAYER_ADDR]" true --private-key $PRIVATE_KEY --rpc-url $RPC_URL

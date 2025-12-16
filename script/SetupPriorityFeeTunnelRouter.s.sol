@@ -23,6 +23,9 @@ contract Executor is Script {
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
 
+        uint8 tssParity = uint8(vm.envUint("TSS_PARITY"));
+        uint256 tssPublicKey = vm.envUint("TSS_PUBLIC_KEY");
+
         require(transitionPeriod != 0, "TRANSITION_PERIOD is not set");
         require(
             transitionOriginatorHash != bytes32(0),
@@ -36,6 +39,8 @@ contract Executor is Script {
             keccak256(bytes(targetChainId)) != keccak256(""),
             "TARGET_CHAIN_ID is not set"
         );
+        require(tssParity != 0, "TSS_PARIY is not set");
+        require(tssPublicKey != 0, "TSS_PUBLIC_KEY is not set");
 
         vm.startBroadcast();
 
@@ -88,6 +93,9 @@ contract Executor is Script {
 
         // Set the tunnel router address in the vault
         Vault(payable(proxyVaultAddr)).setTunnelRouter(proxyTunnelRouterAddr);
+
+        // Adding TSS public key to TssVerifier
+        tssVerifier.addPubKeyByOwner(0, tssParity, tssPublicKey);
 
         vm.stopBroadcast();
 

@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.23;
 
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -20,7 +19,6 @@ import "./L1RouterGasCalculator.sol";
 
 abstract contract BaseTunnelRouter is
     PausableUpgradeable,
-    AccessControlUpgradeable,
     ITunnelRouter,
     ErrorHandler,
     L1RouterGasCalculator
@@ -63,8 +61,6 @@ abstract contract BaseTunnelRouter is
         bytes32 sourceChainIdHash_,
         bytes32 targetChainIdHash_
     ) internal onlyInitializing {
-        __Ownable_init(initialOwner);
-        __Ownable2Step_init();
         __Pausable_init();
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
@@ -88,7 +84,7 @@ abstract contract BaseTunnelRouter is
      */
     function setPackedAdditionalGasFuncCoeffs(
         uint256 packedCoeffs
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setPackedAdditionalGasFuncCoeffs(packedCoeffs);
     }
 
@@ -97,7 +93,7 @@ abstract contract BaseTunnelRouter is
      *
      * @param callbackGasLimit_ the maximum gas limit can be used when calling the target contract.
      */
-    function setCallbackGasLimit(uint256 callbackGasLimit_) external onlyOwner {
+    function setCallbackGasLimit(uint256 callbackGasLimit_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setCallbackGasLimit(callbackGasLimit_);
     }
 
@@ -106,21 +102,21 @@ abstract contract BaseTunnelRouter is
      *
      * @param tssVerifier_ the address of TssVerifier contract.
      */
-    function setTssVerifier(ITssVerifier tssVerifier_) external onlyOwner {
+    function setTssVerifier(ITssVerifier tssVerifier_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setTssVerifier(tssVerifier_);
     }
 
     /**
      * @dev Pauses the contract.
      */
-    function pause() external onlyOwner {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /**
      * @dev Unpauses the contract.
      */
-    function unpause() external onlyOwner {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -291,7 +287,7 @@ abstract contract BaseTunnelRouter is
     function setWhitelist(
         address[] memory senders,
         bool flag
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < senders.length; i++) {
             if (senders[i] == address(0)) {
                 revert InvalidSenderAddress();
@@ -307,7 +303,7 @@ abstract contract BaseTunnelRouter is
     function registerError(
         address target,
         string calldata fsigStr
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _registerError(target, fsigStr);
     }
 
@@ -317,7 +313,7 @@ abstract contract BaseTunnelRouter is
     function unregisterError(
         address target,
         string calldata fsigStr
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unregisterError(target, fsigStr);
     }
 

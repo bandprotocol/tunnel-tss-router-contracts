@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.23;
 
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./interfaces/IPacketConsumer.sol";
@@ -11,7 +10,7 @@ import "./interfaces/IVault.sol";
 
 import "./libraries/PacketDecoder.sol";
 
-contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
+contract PacketConsumer is IPacketConsumer, AccessControl {
     // The tunnel router contract.
     address public immutable tunnelRouter;
 
@@ -31,7 +30,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
     constructor(
         address tunnelRouter_,
         address initialOwner
-    ) Ownable(initialOwner) {
+    ) {
         tunnelRouter = tunnelRouter_;
 
         _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
@@ -126,7 +125,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
     /**
      * @dev See {IPacketConsumer-withdraw}.
      */
-    function withdraw(uint64 tunnelId, uint256 amount) external onlyOwner {
+    function withdraw(uint64 tunnelId, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.withdraw(tunnelId, msg.sender, amount);
@@ -135,7 +134,7 @@ contract PacketConsumer is IPacketConsumer, Ownable2Step, AccessControl {
     /**
      * @dev See {IPacketConsumer-withdrawAll}.
      */
-    function withdrawAll(uint64 tunnelId) external onlyOwner {
+    function withdrawAll(uint64 tunnelId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         IVault vault = ITunnelRouter(tunnelRouter).vault();
 
         vault.withdrawAll(tunnelId, msg.sender);

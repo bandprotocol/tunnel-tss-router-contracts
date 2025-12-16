@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 /**
  * @title L1RouterGasCalculator
@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
  */
 abstract contract L1RouterGasCalculator is
     Initializable,
-    Ownable2StepUpgradeable
+    AccessControlUpgradeable
 {
     // ----- packing constants -----
     uint256 internal constant COEFF_BITS = 80;
@@ -94,8 +94,8 @@ abstract contract L1RouterGasCalculator is
         emit PackedAdditionalGasFuncCoeffsSet(packedCoeffs);
     }
 
-    /// @notice Owner: set the maximum accepted calldata bytes.
-    function setMaxCalldataBytes(uint256 maxBytes) external onlyOwner {
+    /// @notice Admin: set the maximum accepted calldata bytes.
+    function setMaxCalldataBytes(uint256 maxBytes) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setMaxCalldataBytes(maxBytes);
     }
 

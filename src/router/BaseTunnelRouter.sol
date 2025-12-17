@@ -41,9 +41,6 @@ abstract contract BaseTunnelRouter is
 
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
-    // A list of senders allowed to relay packets.
-    mapping(address => bool) public isAllowed; // sender address => isAllowed
-
     uint256[49] __gap;
 
     function __BaseRouter_init(

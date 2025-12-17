@@ -121,11 +121,6 @@ interface ITunnelRouter {
      */
     error SenderNotWhitelisted(address addr);
 
-    /**
-     * @notice Reverts if the sender is address(0).
-     */
-    error InvalidSenderAddress();
-
     // ========================================
     // Functions
     // ========================================

@@ -9,16 +9,16 @@ set -e
 echo "========== Setting environment variables =========="
 
 # Destination Chain
-RPC_URL=
-export TARGET_CHAIN_ID=
-RELAYER_ADDR=
-RELAYER_BALANCE=
+RPC_URL="https://rpc.testnet.soniclabs.com/"
+export TARGET_CHAIN_ID="sonic-testnet"
+RELAYER_ADDR=0x6ba401665563e5706805462006C57cECE055CCA8,0xC62D2539761ADDb53D7021F00d58A877E04b623e,0xa6B821D54B564188ACfDd986bA2b096Ec2ae98c3,0x5d7c991d86828b2f7302680CE2F23fb2376d0f1b,0x4Bc8e4DB4878F5dF362336C139c9d99c7Cf84437
+RELAYER_BALANCE=0.1ether
 export PRIORITY_FEE=1wei
 export TRANSITION_PERIOD=172800
 OPERATOR_ADDRESS=
 
 # Bandchain
-BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
+BANDCHAIN_RPC_URL="https://rpc.band-v3-testnet.bandchain.org"
 
 echo "Getting SOURCE_CHAIN_ID from BandChain node $BANDCHAIN_RPC_URL ..."
 export SOURCE_CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
@@ -61,7 +61,7 @@ TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deploye
 # ================================================
 
 echo "========== Setting whitelist in TunnelRouter =========="
-cast send $TUNNEL_ROUTER "setWhitelist(address[], bool)" "[$RELAYER_ADDR]" true --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 echo "========== Granting GasFeeUpdater role to operator =========="

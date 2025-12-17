@@ -36,6 +36,8 @@ abstract contract BaseTunnelRouter is
     bytes32 public targetChainIdHash;
     // Role identifier for accounts allowed to update gas fee.
     bytes32 public constant GAS_FEE_UPDATER_ROLE = keccak256("GAS_FEE_UPDATER_ROLE");
+    // Role identifier for accounts allowed to relay packets
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
@@ -43,13 +45,6 @@ abstract contract BaseTunnelRouter is
     mapping(address => bool) public isAllowed; // sender address => isAllowed
 
     uint256[49] __gap;
-
-    modifier onlyWhitelisted() {
-        if (!isAllowed[msg.sender]) {
-            revert SenderNotWhitelisted(msg.sender);
-        }
-        _;
-    }
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
@@ -127,7 +122,7 @@ abstract contract BaseTunnelRouter is
         bytes calldata message,
         address randomAddr,
         uint256 signature
-    ) external whenNotPaused onlyWhitelisted {
+    ) external whenNotPaused onlyRole(RELAYER_ROLE) {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         bytes32 originatorHash_ = tssMessage.originatorHash;
@@ -282,22 +277,6 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev Sets senders' address by given flag.
-     */
-    function setWhitelist(
-        address[] memory senders,
-        bool flag
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i = 0; i < senders.length; i++) {
-            if (senders[i] == address(0)) {
-                revert InvalidSenderAddress();
-            }
-            isAllowed[senders[i]] = flag;
-            emit SetWhitelist(senders[i], flag);
-        }
-    }
-
-    /**
      * @dev Register/Add a new custom error for the consumer.
      */
     function registerError(
@@ -382,6 +361,20 @@ abstract contract BaseTunnelRouter is
     function revokeGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
             _revokeRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Grants `RELAYER_ROLE` to `accounts`
+    function grantRelayer(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _grantRole(RELAYER_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Revokes `RELAYER_ROLE` from  `accounts`
+    function revokeRelayer(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _revokeRole(RELAYER_ROLE, accounts[i]);
         }
     }
 }

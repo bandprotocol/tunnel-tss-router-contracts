@@ -119,7 +119,7 @@ contract RelayGasMeasurementTest is Test, Constants {
 
         address[] memory whitelist = new address[](1);
         whitelist[0] = relayer;
-        tunnelRouter.setWhitelist(whitelist, true);
+        tunnelRouter.grantRelayer(whitelist);
 
         vault.setTunnelRouter(address(tunnelRouter));
 

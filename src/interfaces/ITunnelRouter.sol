@@ -72,15 +72,6 @@ interface ITunnelRouter {
      */
     event Deactivated(bytes32 indexed originatorHash, uint64 latestSequence);
 
-    /**
-     * @notice Emitted when a sender's address is added to or removed from the whitelist.
-     *
-     * @param sender The address of the sender whose whitelist status is being updated.
-     * @param flag A boolean value indicating the whitelist status of the address:
-     * `true` if the address is added to the whitelist, `false` if removed.
-     */
-    event SetWhitelist(address indexed sender, bool flag);
-
     // ========================================
     // Custom Errors
     // ========================================

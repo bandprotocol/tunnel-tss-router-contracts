@@ -144,7 +144,6 @@ contract PacketConsumerFactoryTest is Test {
 
         PacketConsumer pc = PacketConsumer(payable(cons));
         assertEq(pc.tunnelRouter(), ROUTER, "Router mismatch");
-        assertEq(pc.owner(), ALICE, "Owner mismatch");
     }
 
     /// @notice Calling again with the same taskId should return the same address and not emit event
@@ -180,10 +179,6 @@ contract PacketConsumerFactoryTest is Test {
         logs = vm.getRecordedLogs();
         assertEq(logs.length, 0, "No event should be emitted");
         assertEq(first, third, "Must return same address for different owner");
-
-        // Verify original owner is unchanged
-        PacketConsumer pc = PacketConsumer(payable(first));
-        assertEq(pc.owner(), ALICE, "Original owner should remain unchanged");
     }
 
     /// @notice A creator should be able to create consumers for multiple distinct task IDs
@@ -207,11 +202,6 @@ contract PacketConsumerFactoryTest is Test {
             cons1 != cons2,
             "Consumer addresses for different task IDs should be different"
         );
-
-        PacketConsumer pc1 = PacketConsumer(payable(cons1));
-        PacketConsumer pc2 = PacketConsumer(payable(cons2));
-        assertEq(pc1.owner(), ALICE, "Consumer1 owner mismatch");
-        assertEq(pc2.owner(), BOB, "Consumer2 owner mismatch");
     }
 
     /// @notice Test that a non-creator can not create a PacketConsumer

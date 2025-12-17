@@ -39,7 +39,7 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
         );
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(this);
-        tunnelRouter.setWhitelist(whitelist, true);
+        tunnelRouter.grantRelayer(whitelist);
 
         // set tunnel router to vault.
         vault.setTunnelRouter(address(tunnelRouter));

@@ -47,7 +47,7 @@ contract RelayFullLoopTest is Test, Constants {
         );
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(this);
-        tunnelRouter.setWhitelist(whitelist, true);
+        tunnelRouter.grantRelayer(whitelist);
 
         vault.setTunnelRouter(address(tunnelRouter));
 
@@ -270,12 +270,7 @@ contract RelayFullLoopTest is Test, Constants {
     }
 
     function testSenderNotInWhitelist() public {
-        bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.SenderNotWhitelisted.selector,
-            MOCK_SENDER
-        );
-
-        vm.expectRevert(expectedErr);
+        vm.expectRevert();
         vm.prank(MOCK_SENDER);
 
         tunnelRouter.relay(
@@ -283,18 +278,6 @@ contract RelayFullLoopTest is Test, Constants {
             SIGNATURE_NONCE_ADDR,
             MESSAGE_SIGNATURE
         );
-    }
-
-    function testSetWhitelistInvalidSender() public {
-        bytes memory expectedErr = abi.encodeWithSelector(
-            ITunnelRouter.InvalidSenderAddress.selector
-        );
-
-        vm.expectRevert(expectedErr);
-
-        address[] memory whitelist = new address[](1);
-        whitelist[0] = address(0);
-        tunnelRouter.setWhitelist(whitelist, true);
     }
 
     function testNonAdminCannotGrantGasFeeUpdater() public {

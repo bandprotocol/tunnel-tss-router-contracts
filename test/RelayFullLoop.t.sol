@@ -269,7 +269,7 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer.activate(tunnelId, 1);
     }
 
-    function testSenderNotInWhitelist() public {
+    function testSenderNotRelayerRole() public {
         vm.expectRevert();
         vm.prank(MOCK_SENDER);
 

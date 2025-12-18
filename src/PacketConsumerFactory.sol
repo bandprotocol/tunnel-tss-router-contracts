@@ -87,12 +87,12 @@ contract PacketConsumerFactory is AccessControl {
         consumer = address(newConsumer);
         taskIdToConsumer[taskId] = consumer;
         
-        grantRole(newConsumer.TUNNEL_ACTIVATOR_ROLE(), owner);
-        revokeRole(newConsumer.TUNNEL_ACTIVATOR_ROLE(), address(this));
-        
-        grantRole(DEFAULT_ADMIN_ROLE, owner);
-        revokeRole(DEFAULT_ADMIN_ROLE, address(this));
-
         emit PacketConsumerCreated(taskId, tunnelRouter, owner, msg.sender);
+
+        newConsumer.grantRole(newConsumer.TUNNEL_ACTIVATOR_ROLE(), owner);
+        newConsumer.revokeRole(newConsumer.TUNNEL_ACTIVATOR_ROLE(), address(this));
+        
+        newConsumer.grantRole(DEFAULT_ADMIN_ROLE, owner);
+        newConsumer.revokeRole(DEFAULT_ADMIN_ROLE, address(this));
     }
 }

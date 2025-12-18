@@ -21,6 +21,7 @@ contract PacketConsumerFactoryTest is Test {
 
     // Duplicates PacketConsumerFactory's CREATOR_ROLE for test convenience.
     bytes32 internal constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
+    bytes32 internal constant TUNNEL_ACTIVATOR_ROLE = keccak256("TUNNEL_ACTIVATOR_ROLE");
 
     // Duplicates AccessControl's DEFAULT_ADMIN_ROLE for test convenience.
     bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
@@ -132,6 +133,11 @@ contract PacketConsumerFactoryTest is Test {
             ALICE,
             CREATOR
         );
+        emit IAccessControl.RoleGranted(TUNNEL_ACTIVATOR_ROLE, ALICE, address(factory));
+        emit IAccessControl.RoleRevoked(TUNNEL_ACTIVATOR_ROLE, address(factory), address(factory));
+        emit IAccessControl.RoleGranted(DEFAULT_ADMIN_ROLE, ALICE, address(factory));
+        emit IAccessControl.RoleRevoked(DEFAULT_ADMIN_ROLE, address(factory), address(factory));
+        
         vm.prank(CREATOR);
         address cons = factory.createPacketConsumer(ALICE, ROUTER, TASK_ID_1);
         assertTrue(cons != address(0), "Consumer address should be non-zero");

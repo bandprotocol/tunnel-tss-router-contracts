@@ -29,7 +29,6 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            address(this),
             75000,
             14000,
             100000,
@@ -46,8 +45,7 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
 
         // deploy packet consumer.
         packetConsumer = new MockPacketConsumer(
-            address(tunnelRouter),
-            address(this)
+            address(tunnelRouter)
         );
 
         // activate tunnelId 1 and 2.

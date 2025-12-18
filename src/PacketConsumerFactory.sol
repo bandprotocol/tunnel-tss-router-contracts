@@ -83,9 +83,15 @@ contract PacketConsumerFactory is AccessControl {
         }
 
         // Deploy & register new consumer
-        PacketConsumer newConsumer = new PacketConsumer(tunnelRouter, owner);
+        PacketConsumer newConsumer = new PacketConsumer(tunnelRouter);
         consumer = address(newConsumer);
         taskIdToConsumer[taskId] = consumer;
+        
+        grantRole(newConsumer.TUNNEL_ACTIVATOR_ROLE(), owner);
+        revokeRole(newConsumer.TUNNEL_ACTIVATOR_ROLE(), address(this));
+        
+        grantRole(DEFAULT_ADMIN_ROLE, owner);
+        revokeRole(DEFAULT_ADMIN_ROLE, address(this));
 
         emit PacketConsumerCreated(taskId, tunnelRouter, owner, msg.sender);
     }

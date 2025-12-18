@@ -46,7 +46,6 @@ abstract contract BaseTunnelRouter is
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        address initialOwner,
         uint256 packedAdditionalGasFuncCoeffs,
         uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
@@ -55,8 +54,8 @@ abstract contract BaseTunnelRouter is
     ) internal onlyInitializing {
         __Pausable_init();
         __AccessControl_init();
-        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
-        _grantRole(GAS_FEE_UPDATER_ROLE, initialOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(GAS_FEE_UPDATER_ROLE, msg.sender);
         __L1RouterGasCalculator_init(
             packedAdditionalGasFuncCoeffs,
             maxCalldataBytes_

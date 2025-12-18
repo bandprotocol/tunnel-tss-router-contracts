@@ -123,7 +123,6 @@ contract Executor is Script {
                 (
                     tssVerifier,
                     IVault(proxyVaultAddr),
-                    msg.sender,
                     17369806436495577561272982365083344973315337688717046180703435,
                     4000,
                     300000,

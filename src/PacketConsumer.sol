@@ -28,13 +28,12 @@ contract PacketConsumer is IPacketConsumer, AccessControl {
     }
 
     constructor(
-        address tunnelRouter_,
-        address initialOwner
+        address tunnelRouter_
     ) {
         tunnelRouter = tunnelRouter_;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
-        _grantRole(TUNNEL_ACTIVATOR_ROLE, initialOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(TUNNEL_ACTIVATOR_ROLE, msg.sender);
     }
 
     /**

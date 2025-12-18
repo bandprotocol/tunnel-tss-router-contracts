@@ -15,7 +15,6 @@ contract TunnelRouterTest is Test {
         router.initialize(
             new MockTssVerifier(),
             new Vault(),
-            address(this),
             75000 * 1e18,
             14000,
             175000,

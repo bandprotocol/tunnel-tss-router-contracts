@@ -37,7 +37,6 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            address(this),
             75000 * 1e18,
             14000,
             175000,

@@ -107,7 +107,6 @@ contract RelayGasMeasurementTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            address(this),
             0,
             14000,
             // relaying 200 signals simultaneously will consume a significant amount of gas

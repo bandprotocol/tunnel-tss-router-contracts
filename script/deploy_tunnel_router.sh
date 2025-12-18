@@ -60,7 +60,7 @@ TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deploye
 # Set up contracts
 # ================================================
 
-echo "========== Setting whitelist in TunnelRouter =========="
+echo "========== Granting Relayer role in TunnelRouter =========="
 cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 

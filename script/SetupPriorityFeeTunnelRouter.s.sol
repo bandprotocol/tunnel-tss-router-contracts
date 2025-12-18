@@ -77,7 +77,7 @@ contract Executor is Script {
             transitionOriginatorHash != bytes32(0),
             "TRANSITION_ORIGINATOR_HASH is not set"
         );
-        require(tssParity != 0, "TSS_PARIY is not set");
+        require(tssParity != 0, "TSS_PARITY is not set");
         require(tssPublicKey != 0, "TSS_PUBLIC_KEY is not set");
         
         vm.startBroadcast();

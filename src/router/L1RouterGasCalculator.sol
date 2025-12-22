@@ -94,12 +94,7 @@ abstract contract L1RouterGasCalculator is
         emit PackedAdditionalGasFuncCoeffsSet(packedCoeffs);
     }
 
-    /// @notice Admin: set the maximum accepted calldata bytes.
-    function setMaxCalldataBytes(uint256 maxBytes) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setMaxCalldataBytes(maxBytes);
-    }
-
-    /// @dev Internal setter with event.
+    /// @dev Store a new max calldata bytes and emit.
     function _setMaxCalldataBytes(uint256 maxBytes) internal {
         maxCalldataBytes = maxBytes;
         emit MaxCalldataBytesSet(maxBytes);

@@ -80,6 +80,14 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
+     * @dev Sets the maxCallData being used in relaying message.
+     * @param maxBytes The new max calldata value.
+     */
+    function setMaxCalldataBytes(uint256 maxBytes) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setMaxCalldataBytes(maxBytes);
+    }
+
+    /**
      * @dev Sets the callback gas limit.
      *
      * @param callbackGasLimit_ the maximum gas limit can be used when calling the target contract.

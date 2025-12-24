@@ -32,10 +32,12 @@ forge clean && forge build --optimize true --optimizer-runs 200
 
 echo "========== Deploying PacketConsumer contract =========="
 MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
+sleep 2
 export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
 
 echo "========== Deploying PacketConsumerProxy contract =========="
 MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
+sleep 2
 PACKET_CONSUMER_PROXY=$( echo "$MSG" | grep "PacketConsumerProxy deployed at:" | awk '{print $4}' | xargs)
 
 echo "================================================"

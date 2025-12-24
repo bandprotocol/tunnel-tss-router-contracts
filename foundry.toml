@@ -6,7 +6,7 @@ ffi = true
 ast = true
 build_info = true
 extra_output = ["storageLayout"]
-evm_version = 'shanghai'
+evm_version = 'paris'
 solc_version = '0.8.28'
 block_gas_limit = 2000000000
 

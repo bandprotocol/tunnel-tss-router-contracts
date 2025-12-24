@@ -41,24 +41,49 @@ export TSS_PUBLIC_KEY=0x$(echo $TSS_PUBLIC_KEY_HEX | cut -c 3-)
 # Deploy contracts
 # ================================================
 
-echo "========== Cleaning and Building contracts =========="
+echo "========== Running deployment script to deploy Vault =========="
 forge clean && forge build --optimize true --optimizer-runs 200
+MSG=$(forge script script/VaultScript.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200)
+sleep 2
+export VAULT_IMPL=$( echo "$MSG" | grep "Vault Implementation deployed at:" | awk '{print $5}' | xargs)
 
-echo "========== Running deployment script to deploy contracts =========="
-MSG=$(forge script script/SetupPriorityFeeTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast  --optimize true --optimizer-runs 200)
-
-echo "Parsing deployed contract addresses ..."
-VAULT=$( echo "$MSG" | grep "Vault Proxy" | awk '{print $5}' | xargs)
-VAULT_IMPL=$( echo "$MSG" | grep "Vault Implementation deployed at:" | awk '{print $5}' | xargs)
+echo "========== Running deployment script to deploy Vault Proxy =========="
+forge clean && forge build --optimize true --optimizer-runs 200
+MSG=$(forge script script/VaultProxyScript.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200)
+sleep 2
+export VAULT=$( echo "$MSG" | grep "Vault Proxy" | awk '{print $5}' | xargs)
 VAULT_ADMIN=$( echo "$MSG" | grep "Vault Admin deployed at:" | awk '{print $5}' | xargs)
-TSS_VERIFIER=$( echo "$MSG" | grep "TssVerifier deployed at: " | awk '{print $4}' | xargs)
+
+echo "========== Running deployment script to deploy Tss Verifier =========="
+forge clean && forge build --optimize true --optimizer-runs 200
+MSG=$(forge script script/TssVerifierScript.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200)
+sleep 2
+export TSS_VERIFIER=$( echo "$MSG" | grep "TssVerifier deployed at: " | awk '{print $4}' | xargs)
+
+echo "========== Running deployment script to deploy Tunnel Router =========="
+forge clean && forge build --optimize true --optimizer-runs 200
+MSG=$(forge script script/TunnelRouterScript.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200)
+sleep 2
+export TUNNEL_ROUTER_IMPL=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Implementation deployed at:" | awk '{print $5}' | xargs)
+
+echo "========== Running deployment script to deploy Tunnel Router Proxy =========="
+forge clean && forge build --optimize true --optimizer-runs 200
+MSG=$(forge script script/TunnelRouterProxyScript.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200)
+sleep 2
 TUNNEL_ROUTER=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Proxy deployed at:" | awk '{print $5}' | xargs)
-TUNNEL_ROUTER_IMPL=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Implementation deployed at:" | awk '{print $5}' | xargs)
 TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deployed at:" | awk '{print $5}' | xargs)
 
 # ================================================
 # Set up contracts
 # ================================================
+
+echo "========== Add Pub Key by Owner in TssVerifier =========="
+cast send $TSS_VERIFIER "addPubKeyByOwner(uint64, uint8, uint256)" 0 $TSS_PARITY $TSS_PUBLIC_KEY --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+sleep 2
+
+echo "========== Set Tunnel Router in Vault =========="
+cast send $VAULT "setTunnelRouter(address)" $TUNNEL_ROUTER --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+sleep 2
 
 echo "========== Granting Relayer role in TunnelRouter =========="
 cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL

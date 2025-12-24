@@ -87,7 +87,7 @@ Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a de
 | Variable            | Description                                                                | Example                                      |
 |---------------------|----------------------------------------------------------------------------|----------------------------------------------|
 | `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                       | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`   | Chain ID of the target EVM network                                         | `11155111`                                   |
+| `TARGET_CHAIN_ID`   | chain name id on Band                                                      | `chainname-mainnet`                          |
 | `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple               | `0xabc123...,0xdef456...`                    |
 | `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                      | `0.1ether`                                   |
 | `PRIORITY_FEE`      | Default tip for priority-fee-based networks                                | `1wei`                                       |
@@ -128,7 +128,7 @@ Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 | Variable                    | Description                                                                | Example                                      |
 |-----------------------------|----------------------------------------------------------------------------|----------------------------------------------|
 | `RPC_URL`                   | RPC endpoint of the target Ethereum-compatible chain                       | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`           | Target chain ID (should match the target EVM network)                      | `11155111`                                   |
+| `TARGET_CHAIN_ID`           | chain name id on Band                                                      | `chainname-mainnet`                        |
 | `TUNNEL_ROUTER`             | Deployed TunnelRouter contract address                                     | `0x1234abcd....`                             |
 | `VAULT_BALANCE`             | ETH or coin value to fund the consumer's vault (for fees)                  | `0.05ether`                                  |
 | `BANDCHAIN_RPC_URL`         | RPC endpoint for BandChain node                                            | `https://rpc.laozi3.bandchain.org/`          |

@@ -65,9 +65,8 @@ contract Executor is Script {
                 (
                     tssVerifier,
                     IVault(proxyVaultAddr),
-                    msg.sender,
-                    100000,
-                    14000,
+                    17369806436495577561272982365083344973322337688717046180703435,
+                    4000,
                     300000,
                     gasPrice,
                     keccak256(bytes(sourceChainId)),

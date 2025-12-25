@@ -51,7 +51,7 @@ interface IPacketConsumer {
      * tunnelRouter contract if the current deposit in the vault contract exceeds a threshold.
      * The transaction is reverted if the threshold is not met.
      *
-     * This function should be called by the contract owner.
+     * This function should be called by the contract activator.
      *
      * @param tunnelId The tunnel ID that the sender contract is activating.
      * @param latestSeq The new sequence of the tunnel.
@@ -61,7 +61,7 @@ interface IPacketConsumer {
     /**
      * @dev Deactivates the tunnel on tunnelRouter contract.
      *
-     * This function should be called by the contract owner.
+     * This function should be called by the contract activator.
      *
      * @param tunnelId The tunnel ID that the sender contract is deactivating.
      */
@@ -80,7 +80,7 @@ interface IPacketConsumer {
     /**
      * @dev Withdraws the native tokens from the vault contract with specific amount.
      *
-     * This function should be called by the contract owner.
+     * This function should be called by the contract admin.
      *
      * @param tunnelId The tunnel ID that the sender contract is withdrawing.
      * @param amount The amount of tokens to be withdrawn.
@@ -90,7 +90,7 @@ interface IPacketConsumer {
     /**
      * @dev Withdraws all native tokens from the vault contract.
      *
-     * This function should be called by the contract owner.
+     * This function should be called by the contract admin.
      *
      * @param tunnelId The tunnel ID that the sender contract is withdrawing.
      */

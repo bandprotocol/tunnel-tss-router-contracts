@@ -17,7 +17,6 @@ contract PriorityFeeTunnelRouter is BaseTunnelRouter {
     function initialize(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        address initialOwner,
         uint256 packedAdditionalGasFuncCoeffs,
         uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
@@ -28,7 +27,6 @@ contract PriorityFeeTunnelRouter is BaseTunnelRouter {
         __BaseRouter_init(
             tssVerifier_,
             vault_,
-            initialOwner,
             packedAdditionalGasFuncCoeffs,
             maxCalldataBytes_,
             callbackGasLimit_,

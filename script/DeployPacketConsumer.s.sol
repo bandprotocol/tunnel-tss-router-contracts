@@ -13,10 +13,7 @@ contract Executor is Script {
 
         vm.startBroadcast();
 
-        PacketConsumer packetConsumer = new PacketConsumer(
-            tunnelRouterAddr,
-            msg.sender
-        );
+        PacketConsumer packetConsumer = new PacketConsumer(tunnelRouterAddr);
 
         vm.stopBroadcast();
 

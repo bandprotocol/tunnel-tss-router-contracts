@@ -76,7 +76,7 @@ bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
 sleep 5
 
 echo "========== Granting Tunnel Activator role to operator =========="
-cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --gas-limit 300000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 # ================================================
@@ -84,7 +84,7 @@ sleep 2
 # ================================================
 
 echo "========== Activating tunnel $TUNNEL_ID on target chain via PacketConsumer =========="
-cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --gas-limit 300000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 
 echo "================================================"
 echo "Summary"

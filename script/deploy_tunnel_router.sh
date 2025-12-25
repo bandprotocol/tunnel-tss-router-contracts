@@ -78,25 +78,25 @@ TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deploye
 # ================================================
 
 echo "========== Add Pub Key by Owner in TssVerifier =========="
-cast send $TSS_VERIFIER "addPubKeyByOwner(uint64, uint8, uint256)" 0 $TSS_PARITY $TSS_PUBLIC_KEY --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $TSS_VERIFIER "addPubKeyByOwner(uint64, uint8, uint256)" 0 $TSS_PARITY $TSS_PUBLIC_KEY --gas-limit 300000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 echo "========== Set Tunnel Router in Vault =========="
-cast send $VAULT "setTunnelRouter(address)" $TUNNEL_ROUTER --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $VAULT "setTunnelRouter(address)" $TUNNEL_ROUTER --gas-limit 300000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 echo "========== Granting Relayer role in TunnelRouter =========="
-cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --gas-limit 500000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 echo "========== Granting GasFeeUpdater role to operator =========="
-cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --gas-limit 300000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
 sleep 2
 
 echo "========== Sending initial balance to relayer(s) =========="
 for addr in $(echo $RELAYER_ADDR | tr ',' ' '); do
     echo "Sending balance to relayer $addr"
-    cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+    cast send $addr --value $RELAYER_BALANCE --gas-limit 300000 --private-key $PRIVATE_KEY --rpc-url $RPC_URL
     sleep 1
 done
 

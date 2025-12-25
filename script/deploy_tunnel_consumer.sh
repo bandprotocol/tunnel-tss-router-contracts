@@ -51,7 +51,7 @@ echo "================================================"
 
 echo "========== Creating tunnel on BandChain =========="
 bandd tx tunnel create-tunnel tss \
-    $TARGET_CHAIN_ID $PACKET_CONSUMER 1 500000000uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
+    $TARGET_CHAIN_ID $PACKET_CONSUMER 1 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
     --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
     -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
 
@@ -80,17 +80,6 @@ cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADD
 sleep 2
 
 # ================================================
-# Activate tunnel on band chain
-# ================================================
-
-echo "========== Activating tunnel $TUNNEL_ID on BandChain =========="
-bandd tx tunnel activate-tunnel $TUNNEL_ID \
-    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND \
-    --gas-prices 0.0025uband \
-    -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
-sleep 5
-
-# ================================================
 # Activate tunnel on target chain
 # ================================================
 
@@ -99,7 +88,8 @@ cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT
 
 echo "================================================"
 echo "Summary"
-echo "Consumer contract: $PACKET_CONSUMER"
-echo "Consumer Proxy contract: $PACKET_CONSUMER_PROXY"
+echo "Packet consumer contract: $PACKET_CONSUMER"
+echo "Packet consumer Proxy contract: $PACKET_CONSUMER_PROXY"
 echo "Tunnel ID: $TUNNEL_ID"
+echo "Next step, deposit to the tunnel and activate it"
 echo "================================================"

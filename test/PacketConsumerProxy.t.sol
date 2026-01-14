@@ -10,7 +10,6 @@ import "../src/PacketConsumerProxy.sol";
 contract PacketConsumerProxyContract is Test {
     PacketConsumer packetConsumer;
     PacketConsumerProxy packetConsumerProxy;
-    address owner;
 
     function setUp() public {
         // deploy packet Consumer with specific address.

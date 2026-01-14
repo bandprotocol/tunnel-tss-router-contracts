@@ -107,7 +107,6 @@ contract RelayGasMeasurementTest is Test, Constants {
         tunnelRouter.initialize(
             tssVerifier,
             vault,
-            address(this),
             0,
             14000,
             // relaying 200 signals simultaneously will consume a significant amount of gas
@@ -119,7 +118,7 @@ contract RelayGasMeasurementTest is Test, Constants {
 
         address[] memory whitelist = new address[](1);
         whitelist[0] = relayer;
-        tunnelRouter.setWhitelist(whitelist, true);
+        tunnelRouter.grantRelayer(whitelist);
 
         vault.setTunnelRouter(address(tunnelRouter));
 

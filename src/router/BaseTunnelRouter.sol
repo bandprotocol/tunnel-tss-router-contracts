@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.23;
 
-import "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -20,7 +19,6 @@ import "./L1RouterGasCalculator.sol";
 
 abstract contract BaseTunnelRouter is
     PausableUpgradeable,
-    AccessControlUpgradeable,
     ITunnelRouter,
     ErrorHandler,
     L1RouterGasCalculator
@@ -38,43 +36,32 @@ abstract contract BaseTunnelRouter is
     bytes32 public targetChainIdHash;
     // Role identifier for accounts allowed to update gas fee.
     bytes32 public constant GAS_FEE_UPDATER_ROLE = keccak256("GAS_FEE_UPDATER_ROLE");
+    // Role identifier for accounts allowed to relay packets
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
-    // A list of senders allowed to relay packets.
-    mapping(address => bool) public isAllowed; // sender address => isAllowed
-
     uint256[49] __gap;
-
-    modifier onlyWhitelisted() {
-        if (!isAllowed[msg.sender]) {
-            revert SenderNotWhitelisted(msg.sender);
-        }
-        _;
-    }
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,
         IVault vault_,
-        address initialOwner,
         uint256 packedAdditionalGasFuncCoeffs,
         uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
         bytes32 sourceChainIdHash_,
         bytes32 targetChainIdHash_
     ) internal onlyInitializing {
-        __Ownable_init(initialOwner);
-        __Ownable2Step_init();
         __Pausable_init();
         __AccessControl_init();
-        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
-        _grantRole(GAS_FEE_UPDATER_ROLE, initialOwner);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(GAS_FEE_UPDATER_ROLE, msg.sender);
         __L1RouterGasCalculator_init(
             packedAdditionalGasFuncCoeffs,
             maxCalldataBytes_
         ); // UPDATED
 
-        tssVerifier = tssVerifier_;
+        _setTssVerifier(tssVerifier_);
         vault = vault_;
         sourceChainIdHash = sourceChainIdHash_;
         targetChainIdHash = targetChainIdHash_;
@@ -88,8 +75,16 @@ abstract contract BaseTunnelRouter is
      */
     function setPackedAdditionalGasFuncCoeffs(
         uint256 packedCoeffs
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setPackedAdditionalGasFuncCoeffs(packedCoeffs);
+    }
+
+    /**
+     * @dev Sets the maxCallData being used in relaying message.
+     * @param maxBytes The new max calldata value.
+     */
+    function setMaxCalldataBytes(uint256 maxBytes) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setMaxCalldataBytes(maxBytes);
     }
 
     /**
@@ -97,21 +92,30 @@ abstract contract BaseTunnelRouter is
      *
      * @param callbackGasLimit_ the maximum gas limit can be used when calling the target contract.
      */
-    function setCallbackGasLimit(uint256 callbackGasLimit_) external onlyOwner {
+    function setCallbackGasLimit(uint256 callbackGasLimit_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setCallbackGasLimit(callbackGasLimit_);
+    }
+
+    /**
+     * @dev Sets the tssVerifier.
+     *
+     * @param tssVerifier_ the address of TssVerifier contract.
+     */
+    function setTssVerifier(ITssVerifier tssVerifier_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setTssVerifier(tssVerifier_);
     }
 
     /**
      * @dev Pauses the contract.
      */
-    function pause() external onlyOwner {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
     /**
      * @dev Unpauses the contract.
      */
-    function unpause() external onlyOwner {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -122,7 +126,7 @@ abstract contract BaseTunnelRouter is
         bytes calldata message,
         address randomAddr,
         uint256 signature
-    ) external whenNotPaused onlyWhitelisted {
+    ) external whenNotPaused onlyRole(RELAYER_ROLE) {
         PacketDecoder.TssMessage memory tssMessage = message.decodeTssMessage();
         PacketDecoder.Packet memory packet = tssMessage.packet;
         bytes32 originatorHash_ = tssMessage.originatorHash;
@@ -277,28 +281,12 @@ abstract contract BaseTunnelRouter is
     }
 
     /**
-     * @dev Sets senders' address by given flag.
-     */
-    function setWhitelist(
-        address[] memory senders,
-        bool flag
-    ) external onlyOwner {
-        for (uint256 i = 0; i < senders.length; i++) {
-            if (senders[i] == address(0)) {
-                revert InvalidSenderAddress();
-            }
-            isAllowed[senders[i]] = flag;
-            emit SetWhitelist(senders[i], flag);
-        }
-    }
-
-    /**
      * @dev Register/Add a new custom error for the consumer.
      */
     function registerError(
         address target,
         string calldata fsigStr
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _registerError(target, fsigStr);
     }
 
@@ -308,7 +296,7 @@ abstract contract BaseTunnelRouter is
     function unregisterError(
         address target,
         string calldata fsigStr
-    ) external onlyOwner {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unregisterError(target, fsigStr);
     }
 
@@ -360,6 +348,12 @@ abstract contract BaseTunnelRouter is
         emit CallbackGasLimitSet(callbackGasLimit_);
     }
 
+    /// @dev Sets tssVerifier and emit an event.
+    function _setTssVerifier(ITssVerifier tssVerifier_) internal {
+        tssVerifier = tssVerifier_;
+        emit TssVerifierSet(tssVerifier_);
+    }
+
     /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`
     function grantGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
@@ -371,6 +365,20 @@ abstract contract BaseTunnelRouter is
     function revokeGasFeeUpdater(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint256 i = 0; i < accounts.length; i++) {
             _revokeRole(GAS_FEE_UPDATER_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Grants `RELAYER_ROLE` to `accounts`
+    function grantRelayer(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _grantRole(RELAYER_ROLE, accounts[i]);
+        }
+    }
+
+    /// @dev Revokes `RELAYER_ROLE` from  `accounts`
+    function revokeRelayer(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _revokeRole(RELAYER_ROLE, accounts[i]);
         }
     }
 }

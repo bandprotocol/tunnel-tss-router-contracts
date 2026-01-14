@@ -3,6 +3,7 @@
 pragma solidity ^0.8.23;
 
 import "./IVault.sol";
+import "../interfaces/ITssVerifier.sol";
 
 interface ITunnelRouter {
     // ========================================
@@ -35,6 +36,13 @@ interface ITunnelRouter {
     event CallbackGasLimitSet(uint256 callbackGasLimit);
 
     /**
+     * @notice Emitted when the tssVerifier is set.
+     *
+     * @param tssVerifier The address of TssVerifier contract.
+     */
+    event TssVerifierSet(ITssVerifier tssVerifier);
+
+    /**
      * @notice Emitted after the message is relayed to the target contract
      * to indicate the result of the process.
      *
@@ -63,15 +71,6 @@ interface ITunnelRouter {
      * @param latestSequence The latest sequence of the tunnel.
      */
     event Deactivated(bytes32 indexed originatorHash, uint64 latestSequence);
-
-    /**
-     * @notice Emitted when a sender's address is added to or removed from the whitelist.
-     *
-     * @param sender The address of the sender whose whitelist status is being updated.
-     * @param flag A boolean value indicating the whitelist status of the address:
-     * `true` if the address is added to the whitelist, `false` if removed.
-     */
-    event SetWhitelist(address indexed sender, bool flag);
 
     // ========================================
     // Custom Errors
@@ -121,11 +120,6 @@ interface ITunnelRouter {
      * @notice Reverts if the sender is not whitelisted.
      */
     error SenderNotWhitelisted(address addr);
-
-    /**
-     * @notice Reverts if the sender is address(0).
-     */
-    error InvalidSenderAddress();
 
     // ========================================
     // Functions

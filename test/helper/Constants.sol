@@ -18,6 +18,8 @@ contract Constants is Test, TssSignerHelper {
     address immutable MOCK_SENDER;
     address immutable MOCK_VALID_GAS_FEE_UPDATER_ROLE;
     address immutable MOCK_INVALID_GAS_FEE_UPDATER_ROLE;
+    address immutable MOCK_VALID_TUNNEL_ACTIVATOR_ROLE;
+    address immutable MOCK_INVALID_TUNNEL_ACTIVATOR_ROLE;
     address immutable SIGNATURE_NONCE_ADDR;
     uint256 immutable MESSAGE_SIGNATURE;
 
@@ -69,6 +71,8 @@ contract Constants is Test, TssSignerHelper {
 
         MOCK_VALID_GAS_FEE_UPDATER_ROLE = vm.addr(PRIVATE_KEY_2);
         MOCK_INVALID_GAS_FEE_UPDATER_ROLE = vm.addr(PRIVATE_KEY_3);
+        MOCK_VALID_TUNNEL_ACTIVATOR_ROLE = vm.addr(PRIVATE_KEY_2);
+        MOCK_INVALID_TUNNEL_ACTIVATOR_ROLE = vm.addr(PRIVATE_KEY_3);
     }
 
     function DECODED_TSS_MESSAGE()

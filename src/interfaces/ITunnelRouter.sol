@@ -43,6 +43,13 @@ interface ITunnelRouter {
     event TssVerifierSet(ITssVerifier tssVerifier);
 
     /**
+     * @notice Emitted when the refundable is set.
+     *
+     * @param refundable The boolean indicating whether the router is refundable.
+     */
+    event RefundableSet(bool refundable);
+
+    /**
      * @notice Emitted after the message is relayed to the target contract
      * to indicate the result of the process.
      *

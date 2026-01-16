@@ -5,6 +5,7 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 import "../src/libraries/PacketDecoder.sol";
 import "../src/interfaces/ITunnelRouter.sol";
+import "../src/interfaces/IPacketConsumer.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/router/L1RouterGasCalculator.sol";
 import "../src/PacketConsumer.sol";
@@ -42,7 +43,8 @@ contract RelayFullLoopTest is Test, Constants {
             175000,
             10,
             keccak256("bandchain"),
-            keccak256("testnet-evm")
+            keccak256("testnet-evm"),
+            true
         );
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(this);
@@ -410,6 +412,78 @@ contract RelayFullLoopTest is Test, Constants {
         vm.prank(MOCK_VALID_TUNNEL_ACTIVATOR_ROLE);
         vm.expectRevert();
         packetConsumer.activate{value: 0.01 ether}(tunnelId, 123);
+    }
+
+    // ============= REFUNDABLE TESTS ================
+
+    function testNoFeeRefundWhenRefundableIsFalse () public {
+        // Set refundable to false
+        tunnelRouter.setRefundable(false);
+        assertEq(tunnelRouter.refundable(), false);
+
+        uint256 gasPrice = 1;
+        vm.txGasPrice(gasPrice);
+
+        uint256 relayerBalanceBefore = address(this).balance;
+        uint256 vaultBalanceBefore = vault.getBalanceByOriginatorHash(originatorHash);
+
+        // Relay a message
+        vm.expectEmit();
+        emit ITunnelRouter.MessageProcessed(originatorHash, 1, true);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
+
+        // Check that no fees were collected (relayer balance unchanged)
+        uint256 relayerBalanceAfter = address(this).balance;
+        uint256 vaultBalanceAfter = vault.getBalanceByOriginatorHash(originatorHash);
+        
+        assertLe(relayerBalanceAfter, relayerBalanceBefore);
+        assertEq(vaultBalanceAfter, vaultBalanceBefore);
+
+        // Tunnel should still be active
+        assertEq(tunnelRouter.isActive(originatorHash), true);
+    }
+
+    function testRefundableFalseTunnelStaysActiveWithLowBalance() public {
+        // Set refundable to false
+        tunnelRouter.setRefundable(false);
+        
+        // Get the minimum balance threshold
+        uint256 threshold = tunnelRouter.minimumBalanceThreshold();
+        
+        // Deactivate and reactivate with balance just above threshold
+        packetConsumer.deactivate(tunnelId);
+        packetConsumer.activate{value: threshold + 1 wei}(tunnelId, 0);
+        
+        // Verify tunnel is active
+        assertEq(tunnelRouter.isActive(originatorHash), true);
+        
+        // Relay a message - should succeed without deactivating
+        vm.expectEmit();
+        emit ITunnelRouter.MessageProcessed(originatorHash, 1, true);
+        tunnelRouter.relay(
+            TSS_RAW_MESSAGE,
+            SIGNATURE_NONCE_ADDR,
+            MESSAGE_SIGNATURE
+        );
+        
+        // Tunnel should still be active even though balance might be below threshold
+        assertEq(tunnelRouter.isActive(originatorHash), true);
+    }
+
+    function testRefundableFalseActivationSucceedsWithLowBalance() public {
+        // Set refundable to false
+        tunnelRouter.setRefundable(false);
+        
+        // Deactivate the tunnel first
+        packetConsumer.deactivate(tunnelId);
+        
+        // Activate with balance below threshold - should succeed when refundable is false
+        packetConsumer.activate{value: 0 wei}(tunnelId, 0);
+        assertEq(tunnelRouter.isActive(originatorHash), true);
     }
 
     receive() external payable {}

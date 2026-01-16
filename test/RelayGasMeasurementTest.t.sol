@@ -113,7 +113,8 @@ contract RelayGasMeasurementTest is Test, Constants {
             10_000_000,
             1,
             sourceChainIdHash,
-            targetChainIdHash
+            targetChainIdHash,
+            true
         );
 
         address[] memory whitelist = new address[](1);

@@ -39,6 +39,8 @@ abstract contract BaseTunnelRouter is
     // Role identifier for accounts allowed to relay packets
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
+    bool public refundable;
+
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
     uint256[49] __gap;
@@ -50,7 +52,8 @@ abstract contract BaseTunnelRouter is
         uint256 maxCalldataBytes_,
         uint256 callbackGasLimit_,
         bytes32 sourceChainIdHash_,
-        bytes32 targetChainIdHash_
+        bytes32 targetChainIdHash_,
+        bool refundable_
     ) internal onlyInitializing {
         __Pausable_init();
         __AccessControl_init();
@@ -67,6 +70,8 @@ abstract contract BaseTunnelRouter is
         targetChainIdHash = targetChainIdHash_;
 
         _setCallbackGasLimit(callbackGasLimit_);
+
+        _setRefundable(refundable_);
     }
 
     /**
@@ -103,6 +108,15 @@ abstract contract BaseTunnelRouter is
      */
     function setTssVerifier(ITssVerifier tssVerifier_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setTssVerifier(tssVerifier_);
+    }
+
+    /**
+     * @dev Sets the refundable flag.
+     *
+     * @param refundable_ the boolean indicating whether the router is refundable.
+     */
+    function setRefundable(bool refundable_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setRefundable(refundable_);
     }
 
     /**
@@ -158,7 +172,6 @@ abstract contract BaseTunnelRouter is
         if (!isValid) {
             revert InvalidSignature();
         }
-
         // forward the message to the target contract.
         uint256 beginGasleft = gasleft();
         (bool isSuccess, ) = _callWithCustomErrorHandling(
@@ -170,19 +183,21 @@ abstract contract BaseTunnelRouter is
 
         emit MessageProcessed(originatorHash_, packet.sequence, isSuccess);
 
-        // charge a fee from the target contract and send to caller.
-        uint256 calldataSize;
-        assembly {
-            calldataSize := calldatasize()
-        }
-        uint256 fee = _routerFee(
-            targetGasUsed + _additionalGasForCalldata(calldataSize)
-        );
-        vault.collectFee(originatorHash_, msg.sender, fee);
+        if (refundable) {
+            // charge a fee from the target contract and send to caller.
+            uint256 calldataSize;
+            assembly {
+                calldataSize := calldatasize()
+            }
+            uint256 fee = _routerFee(
+                targetGasUsed + _additionalGasForCalldata(calldataSize)
+            );
+            vault.collectFee(originatorHash_, msg.sender, fee);
 
-        // deactivate the target contract if the remaining balance is under the threshold.
-        if (_isBalanceUnderThreshold(originatorHash_)) {
-            _deactivate(originatorHash_);
+            // deactivate the target contract if the remaining balance is under the threshold.
+            if (_isBalanceUnderThreshold(originatorHash_)) {
+                _deactivate(originatorHash_);
+            }
         }
     }
 
@@ -198,7 +213,7 @@ abstract contract BaseTunnelRouter is
         vault.deposit{value: msg.value}(tunnelId, msg.sender);
 
         // cannot activate if the remaining balance is under the threshold.
-        if (_isBalanceUnderThreshold(originatorHash_)) {
+        if (refundable && _isBalanceUnderThreshold(originatorHash_)) {
             revert InsufficientRemainingBalance(tunnelId, msg.sender);
         }
 
@@ -352,6 +367,12 @@ abstract contract BaseTunnelRouter is
     function _setTssVerifier(ITssVerifier tssVerifier_) internal {
         tssVerifier = tssVerifier_;
         emit TssVerifierSet(tssVerifier_);
+    }
+
+    /// @dev Sets refundable and emit an event.
+    function _setRefundable(bool refundable_) internal {
+        refundable = refundable_;
+        emit RefundableSet(refundable_);
     }
 
     /// @dev Grants `GAS_FEE_UPDATER_ROLE` to `accounts`

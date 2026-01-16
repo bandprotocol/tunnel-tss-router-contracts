@@ -22,6 +22,7 @@ contract Executor is Script {
         uint256 gasPrice = vm.envUint("GAS_PRICE");
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
+        bool refundable = vm.envOr("REFUNDABLE", true);
 
         require(transitionPeriod != 0, "TRANSITION_PERIOD is not set");
         require(
@@ -70,7 +71,8 @@ contract Executor is Script {
                     300000,
                     gasPrice,
                     keccak256(bytes(sourceChainId)),
-                    keccak256(bytes(targetChainId))
+                    keccak256(bytes(targetChainId)),
+                    refundable
                 )
             )
         );

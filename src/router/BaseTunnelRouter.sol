@@ -113,6 +113,10 @@ abstract contract BaseTunnelRouter is
     /**
      * @dev Sets the refundable flag.
      *
+     * @notice Before setting refundable to true, ensure that enough balance has been deposited
+     *         to the vault for each tunnel (originatorHash) so that their balance is at least
+     *         the minimumBalanceThreshold, or activation/relay may fail or tunnels may be deactivated.
+     *
      * @param refundable_ the boolean indicating whether the router is refundable.
      */
     function setRefundable(bool refundable_) external onlyRole(DEFAULT_ADMIN_ROLE) {

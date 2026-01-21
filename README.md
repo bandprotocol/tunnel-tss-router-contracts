@@ -94,7 +94,7 @@ Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a de
 | `TRANSITION_PERIOD` | Time in seconds for transition period                                        | `172800`                                     |
 | `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                               | `https://rpc.laozi3.bandchain.org/`          |
 | `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple   | `0x0fedcba9876543210fedcba9876543210fedcba9` |
-| `REFUNDABLE`        | Whether the Vault will refund fees back to the packet consumer or keeps them | `true` or `false`                            |
+| `REFUNDABLE`        | Whether the router collects fees from the Vault to refund to the packet consumer; when `false`, no fees are collected from the Vault and relayers are not compensated | `true` or `false`                            |
 
 _Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
 

@@ -113,7 +113,7 @@ abstract contract BaseTunnelRouter is
     /**
      * @dev Sets the refundable flag.
      *
-     * @notice Before setting refundable to true, ensure that enough balance has been deposited
+     * @notice Before changing the refundable flag from false to true, ensure that enough balance has been deposited
      *         to the vault for each tunnel (originatorHash) so that their balance is at least
      *         the minimumBalanceThreshold, or activation/relay may fail or tunnels may be deactivated.
      *

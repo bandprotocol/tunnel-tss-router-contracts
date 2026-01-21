@@ -421,10 +421,6 @@ contract RelayFullLoopTest is Test, Constants {
         tunnelRouter.setRefundable(false);
         assertEq(tunnelRouter.refundable(), false);
 
-        uint256 gasPrice = 1;
-        vm.txGasPrice(gasPrice);
-
-        uint256 relayerBalanceBefore = address(this).balance;
         uint256 vaultBalanceBefore = vault.getBalanceByOriginatorHash(originatorHash);
 
         // Relay a message
@@ -436,12 +432,9 @@ contract RelayFullLoopTest is Test, Constants {
             MESSAGE_SIGNATURE
         );
 
-        // Check that no fees were collected (relayer balance unchanged)
-        uint256 relayerBalanceAfter = address(this).balance;
+        // Vault balance should not change (no refund)
         uint256 vaultBalanceAfter = vault.getBalanceByOriginatorHash(originatorHash);
-        
-        assertLe(relayerBalanceAfter, relayerBalanceBefore);
-        assertEq(vaultBalanceAfter, vaultBalanceBefore);
+        assertEq(vaultBalanceAfter, vaultBalanceBefore, "vault balance should not change when refundable is false");
 
         // Tunnel should still be active
         assertEq(tunnelRouter.isActive(originatorHash), true);

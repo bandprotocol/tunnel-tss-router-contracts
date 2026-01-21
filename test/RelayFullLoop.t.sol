@@ -416,7 +416,7 @@ contract RelayFullLoopTest is Test, Constants {
 
     // ============= REFUNDABLE TESTS ================
 
-    function testNoFeeRefundWhenRefundableIsFalse () public {
+    function testNoFeeRefundWhenRefundableIsFalse() public {
         // Set refundable to false
         tunnelRouter.setRefundable(false);
         assertEq(tunnelRouter.refundable(), false);

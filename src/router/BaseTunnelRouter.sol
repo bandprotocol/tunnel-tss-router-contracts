@@ -43,7 +43,7 @@ abstract contract BaseTunnelRouter is
 
     mapping(bytes32 => TunnelDetail) public tunnelDetails; // originatorHash => TunnelDetail
 
-    uint256[49] __gap;
+    uint256[48] __gap;
 
     function __BaseRouter_init(
         ITssVerifier tssVerifier_,

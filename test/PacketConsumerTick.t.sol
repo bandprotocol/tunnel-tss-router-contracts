@@ -14,7 +14,6 @@ import "./helper/Constants.sol";
 
 contract PacketConsumerTickMockTunnelRouterTest is Test, Constants {
     PacketConsumerTick public packetConsumerTick;
-    uint64 constant tunnelId = 1;
 
     function setUp() public {
         // Deploy PacketConsumerTick with a mock tunnel router address (this contract)

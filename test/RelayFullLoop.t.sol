@@ -525,7 +525,7 @@ contract RelayFullLoopTest is Test, Constants {
         uint256 feeGain = address(this).balance - relayerBalance;
         assertGt(feeGain, 0);
 
-        uint256 gasUsedDuringProcessMsg = feeGain - tunnelRouter.additionalGasForCalldata(0);
+        uint256 gasUsedDuringProcessMsg = (feeGain / tx.gasprice) - tunnelRouter.additionalGasForCalldata(0);
 
         console.log("gas used during process message (tick): ", gasUsedDuringProcessMsg);
         console.log("gas used during others step (tick): ", gasUsed - gasUsedDuringProcessMsg);

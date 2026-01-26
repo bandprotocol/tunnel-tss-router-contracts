@@ -30,6 +30,9 @@ interface IPacketConsumer {
     // Custom error for signal Id input that is not available.
     error SignalIdNotAvailable(string signalId);
 
+    /// Custom error for invalid encoder type.
+    error InvalidEncoderType();
+
     // ========================================
     // Functions
     // ========================================

@@ -57,6 +57,22 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
     }
 
     /**
+     * @dev Converts a right-aligned bytes32 value back to string
+     */
+    function rightAlignedBytes32ToString(bytes32 b) public pure returns (string memory) {
+        // Find out real length
+        uint8 len = 32;
+        while (len > 0 && uint8(b[len-1]) == 0) {
+            len--;
+        }
+        bytes memory out = new bytes(len);
+        for (uint8 i = 0; i < len; i++) {
+            out[i] = b[32 - len + i];
+        }
+        return string(out);
+    }
+
+    /**
      * @dev See {IPacketConsumer-getPrice}.
      */
     function getPrice(string calldata _signalId) external view returns (Price memory) {
@@ -105,6 +121,8 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
         unchecked {
             PacketDecoder.Packet memory packet = data.packet;
 
+            if (data.encoderType != PacketDecoder.EncoderType.Tick) revert InvalidEncoderType();
+
             uint256 time = uint256(int256(packet.timestamp));
         
             uint256 id;
@@ -122,7 +140,7 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
             for (uint256 i = 0; i < signalsLength; ++i) {
                 id = symbolsToIDs[packet.signals[i].signal];
                 idMinusOne = id - 1;
-                require(id != 0, "relay: FAIL_SYMBOL_NOT_AVAILABLE");
+                if (id == 0) revert SignalIdNotAvailable(rightAlignedBytes32ToString(packet.signals[i].signal));
 
                 nextSID = idMinusOne / 6;
                 if (sid != nextSID) {
@@ -131,12 +149,16 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
                     sVal = refs[nextSID];
                     sid = nextSID;
                     sTime = _extractSlotTime(sVal);
-                    sTime = newTimeSlot > sTime ? newTimeSlot : sTime;
-                    sVal = _rebaseTime(sVal, sTime);
+                    if (newTimeSlot > sTime) {
+                        sTime = newTimeSlot;
+                        sVal = _rebaseTime(sVal, sTime);
+                    }
                 }
 
                 shiftLen = 204 - (37 * (idMinusOne % 6));
-                sVal = _setTicksAndTimeOffset(sVal, time - sTime, packet.signals[i].price, shiftLen - 19);
+                sVal = (sTime + _extractTimeOffset(sVal, shiftLen) < time) 
+                    ? _setTicksAndTimeOffset(sVal, time - sTime, packet.signals[i].price, shiftLen - 19) 
+                    : sVal;
             }
 
             if (sVal != 0) refs[sid] = sVal;
@@ -285,7 +307,7 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
     function getSlotAndIndex(bytes32 symbol) public view returns (uint256 slot, uint8 idx) {
         unchecked {
             uint256 id = symbolsToIDs[symbol];
-            require(id != 0, "getSlotAndIndex: FAIL_SYMBOL_NOT_AVAILABLE");
+            if (id == 0) revert SignalIdNotAvailable(rightAlignedBytes32ToString(symbol));
             return ((id - 1) / 6, uint8((id - 1) % 6));
         }
     }
@@ -294,14 +316,12 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
         unchecked {
             (uint256 slot, uint8 idx) = getSlotAndIndex(symbol);
             (tick, lastUpdated) = _getTickAndTime(slot, idx);
-            require(tick != 0, "getTickAndTime: FAIL_TICK_0_IS_AN_EMPTY_PRICE");
         }
     }
 
     function _getPriceFromTick(uint256 x) private pure returns (uint256 y) {
         unchecked {
-            require(x != 0, "_getPriceFromTick: FAIL_TICK_0_IS_AN_EMPTY_PRICE");
-            require(x < (1 << 19), "_getPriceFromTick: FAIL_TICK_OUT_OF_RANGE");
+            if (x == 0) return 0;
             y = 649037107316853453566312041152512;
             if (x < MID_TICK) {
                 x = MID_TICK - x;
@@ -354,7 +374,7 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
     }
 
     function listing(string[] calldata symbols) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(symbols.length != 0, "listing: FAIL_SYMBOLS_IS_EMPTY");
+        if (symbols.length == 0) return;
 
         uint256 _totalSymbolsCount = totalSymbolsCount;
         uint256 sid = _totalSymbolsCount / 6;

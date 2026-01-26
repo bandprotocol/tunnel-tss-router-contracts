@@ -18,8 +18,6 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
     mapping(bytes32 => uint256) public symbolsToIDs;
     mapping(uint256 => bytes32) public idsToSymbols;
 
-    bytes32 public constant LISTER_ROLE = keccak256("LISTER_ROLE");
-    bytes32 public constant DELISTER_ROLE = keccak256("DELISTER_ROLE");
     uint256 public constant MID_TICK = 262144;
 
     // Role identifier for accounts allowed to activate/deactivate tunnel.
@@ -41,8 +39,6 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(TUNNEL_ACTIVATOR_ROLE, msg.sender);
-        _grantRole(LISTER_ROLE, msg.sender);
-        _grantRole(DELISTER_ROLE, msg.sender);
     }
 
     /**
@@ -118,27 +114,29 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
             uint256 sVal;
             uint256 shiftLen;
 
-            for (uint256 i = 0; i < packet.signals.length; i++) {
+            uint256 newTimeSlot = time - (1 << 18) + 1;
+            uint256 idMinusOne;
+
+            uint256 signalsLength = packet.signals.length;
+
+            for (uint256 i = 0; i < signalsLength; ++i) {
                 id = symbolsToIDs[packet.signals[i].signal];
+                idMinusOne = id - 1;
                 require(id != 0, "relay: FAIL_SYMBOL_NOT_AVAILABLE");
 
-                nextSID = (id - 1) / 6;
+                nextSID = idMinusOne / 6;
                 if (sid != nextSID) {
                     if (sVal != 0) refs[sid] = sVal;
 
                     sVal = refs[nextSID];
                     sid = nextSID;
                     sTime = _extractSlotTime(sVal);
+                    sTime = newTimeSlot > sTime ? newTimeSlot : sTime;
+                    sVal = _rebaseTime(sVal, sTime);
                 }
 
-                shiftLen = 204 - (37 * ((id - 1) % 6));
-                if (sTime + _extractTimeOffset(sVal, shiftLen) < time) {
-                    if (time >= sTime + (1 << 18)) {
-                        sTime = time - (1 << 18) + 1;
-                        sVal = _rebaseTime(sVal, sTime);
-                    }
-                    sVal = _setTicksAndTimeOffset(sVal, time - sTime, packet.signals[i].price, shiftLen - 19);
-                }
+                shiftLen = 204 - (37 * (idMinusOne % 6));
+                sVal = _setTicksAndTimeOffset(sVal, time - sTime, packet.signals[i].price, shiftLen - 19);
             }
 
             if (sVal != 0) refs[sid] = sVal;
@@ -206,34 +204,6 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
         }
     }
 
-    /// @dev Grants `LISTER_ROLE` to `accounts`
-    function grantListerRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _grantRole(LISTER_ROLE, accounts[i]);
-        }
-    }
-
-    /// @dev Revokes `LISTER_ROLE` from `accounts`
-    function revokeListerRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _revokeRole(LISTER_ROLE, accounts[i]);
-        }
-    }
-
-    /// @dev Grants `DELISTER_ROLE` to `accounts`
-    function grantDelisterRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _grantRole(DELISTER_ROLE, accounts[i]);
-        }
-    }  
-
-    /// @dev Revokes `DELISTER_ROLE` from `accounts`
-    function revokeDelisterRole(address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _revokeRole(DELISTER_ROLE, accounts[i]);
-        }
-    }
-
     function _extractSlotTime(uint256 val) private pure returns (uint256 t) {
         unchecked {
             t = (val >> 225) & ((1 << 31) - 1);
@@ -295,12 +265,9 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
             for (uint256 i = 0; i < sSize; i++) {
                 shiftLen = 204 - (37 * i);
                 uint256 timeOffset = _extractTimeOffset(val, shiftLen);
-                if (sTime + timeOffset < time) {
-                    val = _setTicksAndTimeOffset(val, 0, 0, shiftLen - 19);
-                }
-                else {
-                    val = _setTimeOffset(val, sTime + timeOffset - time, shiftLen - 19);
-                }
+                val = (sTime + timeOffset < time) 
+                    ? _setTicksAndTimeOffset(val, 0, 0, shiftLen - 19) 
+                    : _setTimeOffset(val, sTime + timeOffset - time, shiftLen - 19);
             }
             newVal = _setTime(val, time);
         }
@@ -386,7 +353,7 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
         y = _getPriceFromTick(x);
     }
 
-    function listing(string[] calldata symbols) public onlyRole(LISTER_ROLE) {
+    function listing(string[] calldata symbols) public onlyRole(DEFAULT_ADMIN_ROLE) {
         require(symbols.length != 0, "listing: FAIL_SYMBOLS_IS_EMPTY");
 
         uint256 _totalSymbolsCount = totalSymbolsCount;
@@ -420,7 +387,7 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
         totalSymbolsCount = _totalSymbolsCount;
     }
 
-    function delisting(string[] calldata symbols) public onlyRole(DELISTER_ROLE) {
+    function delisting(string[] calldata symbols) public onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 _totalSymbolsCount = totalSymbolsCount;
         uint256 slotID1;
         uint256 slotID2;

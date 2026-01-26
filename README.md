@@ -84,16 +84,17 @@ This script deploys the full set of Tunnel Router components, including the Tunn
 
 Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a description of each variable you need to set, along with example values.
 
-| Variable            | Description                                                                | Example                                      |
-|---------------------|----------------------------------------------------------------------------|----------------------------------------------|
-| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                       | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`   | chain name id on Band                                                      | `chainname-mainnet`                          |
-| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple               | `0xabc123...,0xdef456...`                    |
-| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                      | `0.1ether`                                   |
-| `PRIORITY_FEE`      | Default tip for priority-fee-based networks                                | `1wei`                                       |
-| `TRANSITION_PERIOD` | Time in seconds for transition period                                      | `172800`                                     |
-| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                             | `https://rpc.laozi3.bandchain.org/`          |
-| `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| Variable            | Description                                                                  | Example                                      |
+|---------------------|------------------------------------------------------------------------------|----------------------------------------------|
+| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                         | `https://sepolia.infura.io/v3/XXXX`          |
+| `TARGET_CHAIN_ID`   | chain name id on Band                                                        | `chainname-mainnet`                          |
+| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple                 | `0xabc123...,0xdef456...`                    |
+| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                        | `0.1ether`                                   |
+| `PRIORITY_FEE`      | Default tip for priority-fee-based networks                                  | `1wei`                                       |
+| `TRANSITION_PERIOD` | Time in seconds for transition period                                        | `172800`                                     |
+| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                               | `https://rpc.laozi3.bandchain.org/`          |
+| `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple   | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| `REFUNDABLE`        | Whether the router collects fees from the Vault to refund to the packet consumer; when `false`, no fees are collected from the Vault and relayers are not compensated | `true` or `false`                            |
 
 _Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
 

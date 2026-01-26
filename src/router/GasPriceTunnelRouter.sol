@@ -23,7 +23,8 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
         uint256 callbackGasLimit_,
         uint256 gasPrice_,
         bytes32 sourceChainIdHash_,
-        bytes32 targetChainIdHash_
+        bytes32 targetChainIdHash_,
+        bool refundable_
     ) public initializer {
         __BaseRouter_init(
             tssVerifier_,
@@ -32,7 +33,8 @@ contract GasPriceTunnelRouter is BaseTunnelRouter {
             maxCalldataBytes_,
             callbackGasLimit_,
             sourceChainIdHash_,
-            targetChainIdHash_
+            targetChainIdHash_,
+            refundable_
         );
 
         _setGasFee(GasFeeInfo(gasPrice_));

@@ -34,7 +34,8 @@ contract PacketConsumerMultipleTunnelTest is Test, Constants {
             100000,
             1,
             keccak256("bandchain"),
-            keccak256("testnet-evm")
+            keccak256("testnet-evm"),
+            true
         );
         address[] memory whitelist = new address[](1);
         whitelist[0] = address(this);

@@ -35,7 +35,8 @@ contract VaultTest is Test, Constants {
             75000,
             1,
             keccak256("bandchain"),
-            keccak256("testnet-evm")
+            keccak256("testnet-evm"),
+            true
         );
 
         vault.setTunnelRouter(address(tunnelRouter));

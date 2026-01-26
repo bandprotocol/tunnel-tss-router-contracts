@@ -102,6 +102,7 @@ contract Executor is Script {
         uint256 priorityFee = vm.envUint("PRIORITY_FEE");
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
+        bool refundable = vm.envOr("REFUNDABLE", true);
 
         require(
             keccak256(bytes(sourceChainId)) != keccak256(""),
@@ -128,7 +129,8 @@ contract Executor is Script {
                     300000,
                     priorityFee,
                     keccak256(bytes(sourceChainId)),
-                    keccak256(bytes(targetChainId))
+                    keccak256(bytes(targetChainId)),
+                    refundable
                 )
             )
         );

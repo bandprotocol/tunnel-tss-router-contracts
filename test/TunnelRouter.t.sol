@@ -24,7 +24,8 @@ contract TunnelRouterTest is Test {
             175000,
             10,
             keccak256("bandchain"),
-            keccak256("testnet-evm")
+            keccak256("testnet-evm"),
+            true
         );
     }
 
@@ -46,5 +47,24 @@ contract TunnelRouterTest is Test {
         emit ITunnelRouter.TssVerifierSet(newVerifier);
         router.setTssVerifier(newVerifier);
         assertEq(address(router.tssVerifier()), address(newVerifier));
+    }
+
+    function testSetRefundable() public {
+        address testSender = address(0x42);
+        
+        vm.prank(testSender);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                testSender,
+                DEFAULT_ADMIN_ROLE
+            )
+        );
+        router.setRefundable(false);
+        
+        vm.expectEmit(true, false, false, true);
+        emit ITunnelRouter.RefundableSet(false);
+        router.setRefundable(false);
+        assertEq(router.refundable(), false);
     }
 }

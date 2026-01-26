@@ -106,41 +106,43 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
     function process(
         PacketDecoder.TssMessage memory data
     ) external onlyTunnelRouter {
-        PacketDecoder.Packet memory packet = data.packet;
+        unchecked {
+            PacketDecoder.Packet memory packet = data.packet;
 
-        uint256 time = uint256(int256(packet.timestamp));
-       
-        uint256 id;
-        uint256 sid = type(uint256).max;
-        uint256 nextSID;
-        uint256 sTime;
-        uint256 sVal;
-        uint256 shiftLen;
+            uint256 time = uint256(int256(packet.timestamp));
+        
+            uint256 id;
+            uint256 sid = type(uint256).max;
+            uint256 nextSID;
+            uint256 sTime;
+            uint256 sVal;
+            uint256 shiftLen;
 
-        for (uint256 i = 0; i < packet.signals.length; i++) {
-            id = symbolsToIDs[packet.signals[i].signal];
-            require(id != 0, "relay: FAIL_SYMBOL_NOT_AVAILABLE");
+            for (uint256 i = 0; i < packet.signals.length; i++) {
+                id = symbolsToIDs[packet.signals[i].signal];
+                require(id != 0, "relay: FAIL_SYMBOL_NOT_AVAILABLE");
 
-            nextSID = (id - 1) / 6;
-            if (sid != nextSID) {
-                if (sVal != 0) refs[sid] = sVal;
+                nextSID = (id - 1) / 6;
+                if (sid != nextSID) {
+                    if (sVal != 0) refs[sid] = sVal;
 
-                sVal = refs[nextSID];
-                sid = nextSID;
-                sTime = _extractSlotTime(sVal);
-            }
-
-            shiftLen = 204 - (37 * ((id - 1) % 6));
-            if (sTime + _extractTimeOffset(sVal, shiftLen) < time) {
-                if (time >= sTime + (1 << 18)) {
-                    sTime = time - (1 << 18) + 1;
-                    sVal = _rebaseTime(sVal, sTime);
+                    sVal = refs[nextSID];
+                    sid = nextSID;
+                    sTime = _extractSlotTime(sVal);
                 }
-                sVal = _setTicksAndTimeOffset(sVal, time - sTime, packet.signals[i].price, shiftLen - 19);
-            }
-        }
 
-        if (sVal != 0) refs[sid] = sVal;
+                shiftLen = 204 - (37 * ((id - 1) % 6));
+                if (sTime + _extractTimeOffset(sVal, shiftLen) < time) {
+                    if (time >= sTime + (1 << 18)) {
+                        sTime = time - (1 << 18) + 1;
+                        sVal = _rebaseTime(sVal, sTime);
+                    }
+                    sVal = _setTicksAndTimeOffset(sVal, time - sTime, packet.signals[i].price, shiftLen - 19);
+                }
+            }
+
+            if (sVal != 0) refs[sid] = sVal;
+        }
     }
 
     /**

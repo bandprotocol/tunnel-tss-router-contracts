@@ -6,8 +6,7 @@ import "forge-std/Test.sol";
 import "../src/libraries/PacketDecoder.sol";
 import "../src/interfaces/IPacketConsumer.sol";
 import "../src/interfaces/ITunnelRouter.sol";
-import "../src/libraries/Originator.sol";
-import "../src/interfaces/IPacketConsumer.sol";
+import "../src/libraries/Originator.sol"; 
 import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/router/L1RouterGasCalculator.sol";
 import "../src/PacketConsumer.sol";
@@ -131,7 +130,7 @@ contract RelayFullLoopTest is Test, Constants {
         } else if (tssMessage.encoderType == PacketDecoder.EncoderType.Tick) {
             encoderSelector = 0xd3813e0cdb99b2b3;
         } else {
-            revert("Invalid encoder type");
+            revert IPacketConsumer.InvalidEncoderType();
         }
         
         bytes memory packetBytes = abi.encode(tssMessage.packet);

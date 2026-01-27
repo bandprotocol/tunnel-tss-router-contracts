@@ -20,6 +20,61 @@ contract PacketConsumerTickMockTunnelRouterTest is Test, Constants {
         packetConsumerTick = new PacketConsumerTick(address(this));
     }
 
+    function testDelisting() public {
+        // List symbols first so that process can succeed
+        string[] memory symbols = new string[](3);
+        symbols[0] = "CS:BTC-USD";
+        symbols[1] = "CS:ETH-USD";
+        symbols[2] = "CS:BAND-USD";
+        packetConsumerTick.listing(symbols);
+
+        // Process once to populate ticks so we can assert prices survive delisting swaps
+        PacketDecoder.TssMessage memory data = DECODED_TSS_MESSAGE_PRICE_TICK();
+        packetConsumerTick.process(data);
+
+        // Sanity: prices exist pre-delisting
+        PacketConsumerTick.Price memory btcBefore = packetConsumerTick.getPrice("CS:BTC-USD");
+        PacketConsumerTick.Price memory bandBefore = packetConsumerTick.getPrice("CS:BAND-USD");
+        assertTrue(btcBefore.price != 0);
+        assertTrue(bandBefore.price != 0);
+
+        // Delist ETH (middle). This should swap BAND into ETH's ID.
+        string[] memory delistSymbols = new string[](1);
+        delistSymbols[0] = "CS:ETH-USD";
+        packetConsumerTick.delisting(delistSymbols);
+
+        // totalSymbolsCount decremented
+        assertEq(packetConsumerTick.totalSymbolsCount(), 2);
+
+        // ETH removed
+        bytes32 ethB32 = packetConsumerTick.stringToRightAlignedBytes32("CS:ETH-USD");
+        assertEq(packetConsumerTick.symbolsToIDs(ethB32), 0);
+
+        // BAND swapped into id=2, and old id=3 cleared
+        bytes32 bandB32 = packetConsumerTick.stringToRightAlignedBytes32("CS:BAND-USD");
+        assertEq(packetConsumerTick.symbolsToIDs(bandB32), 2);
+        assertEq(packetConsumerTick.idsToSymbols(2), bandB32);
+        assertEq(packetConsumerTick.idsToSymbols(3), bytes32(0));
+
+        // Slot size updated (3 -> 2) for slot 0
+        uint256 sVal = packetConsumerTick.refs(0);
+        uint256 size = (sVal >> 222) & ((uint256(1) << 3) - 1);
+        assertEq(size, 2);
+
+        // BTC and BAND should still be queryable and unchanged after swap
+        PacketConsumerTick.Price memory btcAfter = packetConsumerTick.getPrice("CS:BTC-USD");
+        PacketConsumerTick.Price memory bandAfter = packetConsumerTick.getPrice("CS:BAND-USD");
+        assertEq(btcAfter.price, btcBefore.price);
+        assertEq(btcAfter.timestamp, btcBefore.timestamp);
+        assertEq(bandAfter.price, bandBefore.price);
+        assertEq(bandAfter.timestamp, bandBefore.timestamp);
+
+        // Processing a packet that still includes the delisted symbol should now revert
+        bytes memory expectedErr = abi.encodeWithSelector(IPacketConsumer.SignalIdNotAvailable.selector, "CS:ETH-USD");
+        vm.expectRevert(expectedErr);
+        packetConsumerTick.process(data);
+    }
+
     function testStringToRightAlignedBytes32() public {
         string memory s;
 
@@ -247,6 +302,27 @@ contract PacketConsumerTickMockTunnelRouterTest is Test, Constants {
             )
         );
         packetConsumerTick.stringToRightAlignedBytes32(s);
+    }
+
+    function testRightAlignedBytes32ToString() public {
+        // all-zero bytes32 should decode to empty string
+        assertEq(packetConsumerTick.rightAlignedBytes32ToString(bytes32(0)), "");
+
+        // round-trip should preserve the original string
+        string[5] memory inputs = [
+            string(""),
+            string("0"),
+            string("CS:BTC-USD"),
+            string("CS:ETH-USD"),
+            // exactly 32 bytes
+            string("0123456789abcdefghijklmnopqrstuv")
+        ];
+
+        for (uint256 i = 0; i < inputs.length; i++) {
+            bytes32 b = packetConsumerTick.stringToRightAlignedBytes32(inputs[i]);
+            string memory out = packetConsumerTick.rightAlignedBytes32ToString(b);
+            assertEq(keccak256(bytes(out)), keccak256(bytes(inputs[i])));
+        }
     }
 
     function testProcessAndGetPrice() public {

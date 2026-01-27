@@ -60,15 +60,21 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
      * @dev Converts a right-aligned bytes32 value back to string
      */
     function rightAlignedBytes32ToString(bytes32 b) public pure returns (string memory) {
-        // Find out real length
-        uint8 len = 32;
-        while (len > 0 && uint8(b[len-1]) == 0) {
-            len--;
+        // Find the index of the first non-zero byte (strip leading zero padding)
+        uint8 start = 0;
+        while (start < 32 && b[start] == 0) {
+            start++;
         }
+        // If all bytes are zero, return empty string
+        if (start == 32) {
+            return "";
+        }
+        uint8 len = 32 - start;
         bytes memory out = new bytes(len);
         for (uint8 i = 0; i < len; i++) {
-            out[i] = b[32 - len + i];
+            out[i] = b[start + i];
         }
+        
         return string(out);
     }
 
@@ -139,8 +145,8 @@ contract PacketConsumerTick is IPacketConsumer, AccessControl {
 
             for (uint256 i = 0; i < signalsLength; ++i) {
                 id = symbolsToIDs[packet.signals[i].signal];
-                idMinusOne = id - 1;
                 if (id == 0) revert SignalIdNotAvailable(rightAlignedBytes32ToString(packet.signals[i].signal));
+                idMinusOne = id - 1;
 
                 nextSID = idMinusOne / 6;
                 if (sid != nextSID) {

@@ -13,10 +13,10 @@ contract Executor is Script {
 
         vm.startBroadcast();
 
-        PacketConsumerTick packetConsumer = new PacketConsumerTick(tunnelRouterAddr);
+        PacketConsumerTick packetConsumerTick = new PacketConsumerTick(tunnelRouterAddr);
 
         vm.stopBroadcast();
 
-        console.log("PacketConsumer deployed at:", address(packetConsumer));
+        console.log("PacketConsumerTick deployed at:", address(packetConsumerTick));
     }
 }

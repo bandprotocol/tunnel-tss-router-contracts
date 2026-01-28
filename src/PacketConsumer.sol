@@ -84,6 +84,7 @@ contract PacketConsumer is IPacketConsumer, AccessControl {
         PacketDecoder.TssMessage memory data
     ) external onlyTunnelRouter {
         PacketDecoder.Packet memory packet = data.packet;
+        if (data.encoderType != PacketDecoder.EncoderType.FixedPoint) revert InvalidEncoderType();
         for (uint256 i = 0; i < packet.signals.length; i++) {
             _prices[packet.signals[i].signal] = Price({
                 price: packet.signals[i].price,

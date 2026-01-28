@@ -25,7 +25,7 @@ CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_i
 
 # Extract signal_ids from price deviation JSON file
 echo "========== Extracting signal_ids from $PRICE_DEVIATION_JSON_FILE =========="
-SIGNAL_IDS=$(jq -r '.signal_deviations[].signal_id' "$PRICE_DEVIATION_JSON_FILE" | tr '\n' ',')
+SIGNAL_IDS=$(jq -r '.signal_deviations[].signal_id' "$PRICE_DEVIATION_JSON_FILE" | paste -sd, -)
 echo "Signal IDs: $SIGNAL_IDS"
 echo "================================================"
 

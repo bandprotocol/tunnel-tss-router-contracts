@@ -33,6 +33,9 @@ interface IPacketConsumer {
     /// Custom error for invalid encoder type.
     error InvalidEncoderType();
 
+    /// Custom error for invalid packet.
+    error InvalidPacketTimestamp();
+
     // ========================================
     // Functions
     // ========================================

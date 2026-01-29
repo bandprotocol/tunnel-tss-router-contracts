@@ -6,6 +6,9 @@ set -e
 # Environment variables; EDIT THIS
 # ================================================
 
+# NOTE: Set VAULT_BALANCE=0 if the tunnel is not refundable.
+#       For non-refundable tunnels (router REFUNDABLE=false), funding is not needed.
+
 # Destination Chain
 RPC_URL=
 TARGET_CHAIN_ID=

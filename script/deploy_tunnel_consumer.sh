@@ -109,10 +109,17 @@ echo "================================================"
 # ================================================
 
 echo "========== Creating tunnel on BandChain =========="
-bandd tx tunnel create-tunnel tss \
+if [ "$ENCODER_TYPE" == "tick" ]; then
+    bandd tx tunnel create-tunnel tss \
+        $TARGET_CHAIN_ID $PACKET_CONSUMER 2 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
+        --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
+        -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
+else
+    bandd tx tunnel create-tunnel tss \
     $TARGET_CHAIN_ID $PACKET_CONSUMER 1 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
     --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
     -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
+fi
 
 sleep 5
 

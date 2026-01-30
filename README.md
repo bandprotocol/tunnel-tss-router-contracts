@@ -171,12 +171,11 @@ Both of the following accounts must have a sufficient balance of the native toke
 If either account lacks sufficient balance, deployment or subsequent operations may fail.
 
 ---
+**Note:**  
+Set `ENCODER_TYPE=tick` in your configuration to deploy and initialize `PacketConsumerTick`.
 
-**`script/deploy_tunnel_consumer_tick.sh`**
-
-This script deploys `PacketConsumerTick` (and a `PacketConsumerProxy` for querying), then creates a tunnel on BandChain using a tick-based on-chain price representation.
-
-**Important limitation:** `PacketConsumerTick` encodes the base timestamp using a **31-bit Unix time (seconds)**, so it only supports timestamps **before 2038-01-19** (i.e., **time < 2^31**).
+**Important limitation:**  
+`PacketConsumerTick` encodes the base timestamp using a **31-bit Unix time (seconds)**, so it only supports timestamps **before 2038-01-19** (i.e., **time < 2^31**).
 
 ## Contribution
 We welcome and encourage contributions to the project. If you have suggestions or feedback, please open an issue or submit a pull request. We appreciate your contributions and look forward to collaborating to improve the Tunnel-TSS-Router.

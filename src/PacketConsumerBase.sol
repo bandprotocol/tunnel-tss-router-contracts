@@ -8,8 +8,6 @@ import "./interfaces/IPacketConsumer.sol";
 import "./interfaces/ITunnelRouter.sol";
 import "./interfaces/IVault.sol";
 
-import "./libraries/PacketDecoder.sol";
-
 abstract contract PacketConsumerBase is IPacketConsumer, AccessControl {
     // The tunnel router contract.
     address public immutable tunnelRouter;

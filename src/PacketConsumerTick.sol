@@ -89,7 +89,7 @@ contract PacketConsumerTick is PacketConsumerBase {
         unchecked {
             PacketDecoder.Packet memory packet = data.packet;
 
-            if (packet.timestamp < ((1 << 18) - 1)) revert InvalidPacketTimestamp();
+            if (packet.timestamp < int64((1 << 18) - 1)) revert InvalidPacketTimestamp();
             if (data.encoderType != PacketDecoder.EncoderType.Tick) revert InvalidEncoderType();
 
             uint256 time = uint256(int256(packet.timestamp));

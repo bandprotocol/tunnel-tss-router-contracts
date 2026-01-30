@@ -21,14 +21,16 @@ contract Executor is Script {
 
         (address proxyVaultAddr, address implVaultAddr, address adminVaultAddr) = deployVault();
 
-        string memory gasType = vm.envOR("GAS_TYPE", "eip1559");
+        string memory gasType = vm.envString("GAS_TYPE");
         address proxyTunnelRouterAddr;
         address implTunnelRouterAddr;
         address adminTunnelRouterAddr;
-        if(gasType == "eip1559") {
+        if (keccak256(bytes(gasType)) == keccak256(bytes("eip1559"))) {
             (proxyTunnelRouterAddr, implTunnelRouterAddr, adminTunnelRouterAddr) = deployPriorityFeeTunnelRouter(tssVerifier, proxyVaultAddr);
+            console.log("TunnelRouter type: PriorityFee");
         } else {
             (proxyTunnelRouterAddr, implTunnelRouterAddr, adminTunnelRouterAddr) = deployGasPriceTunnelRouter(tssVerifier, proxyVaultAddr);
+            console.log("TunnelRouter type: GasPrice");
         }
 
         vm.startBroadcast();

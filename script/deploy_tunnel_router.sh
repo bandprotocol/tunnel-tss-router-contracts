@@ -13,7 +13,7 @@ RPC_URL=
 export TARGET_CHAIN_ID=
 RELAYER_ADDR=
 RELAYER_BALANCE=
-export GAS_TYPE=
+export GAS_TYPE=eip1559
 export PRIORITY_FEE=1wei
 export GAS_PRICE=
 export REFUNDABLE=true
@@ -58,6 +58,7 @@ print_summary() {
     echo "VAULT(impl): $VAULT_IMPL"
     echo "VAULT(admin): $VAULT_ADMIN"
     echo "TSS_VERIFIER: $TSS_VERIFIER"
+    echo "Tunnel router type: $TUNNEL_ROUTER_TYPE"
     echo "TUNNEL_ROUTER(proxy): $TUNNEL_ROUTER"
     echo "TUNNEL_ROUTER(impl): $TUNNEL_ROUTER_IMPL"
     echo "TUNNEL_ROUTER(admin): $TUNNEL_ROUTER_ADMIN"
@@ -73,16 +74,21 @@ echo "========== Cleaning and Building contracts =========="
 forge clean && forge build --optimize true --optimizer-runs 200
 
 echo "========== Running deployment script to deploy contracts =========="
-MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast  --optimize true --optimizer-runs 200)
+if [ "$GAS_TYPE" == "legacy" ]; then
+    MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200 --legacy)
+else
+    MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200)
+fi
 
 echo "Parsing deployed contract addresses ..."
 VAULT=$( echo "$MSG" | grep "Vault Proxy" | awk '{print $5}' | xargs)
 VAULT_IMPL=$( echo "$MSG" | grep "Vault Implementation deployed at:" | awk '{print $5}' | xargs)
 VAULT_ADMIN=$( echo "$MSG" | grep "Vault Admin deployed at:" | awk '{print $5}' | xargs)
 TSS_VERIFIER=$( echo "$MSG" | grep "TssVerifier deployed at: " | awk '{print $4}' | xargs)
-TUNNEL_ROUTER=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Proxy deployed at:" | awk '{print $5}' | xargs)
-TUNNEL_ROUTER_IMPL=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Implementation deployed at:" | awk '{print $5}' | xargs)
-TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "PriorityFeeTunnelRouter Admin deployed at:" | awk '{print $5}' | xargs)
+TUNNEL_ROUTER_TYPE=$( echo "$MSG" | grep "TunnelRouter type:" | awk '{print $3}' | xargs)
+TUNNEL_ROUTER=$( echo "$MSG" | grep "TunnelRouter Proxy deployed at:" | awk '{print $5}' | xargs)
+TUNNEL_ROUTER_IMPL=$( echo "$MSG" | grep "TunnelRouter Implementation deployed at:" | awk '{print $5}' | xargs)
+TUNNEL_ROUTER_ADMIN=$( echo "$MSG" | grep "TunnelRouter Admin deployed at:" | awk '{print $5}' | xargs)
 sleep 5
 
 # ================================================
@@ -90,16 +96,28 @@ sleep 5
 # ================================================
 
 echo "========== Granting Relayer role in TunnelRouter =========="
-cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+if [ "$GAS_TYPE" == "legacy" ]; then
+  cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy
+else
+  cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+fi
 sleep 5
 
 echo "========== Granting GasFeeUpdater role to operator =========="
-cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+if [ "$GAS_TYPE" == "legacy" ]; then
+  cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy
+else 
+  cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+fi
 sleep 5
 
 echo "========== Sending initial balance to relayer(s) =========="
 for addr in $(echo $RELAYER_ADDR | tr ',' ' '); do
     echo "Sending balance to relayer $addr"
-    cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+    if [ "$GAS_TYPE" == "legacy" ]; then
+      cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy
+    else
+      cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL
+    fi
     sleep 1
 done

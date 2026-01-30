@@ -135,6 +135,7 @@ Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 | `TUNNEL_ROUTER`             | Deployed TunnelRouter contract address                                     | `0x1234abcd....`                             |
 | `VAULT_BALANCE`             | ETH or coin value to fund the consumer's vault (for fees)                  | `0.05ether`                                  |
 | `OPERATOR_ADDRESS`          | Address that will be set as contract operator, comma-separated if multiple | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| `GAS_TYPE`   | Set to `eip1559` to use priority-fee model; set to `legacy` for a fixed gas-price based contract                  | `eip1559` or `legacy`  
 | `BANDCHAIN_RPC_URL`         | RPC endpoint for BandChain node                                            | `https://rpc.laozi3.bandchain.org/`          |
 | `WALLET_NAME`               | Name of the BandChain wallet                                               | `alice`                                      |
 | `BANDCHAIN_KEYRING_BACKEND` | BandChain key storage backend (`os`, `file`, or `test`)                    | `os`                                         |

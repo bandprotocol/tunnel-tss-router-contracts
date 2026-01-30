@@ -84,17 +84,19 @@ This script deploys the full set of Tunnel Router components, including the Tunn
 
 Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a description of each variable you need to set, along with example values.
 
-| Variable            | Description                                                                  | Example                                      |
-|---------------------|------------------------------------------------------------------------------|----------------------------------------------|
-| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                         | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`   | chain name id on Band                                                        | `chainname-mainnet`                          |
-| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple                 | `0xabc123...,0xdef456...`                    |
-| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                        | `0.1ether`                                   |
-| `PRIORITY_FEE`      | Default tip for priority-fee-based networks                                  | `1wei`                                       |
+| Variable            | Description                                                                                                  | Example                                      |
+|---------------------|--------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                                                         | `https://sepolia.infura.io/v3/XXXX`          |
+| `TARGET_CHAIN_ID`   | chain name id on Band                                                                    | `chainname-mainnet`                 |
+| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple                                                 | `0xabc123...,0xdef456...`                    |
+| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                                                        | `0.1ether`                                   |
+| `GAS_TYPE`   | Set to `eip1559` to use priority-fee model; set to `legacy` for a fixed gas-price based contract                  | `eip1559` or `legacy`                                       |
+| `PRIORITY_FEE`      | Default tip for priority-fee-based networks, used if `GAS_TYPE` is `eip1559`                                         | `1wei`                                       |
+| `GAS_PRICE`         | Fixed gas price used when `GAS_TYPE` is `legacy`                          | `20gwei`                                     |
+| `REFUNDABLE`        | Whether the router collects fees from the Vault to refund to the packet consumer; when `false`, no fees are collected from the Vault and relayers are not compensated | `true` or `false`                            |
 | `TRANSITION_PERIOD` | Time in seconds for transition period                                        | `172800`                                     |
 | `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                               | `https://rpc.laozi3.bandchain.org/`          |
 | `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple   | `0x0fedcba9876543210fedcba9876543210fedcba9` |
-| `REFUNDABLE`        | Whether the router collects fees from the Vault to refund to the packet consumer; when `false`, no fees are collected from the Vault and relayers are not compensated | `true` or `false`                            |
 
 _Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
 
@@ -129,16 +131,17 @@ Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 | Variable                    | Description                                                                | Example                                      |
 |-----------------------------|----------------------------------------------------------------------------|----------------------------------------------|
 | `RPC_URL`                   | RPC endpoint of the target Ethereum-compatible chain                       | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`           | chain name id on Band                                                      | `chainname-mainnet`                        |
+| `TARGET_CHAIN_ID`           | chain name id on Band                                                      | `chainname-mainnet`                          |
 | `TUNNEL_ROUTER`             | Deployed TunnelRouter contract address                                     | `0x1234abcd....`                             |
 | `VAULT_BALANCE`             | ETH or coin value to fund the consumer's vault (for fees)                  | `0.05ether`                                  |
+| `OPERATOR_ADDRESS`          | Address that will be set as contract operator, comma-separated if multiple | `0x0fedcba9876543210fedcba9876543210fedcba9` |
 | `BANDCHAIN_RPC_URL`         | RPC endpoint for BandChain node                                            | `https://rpc.laozi3.bandchain.org/`          |
 | `WALLET_NAME`               | Name of the BandChain wallet                                               | `alice`                                      |
 | `BANDCHAIN_KEYRING_BACKEND` | BandChain key storage backend (`os`, `file`, or `test`)                    | `os`                                         |
 | `PRICE_INTERVAL`            | Seconds between oracle price reports                                       | `300`                                        |
 | `PRICE_DEVIATION_JSON_FILE` | JSON file with allowed price deviation thresholds                          | `deviation.json`                             |
 | `FEE_PAYER_BALANCE`         | Amount to send to BandChain fee payer, with denom                          | `1000000uband`                               |
-| `OPERATOR_ADDRESS`          | Address that will be set as contract operator, comma-separated if multiple | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| `ENCODER_TYPE`              | Encoder type used for the PacketConsumer; use `tick` for tick-based encoding or `fixed_point` for fixed point encoding | `tick` or `fixed_point`                            |
 
 _Note: You must also `export PRIVATE_KEY=<your_private_key>` in your shell, as with the router script._
 

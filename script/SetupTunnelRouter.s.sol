@@ -10,15 +10,26 @@ import {IVault} from "../src/interfaces/IVault.sol";
 import {ITssVerifier} from "../src/interfaces/ITssVerifier.sol";
 
 import {PriorityFeeTunnelRouter} from "../src/router/PriorityFeeTunnelRouter.sol";
+import {GasPriceTunnelRouter} from "../src/router/GasPriceTunnelRouter.sol";
 import {TssVerifier} from "../src/TssVerifier.sol";
 import {Vault} from "../src/Vault.sol";
 
 contract Executor is Script {
     function run() external {
 
-        (address proxyVaultAddr, address implVaultAddr, address adminVaultAddr) = deployVault();
         TssVerifier tssVerifier = deployTssVerifier();
-        (address proxyTunnelRouterAddr, address implTunnelRouterAddr, address adminTunnelRouterAddr) = deployTunnelRouter(tssVerifier, proxyVaultAddr);
+
+        (address proxyVaultAddr, address implVaultAddr, address adminVaultAddr) = deployVault();
+
+        string memory gasType = vm.envOR("GAS_TYPE", "eip1559");
+        address proxyTunnelRouterAddr;
+        address implTunnelRouterAddr;
+        address adminTunnelRouterAddr;
+        if(gasType == "eip1559") {
+            (proxyTunnelRouterAddr, implTunnelRouterAddr, adminTunnelRouterAddr) = deployPriorityFeeTunnelRouter(tssVerifier, proxyVaultAddr);
+        } else {
+            (proxyTunnelRouterAddr, implTunnelRouterAddr, adminTunnelRouterAddr) = deployGasPriceTunnelRouter(tssVerifier, proxyVaultAddr);
+        }
 
         vm.startBroadcast();
         // Set the tunnel router address in the vault
@@ -30,15 +41,15 @@ contract Executor is Script {
         console.log("Vault Admin deployed at:", adminVaultAddr);
         console.log("TssVerifier deployed at:", address(tssVerifier));
         console.log(
-            "PriorityFeeTunnelRouter Proxy deployed at:",
+            "TunnelRouter Proxy deployed at:",
             proxyTunnelRouterAddr
         );
         console.log(
-            "PriorityFeeTunnelRouter Implementation deployed at:",
+            "TunnelRouter Implementation deployed at:",
             implTunnelRouterAddr
         );
         console.log(
-            "PriorityFeeTunnelRouter Admin deployed at:",
+            "TunnelRouter Admin deployed at:",
             adminTunnelRouterAddr
         );
     }
@@ -98,7 +109,7 @@ contract Executor is Script {
         return tssVerifier;
     }
 
-    function deployTunnelRouter(TssVerifier tssVerifier, address proxyVaultAddr) internal returns (address, address, address) {
+    function deployPriorityFeeTunnelRouter(TssVerifier tssVerifier, address proxyVaultAddr) internal returns (address, address, address) {
         uint256 priorityFee = vm.envUint("PRIORITY_FEE");
         string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
         string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
@@ -116,7 +127,7 @@ contract Executor is Script {
         vm.startBroadcast();
 
         // Deploy the proxy TunnelRouter contract
-        address proxyTunnelRouterAddr = Upgrades.deployTransparentProxy(
+        address proxyPriorityFeeTunnelRouterAddr = Upgrades.deployTransparentProxy(
             "PriorityFeeTunnelRouter.sol",
             msg.sender,
             abi.encodeCall(
@@ -134,16 +145,65 @@ contract Executor is Script {
                 )
             )
         );
-        address implTunnelRouterAddr = Upgrades.getImplementationAddress(
-            proxyTunnelRouterAddr
+        address implPriorityFeeTunnelRouterAddr = Upgrades.getImplementationAddress(
+            proxyPriorityFeeTunnelRouterAddr
         );
 
-        address adminTunnelRouterAddr = Upgrades.getAdminAddress(
-            proxyTunnelRouterAddr
+        address adminPriorityFeeTunnelRouterAddr = Upgrades.getAdminAddress(
+            proxyPriorityFeeTunnelRouterAddr
         );
 
         vm.stopBroadcast();
 
-        return (proxyTunnelRouterAddr, implTunnelRouterAddr, adminTunnelRouterAddr);
+        return (proxyPriorityFeeTunnelRouterAddr, implPriorityFeeTunnelRouterAddr, adminPriorityFeeTunnelRouterAddr);
+    }
+
+    function deployGasPriceTunnelRouter(TssVerifier tssVerifier, address proxyVaultAddr) internal returns (address, address, address) {
+        uint256 gasPrice = vm.envUint("GAS_PRICE");
+        string memory sourceChainId = vm.envString("SOURCE_CHAIN_ID");
+        string memory targetChainId = vm.envString("TARGET_CHAIN_ID");
+        bool refundable = vm.envOr("REFUNDABLE", true);
+
+        require(
+            keccak256(bytes(sourceChainId)) != keccak256(""),
+            "SOURCE_CHAIN_ID is not set"
+        );
+        require(
+            keccak256(bytes(targetChainId)) != keccak256(""),
+            "TARGET_CHAIN_ID is not set"
+        );
+
+        vm.startBroadcast();
+
+        // Deploy the proxy TunnelRouter contract
+        address proxyGasPriceTunnelRouterAddr = Upgrades.deployTransparentProxy(
+            "GasPriceTunnelRouter.sol",
+            msg.sender,
+            abi.encodeCall(
+                GasPriceTunnelRouter.initialize,
+                (
+                    tssVerifier,
+                    IVault(proxyVaultAddr),
+                    17369806436495577561272982365083344973322337688717046180703435,
+                    4000,
+                    300000,
+                    gasPrice,
+                    keccak256(bytes(sourceChainId)),
+                    keccak256(bytes(targetChainId)),
+                    refundable
+                )
+            )
+        );
+        address implGasPriceTunnelRouterAddr = Upgrades.getImplementationAddress(
+            proxyGasPriceTunnelRouterAddr
+        );
+
+        address adminGasPriceTunnelRouterAddr = Upgrades.getAdminAddress(
+            proxyGasPriceTunnelRouterAddr
+        );
+
+        vm.stopBroadcast();
+
+        return (proxyGasPriceTunnelRouterAddr, implGasPriceTunnelRouterAddr, adminGasPriceTunnelRouterAddr);
     }
 }

@@ -125,4 +125,55 @@ contract Constants is Test, TssSignerHelper {
 
         return tssMessage;
     }
+
+    function DECODED_TSS_MESSAGE_PRICE_TICK()
+        public
+        pure
+        returns (PacketDecoder.TssMessage memory)
+    {
+        PacketDecoder.SignalPrice[]
+            memory signalPriceInfos = new PacketDecoder.SignalPrice[](3);
+        bytes memory signalIDBtc = abi.encodePacked(
+            hex"00000000000000000000000000000000000000000000",
+            "CS:BTC-USD"
+        );
+        signalPriceInfos[0] = PacketDecoder.SignalPrice(
+            bytes32(signalIDBtc),
+            262145
+        );
+
+        bytes memory signalIDEth = abi.encodePacked(
+            hex"00000000000000000000000000000000000000000000",
+            "CS:ETH-USD"
+        );
+        signalPriceInfos[1] = PacketDecoder.SignalPrice(
+            bytes32(signalIDEth),
+            262143
+        );
+
+        bytes memory signalIDBand = abi.encodePacked(
+            hex"000000000000000000000000000000000000000000",
+            "CS:BAND-USD"
+        );
+        signalPriceInfos[2] = PacketDecoder.SignalPrice(
+            bytes32(signalIDBand),
+            262144
+        );
+
+        PacketDecoder.Packet memory packet = PacketDecoder.Packet(
+            1,
+            signalPriceInfos,
+            1733044960
+        );
+
+        PacketDecoder.TssMessage memory tssMessage = PacketDecoder.TssMessage(
+            0x1930634c04eaace73b84b572782f354be5c6c84233d24c0ede853409d89c3585,
+            1733044960,
+            1,
+            PacketDecoder.EncoderType.Tick,
+            packet
+        );
+
+        return tssMessage;
+    }
 }

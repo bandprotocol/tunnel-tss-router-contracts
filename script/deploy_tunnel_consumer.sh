@@ -28,6 +28,12 @@ ENCODER_TYPE=
 
 CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
 
+if [ "$GAS_TYPE" == "legacy" ]; then
+    GAS_TYPE_FLAG=true
+else
+    GAS_TYPE_FLAG=false
+fi
+
 # ================================================
 # Summary
 # ================================================
@@ -65,38 +71,22 @@ if [ "$ENCODER_TYPE" == "tick" ]; then
     echo "================================================"
 
     echo "========== Deploying PacketConsumerTick contract =========="
-    if [ "$GAS_TYPE" == "legacy" ]; then
-        MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --legacy)
-    else
-        MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
-    fi
+    MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --legacy $GAS_TYPE_FLAG)
     export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumerTick deployed at:" | awk '{print $4}' | xargs)
     PACKET_CONSUMER_TYPE=tick
 
     echo "========== Listing signal IDs on PacketConsumerTick =========="
-    if [ "$GAS_TYPE" == "legacy" ]; then
-        cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy
-    else
-        cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
-    fi
+    cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy $GAS_TYPE_FLAG
     sleep 5
 else
     echo "========== Deploying PacketConsumer contract =========="
-    if [ "$GAS_TYPE" == "legacy" ]; then
-        MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --legacy)
-    else
-        MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
-    fi
+    MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --legacy $GAS_TYPE_FLAG)
     export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
     PACKET_CONSUMER_TYPE=fixed_point
 fi
 
 echo "========== Deploying PacketConsumerProxy contract =========="
-if [ "$GAS_TYPE" == "legacy" ]; then
-    MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --legacy)
-else
-    MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200)
-fi
+MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --legacy $GAS_TYPE_FLAG)
 PACKET_CONSUMER_PROXY=$( echo "$MSG" | grep "PacketConsumerProxy deployed at:" | awk '{print $4}' | xargs)
 
 echo "================================================"
@@ -142,11 +132,7 @@ bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
 sleep 5
 
 echo "========== Granting Tunnel Activator role to operator =========="
-if [ "$GAS_TYPE" == "legacy" ]; then
-    cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy
-else
-    cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL
-fi
+cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy $GAS_TYPE_FLAG
 sleep 5
 
 # ================================================
@@ -154,8 +140,4 @@ sleep 5
 # ================================================
 
 echo "========== Activating tunnel $TUNNEL_ID on target chain via PacketConsumer =========="
-if [ "$GAS_TYPE" == "legacy" ]; then
-    cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy
-else
-    cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL
-fi
+cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL --legacy $GAS_TYPE_FLAG

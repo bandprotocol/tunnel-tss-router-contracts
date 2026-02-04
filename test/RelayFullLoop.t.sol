@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import "../src/libraries/PacketDecoder.sol";
 import "../src/interfaces/IPacketConsumer.sol";
 import "../src/interfaces/ITunnelRouter.sol";
-import "../src/libraries/Originator.sol"; 
+import "../src/libraries/Originator.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/router/L1RouterGasCalculator.sol";
 import "../src/PacketConsumer.sol";

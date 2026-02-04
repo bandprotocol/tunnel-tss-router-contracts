@@ -196,6 +196,7 @@ contract PacketConsumerTick is PacketConsumerBase {
                 shiftLen = 204 - (37 * i);
                 uint256 timeOffset = _extractTimeOffset(val, shiftLen);
                 val = (sTime + timeOffset < time) 
+                    // Reset tick and offset to zero for expired data to clear obsolete entries
                     ? _setTicksAndTimeOffset(val, 0, 0, shiftLen - 19) 
                     : _setTimeOffset(val, sTime + timeOffset - time, shiftLen - 19);
             }

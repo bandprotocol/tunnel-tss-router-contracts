@@ -151,7 +151,7 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
 
         if (cpx > _ORDER / 2) {
             cpx = _ORDER - cpx;
-            publicKey.px = publicKey.px == 27 ? 28 : 27;
+            publicKey.parity = publicKey.parity == 27 ? 28 : 27;
         }
 
         address addr = ecrecover(bytes32(spx), publicKey.parity, bytes32(publicKey.px), bytes32(cpx));

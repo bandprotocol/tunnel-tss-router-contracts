@@ -37,7 +37,7 @@ fi
 
 if [ "$ZKSYNC" == "true" ]; then
     ZKSYNC_BUILD_FLAG="--zksync --suppress-errors sendtransfer"
-     ZKSYNC_FLAG="--zksync"
+    ZKSYNC_FLAG="--zksync"
 else
     ZKSYNC_BUILD_FLAG=""
     ZKSYNC_FLAG=""

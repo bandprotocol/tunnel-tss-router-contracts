@@ -4,11 +4,13 @@ pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
 import "../src/libraries/PacketDecoder.sol";
-import "../src/interfaces/ITunnelRouter.sol";
 import "../src/interfaces/IPacketConsumer.sol";
+import "../src/interfaces/ITunnelRouter.sol";
+import "../src/libraries/Originator.sol";
 import "../src/router/GasPriceTunnelRouter.sol";
 import "../src/router/L1RouterGasCalculator.sol";
 import "../src/PacketConsumer.sol";
+import "../src/PacketConsumerTick.sol";
 import "../src/TssVerifier.sol";
 import "../src/Vault.sol";
 import "./helper/Constants.sol";
@@ -16,13 +18,16 @@ import "./helper/TssSignerHelper.sol";
 
 contract RelayFullLoopTest is Test, Constants {
     PacketConsumer packetConsumer;
+    PacketConsumerTick packetConsumerTick;
     GasPriceTunnelRouter tunnelRouter;
     TssVerifier tssVerifier;
     Vault vault;
     bytes32 originatorHash;
+    bytes32 originatorHashTick;
     mapping(uint256 => PacketDecoder.SignalPrice) referencePrices;
     int64 referenceTimestamp;
     uint64 constant tunnelId = 1;
+    uint64 constant tunnelIdTick = 2;
 
     function setUp() public {
         tssVerifier = new TssVerifier(86400, 0x00, address(this));
@@ -77,6 +82,26 @@ contract RelayFullLoopTest is Test, Constants {
         );
         assertEq(tunnelRouter.isActive(originatorHash), true);
 
+        address packetConsumerTickAddr = makeAddr("PacketConsumerTick");
+        deployCodeTo(
+            "PacketConsumerTick.sol:PacketConsumerTick",
+            packetConsumerArgs,
+            packetConsumerTickAddr
+        );
+
+        packetConsumerTick = PacketConsumerTick(payable(packetConsumerTickAddr));
+
+        // set latest nonce.
+        packetConsumerTick.activate{value: 0.01 ether}(tunnelIdTick, 0);
+
+        originatorHashTick = Originator.hash(
+            tunnelRouter.sourceChainIdHash(),
+            tunnelIdTick,
+            tunnelRouter.targetChainIdHash(),
+            address(packetConsumerTick)
+        );
+        assertEq(tunnelRouter.isActive(originatorHashTick), true);
+
         PacketDecoder.TssMessage memory tssm = this.decodeTssMessage(
             TSS_RAW_MESSAGE
         );
@@ -96,6 +121,27 @@ contract RelayFullLoopTest is Test, Constants {
         bytes calldata message
     ) public pure returns (PacketDecoder.TssMessage memory) {
         return PacketDecoder.decodeTssMessage(message);
+    }
+
+    function encodeTssMessage(PacketDecoder.TssMessage memory tssMessage) public pure returns (bytes memory) {
+        bytes8 encoderSelector;
+        if (tssMessage.encoderType == PacketDecoder.EncoderType.FixedPoint) {
+            encoderSelector = 0xd3813e0ccba0ad5a;
+        } else if (tssMessage.encoderType == PacketDecoder.EncoderType.Tick) {
+            encoderSelector = 0xd3813e0cdb99b2b3;
+        } else {
+            revert IPacketConsumer.InvalidEncoderType();
+        }
+        
+        bytes memory packetBytes = abi.encode(tssMessage.packet);
+        
+        return abi.encodePacked(
+            tssMessage.originatorHash,
+            bytes8(uint64(tssMessage.sourceTimestamp)),
+            bytes8(uint64(tssMessage.signingId)),
+            encoderSelector,
+            packetBytes
+        );
     }
 
     function testRelayMessageConsumerActivated() public {
@@ -414,6 +460,76 @@ contract RelayFullLoopTest is Test, Constants {
         packetConsumer.activate{value: 0.01 ether}(tunnelId, 123);
     }
 
+    function testRelayMessageConsumerTickActivated() public {
+        // List symbols first (required for PacketConsumerTick)
+        string[] memory symbols = new string[](3);
+        symbols[0] = "CS:BTC-USD";
+        symbols[1] = "CS:ETH-USD";
+        symbols[2] = "CS:BAND-USD";
+        packetConsumerTick.listing(symbols);
+
+        // gasPrice is lower than the user-defined gas fee
+        vm.txGasPrice(1);
+
+        // Before: expect price queries to revert
+        vm.expectRevert();
+        packetConsumerTick.getPrice("CS:BTC-USD");
+        vm.expectRevert();
+        packetConsumerTick.getPrice("CS:ETH-USD");
+        vm.expectRevert();
+        packetConsumerTick.getPrice("CS:BAND-USD");
+
+        // Construct TSS message for tick consumer using DECODED_TSS_MESSAGE_PRICE_TICK
+        PacketDecoder.TssMessage memory tssMessageDecoded = DECODED_TSS_MESSAGE_PRICE_TICK();
+        // Replace originatorHash with originatorHashTick
+        tssMessageDecoded.originatorHash = originatorHashTick;
+        
+        // Encode the TssMessage to raw bytes format
+        bytes memory tssMessageTick = this.encodeTssMessage(tssMessageDecoded);
+
+        // Sign the message
+        (address signatureNonceAddrTick, uint256 messageSignatureTick) = signTssm(
+            tssMessageTick,
+            PRIVATE_KEY_1
+        );
+
+        uint256 relayerBalance = address(this).balance;
+        uint256 currentGas = gasleft();
+        vm.expectEmit();
+        emit ITunnelRouter.MessageProcessed(originatorHashTick, 1, true);
+        tunnelRouter.relay(
+            tssMessageTick,
+            signatureNonceAddrTick,
+            messageSignatureTick
+        );
+        uint256 gasUsed = currentGas - gasleft();
+
+        // After: prices should be available and derived from ticks
+        PacketDecoder.Packet memory packet = tssMessageDecoded.packet;
+        PacketConsumerTick.Price memory p = packetConsumerTick.getPrice("CS:BTC-USD");
+        assertEq(p.price, uint64(packetConsumerTick.getPriceFromTick(packet.signals[0].price)));
+        assertEq(p.timestamp, packet.timestamp);
+        
+        p = packetConsumerTick.getPrice("CS:ETH-USD");
+        assertEq(p.price, uint64(packetConsumerTick.getPriceFromTick(packet.signals[1].price)));
+        assertEq(p.timestamp, packet.timestamp);
+        
+        p = packetConsumerTick.getPrice("CS:BAND-USD");
+        assertEq(p.price, uint64(packetConsumerTick.getPriceFromTick(packet.signals[2].price)));
+        assertEq(p.timestamp, packet.timestamp);
+
+        assertEq(tunnelRouter.sequence(originatorHashTick), 1);
+        assertEq(tunnelRouter.isActive(originatorHashTick), true);
+
+        uint256 feeGain = address(this).balance - relayerBalance;
+        assertGt(feeGain, 0);
+
+        uint256 gasUsedDuringProcessMsg = (feeGain / tx.gasprice) - tunnelRouter.additionalGasForCalldata(0);
+
+        console.log("gas used during process message (tick): ", gasUsedDuringProcessMsg);
+        console.log("gas used during others step (tick): ", gasUsed - gasUsedDuringProcessMsg);
+    }
+    
     // ============= REFUNDABLE TESTS ================
 
     function testNoFeeRefundWhenRefundableIsFalse() public {

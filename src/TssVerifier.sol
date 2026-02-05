@@ -91,15 +91,15 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
         // If the active time of the public key is in the transition period, then
         // we need to check the previous public key as it may be the signature from
         // the previous group.
-        bool isInTransitionPeriod = publicKeys[pubKeyIdx].activeTime + transitionPeriod >= block.timestamp;
+        PublicKey memory publicKey = publicKeys[pubKeyIdx];
         if (
-            pubKeyIdx > 0 && isInTransitionPeriod
+            pubKeyIdx > 0 && publicKey.activeTime + transitionPeriod >= block.timestamp
                 && _verifyWithPublicKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx - 1])
         ) {
             return true;
         }
 
-        return _verifyWithPublicKey(hashedMessage, randomAddr, signature, publicKeys[pubKeyIdx]);
+        return _verifyWithPublicKey(hashedMessage, randomAddr, signature, publicKey);
     }
 
     /// @dev Pauses the contract to prevent any further updates.
@@ -149,7 +149,13 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             revert ProcessingSignatureFailed();
         }
 
-        address addr = ecrecover(bytes32(spx), publicKey.parity, bytes32(publicKey.px), bytes32(cpx));
+        uint8 parity = publicKey.parity;
+        if (cpx > _ORDER / 2) {
+            cpx = _ORDER - cpx;
+            parity = parity == 27 ? 28 : 27;
+        }
+
+        address addr = ecrecover(bytes32(spx), parity, bytes32(publicKey.px), bytes32(cpx));
         return randomAddr == addr;
     }
 

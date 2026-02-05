@@ -98,7 +98,7 @@ This script deploys the full set of Tunnel Router components, including the Tunn
 Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a description of each variable you need to set, along with example values.
 
 | Variable            | Description                                                                                                                                                           | Example                                      |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
 | `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                                                                                                                  | `https://sepolia.infura.io/v3/XXXX`          |
 | `TARGET_CHAIN_ID`   | chain name id on Band                                                                                                                                                 | `chainname-mainnet`                          |
 | `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple                                                                                                          | `0xabc123...,0xdef456...`                    |
@@ -145,7 +145,7 @@ initiates the tunnel on BandChain.
 Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 
 | Variable                    | Description                                                                                                            | Example                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
 | `RPC_URL`                   | RPC endpoint of the target Ethereum-compatible chain                                                                   | `https://sepolia.infura.io/v3/XXXX`          |
 | `TARGET_CHAIN_ID`           | chain name id on Band                                                                                                  | `chainname-mainnet`                          |
 | `TUNNEL_ROUTER`             | Deployed TunnelRouter contract address                                                                                 | `0x1234abcd....`                             |
@@ -191,7 +191,6 @@ Both of the following accounts must have a sufficient balance of the native toke
 If either account lacks sufficient balance, deployment or subsequent operations may fail.
 
 ---
-
 **Note:**  
 Set `ENCODER_TYPE=tick` in your configuration to deploy and initialize `PacketConsumerTick`.
 

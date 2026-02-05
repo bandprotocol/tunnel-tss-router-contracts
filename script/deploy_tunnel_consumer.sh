@@ -16,7 +16,7 @@ export TUNNEL_ROUTER=
 VAULT_BALANCE=
 OPERATOR_ADDRESS=
 GAS_TYPE=eip1559
-ZKSYNC= false
+ZKSYNC=false
 
 # Bandchain
 BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/

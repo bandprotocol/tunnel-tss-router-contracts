@@ -149,12 +149,13 @@ contract TssVerifier is Pausable, Ownable2Step, ITssVerifier {
             revert ProcessingSignatureFailed();
         }
 
+        uint8 parity = publicKey.parity;
         if (cpx > _ORDER / 2) {
             cpx = _ORDER - cpx;
-            publicKey.parity = publicKey.parity == 27 ? 28 : 27;
+            parity = parity == 27 ? 28 : 27;
         }
 
-        address addr = ecrecover(bytes32(spx), publicKey.parity, bytes32(publicKey.px), bytes32(cpx));
+        address addr = ecrecover(bytes32(spx), parity, bytes32(publicKey.px), bytes32(cpx));
         return randomAddr == addr;
     }
 

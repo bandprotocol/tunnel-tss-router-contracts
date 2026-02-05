@@ -18,7 +18,7 @@ export PRIORITY_FEE=1wei
 export GAS_PRICE=
 export REFUNDABLE=true
 export TRANSITION_PERIOD=172800
-export ZKSYNC = false
+export ZKSYNC=false
 OPERATOR_ADDRESS=
 
 # Bandchain

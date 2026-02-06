@@ -12,6 +12,7 @@
 The Tunnel-TSS-Router is an innovative relaying solution that connects EVM networks with Band Protocol's price feeds data more efficiently than the current Bridge smart contract. It leverages threshold signature technology and a custom signing procedure to minimize proof size and verification operations, resulting in significant gas savings.
 
 ## Background
+
 The current Bridge smart contract requires extensive EVM operations for lite client verification, leading to high gas consumption. This inefficiency stems from several factors such as:
 
 1. Storing and retrieving validators with voting power
@@ -22,18 +23,29 @@ The current Bridge smart contract requires extensive EVM operations for lite cli
 These operations result in high gas costs and slower transaction processing. The Tunnel-TSS-Router addresses these issues by implementing a more efficient verification mechanism using threshold signatures.
 
 ## Installation
+
 If you don't have Foundry installed, run the following command to install foundryup, the Foundry toolchain installer:
+
 ```sh
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
+In case you want to work with zkEVM network, you need to install ZKsync toolchain too.
+
+```
+curl -L https://raw.githubusercontent.com/matter-labs/foundry-zksync/main/install-foundry-zksync | bash
+```
+
 ## Testing
+
 Run the following command to execute tests:
+
 ```sh
 forge test -vv
 ```
 
 ## Data Flow
+
 The Tunnel-TSS-Router system consists of multiple coordinated components that work together to securely relay data:
 
 1. A **Relayer** submits data to the `TunnelRouter`
@@ -44,6 +56,7 @@ The Tunnel-TSS-Router system consists of multiple coordinated components that wo
 6. If the remaining balance drops below a configured threshold, the Target Contract is marked as **inactive** to prevent further relaying
 
 ## Features
+
 Built on threshold signature technology and a custom signing procedure, the project offers several advantages:
 
 1. 🔁 **Efficient Relaying Process**
@@ -84,21 +97,22 @@ This script deploys the full set of Tunnel Router components, including the Tunn
 
 Edit the variables at the top of `script/deploy_tunnel_router.sh`. Below is a description of each variable you need to set, along with example values.
 
-| Variable            | Description                                                                                                  | Example                                      |
-|---------------------|--------------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                                                         | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`   | chain name id on Band                                                                    | `chainname-mainnet`                 |
-| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple                                                 | `0xabc123...,0xdef456...`                    |
-| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                                                        | `0.1ether`                                   |
-| `GAS_TYPE`   | Set to `eip1559` to use priority-fee model; set to `legacy` for a fixed gas-price based contract                  | `eip1559` or `legacy`                                       |
-| `PRIORITY_FEE`      | Default tip for priority-fee-based networks, used if `GAS_TYPE` is `eip1559`                                         | `1wei`                                       |
-| `GAS_PRICE`         | Fixed gas price used when `GAS_TYPE` is `legacy`                          | `20gwei`                                     |
+| Variable            | Description                                                                                                                                                           | Example                                      |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| `RPC_URL`           | RPC endpoint of the target Ethereum-compatible chain                                                                                                                  | `https://sepolia.infura.io/v3/XXXX`          |
+| `TARGET_CHAIN_ID`   | chain name id on Band                                                                                                                                                 | `chainname-mainnet`                          |
+| `RELAYER_ADDR`      | Address(es) of initial relayers, comma-separated if multiple                                                                                                          | `0xabc123...,0xdef456...`                    |
+| `RELAYER_BALANCE`   | Native token value to send to each relayer (for fees)                                                                                                                 | `0.1ether`                                   |
+| `GAS_TYPE`          | Set to `eip1559` to use priority-fee model; set to `legacy` for a fixed gas-price based contract                                                                      | `eip1559` or `legacy`                        |
+| `PRIORITY_FEE`      | Default tip for priority-fee-based networks, used if `GAS_TYPE` is `eip1559`                                                                                          | `1wei`                                       |
+| `GAS_PRICE`         | Fixed gas price used when `GAS_TYPE` is `legacy`                                                                                                                      | `20gwei`                                     |
 | `REFUNDABLE`        | Whether the router collects fees from the Vault to refund to the packet consumer; when `false`, no fees are collected from the Vault and relayers are not compensated | `true` or `false`                            |
-| `TRANSITION_PERIOD` | Time in seconds for transition period                                        | `172800`                                     |
-| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                               | `https://rpc.laozi3.bandchain.org/`          |
-| `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple   | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| `TRANSITION_PERIOD` | Time in seconds for transition period                                                                                                                                 | `172800`                                     |
+| `BANDCHAIN_RPC_URL` | RPC endpoint of BandChain node                                                                                                                                        | `https://rpc.laozi3.bandchain.org/`          |
+| `OPERATOR_ADDRESS`  | Address that will be set as contract operator, comma-separated if multiple                                                                                            | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| `ZKSYNC`            | `true` if the destination chain is zkEvm                                                                                                                              | `true` or `false`                            |
 
-_Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script._
+\_Note: The `PRIVATE_KEY` environment variable (not in file) must also be exported in your shell before running the script.
 
 **Step 2: Run the Script**
 
@@ -108,9 +122,11 @@ bash script/deploy_tunnel_router.sh
 ```
 
 **Environment Variables:**
+
 - `PRIVATE_KEY`: The private key used to sign the deployment transactions. _This environment variable must be set for the script to work._
 
 **What it does:**
+
 - Sets up the deployment environment with your provided `PRIVATE_KEY`
 - Deploys the `TunnelRouter` contract, the `Vault` contract, and the `TSSVerifier` contract
 - Deploys proxy contracts for both `TunnelRouter` and `Vault`
@@ -120,29 +136,29 @@ bash script/deploy_tunnel_router.sh
 
 ### `script/deploy_tunnel_consumer.sh`
 
-This script automates the full deployment of the Tunnel Consumer component. It deploys the PacketConsumer 
-contract, also sets up a separate proxy contract that serves as an interface to query the PacketConsumer, and 
+This script automates the full deployment of the Tunnel Consumer component. It deploys the PacketConsumer
+contract, also sets up a separate proxy contract that serves as an interface to query the PacketConsumer, and
 initiates the tunnel on BandChain.
 
 **Step 1: Configure Variables**
 
 Edit the variables at the top of `script/deploy_tunnel_consumer.sh` as shown:
 
-| Variable                    | Description                                                                | Example                                      |
-|-----------------------------|----------------------------------------------------------------------------|----------------------------------------------|
-| `RPC_URL`                   | RPC endpoint of the target Ethereum-compatible chain                       | `https://sepolia.infura.io/v3/XXXX`          |
-| `TARGET_CHAIN_ID`           | chain name id on Band                                                      | `chainname-mainnet`                          |
-| `TUNNEL_ROUTER`             | Deployed TunnelRouter contract address                                     | `0x1234abcd....`                             |
-| `VAULT_BALANCE`             | ETH or coin value to fund the consumer's vault (for fees)                  | `0.05ether`                                  |
-| `OPERATOR_ADDRESS`          | Address that will be set as contract operator, comma-separated if multiple | `0x0fedcba9876543210fedcba9876543210fedcba9` |
-| `GAS_TYPE`   | Set to `eip1559` to use priority-fee model; set to `legacy` for a fixed gas-price based contract                  | `eip1559` or `legacy`    |
-| `BANDCHAIN_RPC_URL`         | RPC endpoint for BandChain node                                            | `https://rpc.laozi3.bandchain.org/`          |
-| `WALLET_NAME`               | Name of the BandChain wallet                                               | `alice`                                      |
-| `BANDCHAIN_KEYRING_BACKEND` | BandChain key storage backend (`os`, `file`, or `test`)                    | `os`                                         |
-| `PRICE_INTERVAL`            | Seconds between oracle price reports                                       | `300`                                        |
-| `PRICE_DEVIATION_JSON_FILE` | JSON file with allowed price deviation thresholds                          | `deviation.json`                             |
-| `FEE_PAYER_BALANCE`         | Amount to send to BandChain fee payer, with denom                          | `1000000uband`                               |
-| `ENCODER_TYPE`              | Encoder type used for the PacketConsumer; use `tick` for tick-based encoding or `fixed_point` for fixed point encoding | `tick` or `fixed_point`                            |
+| Variable                    | Description                                                                                                            | Example                                      |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| `RPC_URL`                   | RPC endpoint of the target Ethereum-compatible chain                                                                   | `https://sepolia.infura.io/v3/XXXX`          |
+| `TARGET_CHAIN_ID`           | chain name id on Band                                                                                                  | `chainname-mainnet`                          |
+| `TUNNEL_ROUTER`             | Deployed TunnelRouter contract address                                                                                 | `0x1234abcd....`                             |
+| `VAULT_BALANCE`             | ETH or coin value to fund the consumer's vault (for fees)                                                              | `0.05ether`                                  |
+| `OPERATOR_ADDRESS`          | Address that will be set as contract operator, comma-separated if multiple                                             | `0x0fedcba9876543210fedcba9876543210fedcba9` |
+| `GAS_TYPE`                  | Set to `eip1559` to use priority-fee model; set to `legacy` for a fixed gas-price based contract                       | `eip1559` or `legacy`                        |
+| `BANDCHAIN_RPC_URL`         | RPC endpoint for BandChain node                                                                                        | `https://rpc.laozi3.bandchain.org/`          |
+| `WALLET_NAME`               | Name of the BandChain wallet                                                                                           | `alice`                                      |
+| `BANDCHAIN_KEYRING_BACKEND` | BandChain key storage backend (`os`, `file`, or `test`)                                                                | `os`                                         |
+| `PRICE_INTERVAL`            | Seconds between oracle price reports                                                                                   | `300`                                        |
+| `PRICE_DEVIATION_JSON_FILE` | JSON file with allowed price deviation thresholds                                                                      | `deviation.json`                             |
+| `FEE_PAYER_BALANCE`         | Amount to send to BandChain fee payer, with denom                                                                      | `1000000uband`                               |
+| `ENCODER_TYPE`              | Encoder type used for the PacketConsumer; use `tick` for tick-based encoding or `fixed_point` for fixed point encoding | `tick` or `fixed_point`                      |
 
 _Note: You must also `export PRIVATE_KEY=<your_private_key>` in your shell, as with the router script._
 
@@ -154,17 +170,21 @@ bash script/deploy_tunnel_consumer.sh
 ```
 
 **Environment Variables:**
+
 - `PRIVATE_KEY`: The private key used to sign all deployment transactions. _This variable must be set for the script to work._
 
 **What it does:**
+
 - Deploys the PacketConsumer contract (and proxy) to your target EVM chain
 - Executes necessary BandChain CLI commands to set up and activate the tunnel linking both chains
 - Funds the tunnel on both sides for correct operation
 
 ---
 
-### **Note:**  
+### **Note:**
+
 Both of the following accounts must have a sufficient balance of the native token (e.g. ETH) on the target network to cover deployment and operational transaction fees:
+
 - The account corresponding to your `PRIVATE_KEY` (used for deployment on the EVM chain)
 - The account used for BandChain interactions (i.e., your Band wallet specified by wallet name or address)
 
@@ -178,4 +198,5 @@ Set `ENCODER_TYPE=tick` in your configuration to deploy and initialize `PacketCo
 `PacketConsumerTick` encodes the base timestamp using a **31-bit Unix time (seconds)**, so it only supports timestamps **before 2038-01-19** (i.e., **time < 2^31**).
 
 ## Contribution
+
 We welcome and encourage contributions to the project. If you have suggestions or feedback, please open an issue or submit a pull request. We appreciate your contributions and look forward to collaborating to improve the Tunnel-TSS-Router.

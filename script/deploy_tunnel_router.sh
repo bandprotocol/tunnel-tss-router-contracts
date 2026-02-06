@@ -18,6 +18,7 @@ export PRIORITY_FEE=1wei
 export GAS_PRICE=
 export REFUNDABLE=true
 export TRANSITION_PERIOD=172800
+export ZKSYNC=false
 OPERATOR_ADDRESS=
 
 # Bandchain
@@ -45,6 +46,14 @@ if [ "$GAS_TYPE" == "legacy" ]; then
     GAS_TYPE_FLAG=--legacy
 else
     GAS_TYPE_FLAG=
+fi
+
+if [ "$ZKSYNC" == "true" ]; then
+    ZKSYNC_BUILD_FLAG="--zksync --suppress-errors sendtransfer"
+    ZKSYNC_FLAG="--zksync"
+else
+    ZKSYNC_BUILD_FLAG=""
+    ZKSYNC_FLAG=""
 fi
 
 # ================================================
@@ -77,10 +86,10 @@ trap print_summary EXIT
 # ================================================
 
 echo "========== Cleaning and Building contracts =========="
-forge clean && forge build --optimize true --optimizer-runs 200
+forge clean && forge build --optimize true --optimizer-runs 200 $ZKSYNC_BUILD_FLAG
 
 echo "========== Running deployment script to deploy contracts =========="
-MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200 $GAS_TYPE_FLAG)
+MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200 $GAS_TYPE_FLAG $ZKSYNC_FLAG)
 
 echo "Parsing deployed contract addresses ..."
 VAULT=$( echo "$MSG" | grep "Vault Proxy" | awk '{print $5}' | xargs)
@@ -98,16 +107,16 @@ sleep 5
 # ================================================
 
 echo "========== Granting Relayer role in TunnelRouter =========="
-cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG
+cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $ZKSYNC_FLAG
 sleep 5
 
 echo "========== Granting GasFeeUpdater role to operator =========="
-cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG
+cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $ZKSYNC_FLAG
 sleep 5
 
 echo "========== Sending initial balance to relayer(s) =========="
 for addr in $(echo $RELAYER_ADDR | tr ',' ' '); do
     echo "Sending balance to relayer $addr"
-    cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG
+    cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $ZKSYNC_FLAG
     sleep 1
 done

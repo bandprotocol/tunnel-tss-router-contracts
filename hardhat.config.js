@@ -12,7 +12,7 @@ module.exports = {
         runs: 200,
       },
       evmVersion: "shanghai",
-      viaIR: true,
+      viaIR: false,
     },
   },
   paths: {

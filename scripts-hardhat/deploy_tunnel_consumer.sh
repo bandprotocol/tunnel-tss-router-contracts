@@ -17,20 +17,20 @@ fi
 
 # Destination Chain
 export RPC_URL=
-export TARGET_CHAIN_ID=-testnet
+export TARGET_CHAIN_ID=
 export TUNNEL_ROUTER=
-export VAULT_BALANCE=5ether
+export VAULT_BALANCE=1ether
 export OPERATOR_ADDRESS=
 export GAS_TYPE=eip1559
 
 # Bandchain
 export BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
 export WALLET_NAME=
-export BANDCHAIN_KEYRING_BACKEND=os
-export PRICE_INTERVAL=3600
-export PRICE_DEVIATION_JSON_FILE=./script/deviations.json
-export FEE_PAYER_BALANCE=10000000uband
-export ENCODER_TYPE=tick
+export BANDCHAIN_KEYRING_BACKEND=
+export PRICE_INTERVAL=
+export PRICE_DEVIATION_JSON_FILE=
+export FEE_PAYER_BALANCE=
+export ENCODER_TYPE=
 
 export CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
 
@@ -68,7 +68,7 @@ trap print_summary EXIT
 # ================================================
 
 echo "========== Compiling contracts with Hardhat =========="
-npx hardhat compile
+npx hardhat compile --force
 
 if [ "$ENCODER_TYPE" == "tick" ]; then
     # Extract signal_ids from price deviation JSON file

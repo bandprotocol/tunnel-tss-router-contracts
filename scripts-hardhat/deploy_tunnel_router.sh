@@ -16,7 +16,7 @@ echo "========== Setting environment variables =========="
 
 # Destination Chain
 export RPC_URL=
-export TARGET_CHAIN_ID=-testnet
+export TARGET_CHAIN_ID=
 export RELAYER_ADDR=
 export RELAYER_BALANCE=0.1ether
 export GAS_TYPE=eip1559
@@ -84,7 +84,7 @@ trap print_summary EXIT
 # ================================================
 
 echo "========== Compiling contracts with Hardhat =========="
-npx hardhat compile
+npx hardhat compile --force
 
 echo "========== Running deployment script to deploy contracts =========="
 DEPLOY_OUTPUT=$(npx hardhat run scripts-hardhat/deployTunnelRouter.js --network localhost)

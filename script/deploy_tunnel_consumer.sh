@@ -10,6 +10,7 @@ set -e
 #       For non-refundable tunnels (router REFUNDABLE=false), funding is not needed.
 
 # Destination Chain
+EVM_VERSION=shanghai
 RPC_URL=
 TARGET_CHAIN_ID=
 export TUNNEL_ROUTER=
@@ -70,7 +71,7 @@ trap print_summary EXIT
 # ================================================
 
 echo "========== Cleaning and Building contracts =========="
-forge clean && forge build --optimize true --optimizer-runs 200 $ZKSYNC_BUILD_FLAG
+forge clean && forge build --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $ZKSYNC_BUILD_FLAG
 
 if [ "$ENCODER_TYPE" == "tick" ]; then
     # Extract signal_ids from price deviation JSON file
@@ -80,7 +81,7 @@ if [ "$ENCODER_TYPE" == "tick" ]; then
     echo "================================================"
 
     echo "========== Deploying PacketConsumerTick contract =========="
-    MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+    MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
     export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumerTick deployed at:" | awk '{print $4}' | xargs)
     PACKET_CONSUMER_TYPE=tick
 
@@ -89,13 +90,13 @@ if [ "$ENCODER_TYPE" == "tick" ]; then
     sleep 5
 else
     echo "========== Deploying PacketConsumer contract =========="
-    MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+    MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
     export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
     PACKET_CONSUMER_TYPE=fixed_point
 fi
 
 echo "========== Deploying PacketConsumerProxy contract =========="
-MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
 PACKET_CONSUMER_PROXY=$( echo "$MSG" | grep "PacketConsumerProxy deployed at:" | awk '{print $4}' | xargs)
 
 echo "================================================"

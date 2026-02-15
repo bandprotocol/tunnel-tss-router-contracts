@@ -22,6 +22,8 @@ export TUNNEL_ROUTER=
 export VAULT_BALANCE=1ether
 export OPERATOR_ADDRESS=
 export GAS_TYPE=eip1559
+export USE_ZKSYNC=false
+export ETH_NETWORK=
 
 # Bandchain
 export BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
@@ -52,6 +54,10 @@ print_summary() {
     echo "Bandchain source chain ID: $CHAIN_ID (rpc url: $BANDCHAIN_RPC_URL)"
     echo "Target chain ID: $TARGET_CHAIN_ID (rpc url: $RPC_URL)"
     echo "Deployed contracts:"
+    echo "Using zkSync: $USE_ZKSYNC"
+    if [ "$USE_ZKSYNC" == "true" ]; then
+        echo "zkSync L1 Network: $ETH_NETWORK"
+    fi
     echo "Packet consumer type: $PACKET_CONSUMER_TYPE"
     echo "Packet consumer contract: $PACKET_CONSUMER"
     echo "Packet consumer proxy contract: $PACKET_CONSUMER_PROXY"

@@ -2,12 +2,16 @@ const { ethers } = require("hardhat");
 
 async function main() {
   const tunnelRouterAddr = process.env.TUNNEL_ROUTER;
+  const useZkSync = process.env.USE_ZKSYNC === "true";
   
   if (!tunnelRouterAddr) {
     throw new Error("TUNNEL_ROUTER environment variable is not set");
   }
 
   console.log("Deploying PacketConsumerTick...");
+  if (useZkSync) {
+    console.log("Using zkSync deployment mode");
+  }
   const PacketConsumerTick = await ethers.getContractFactory("PacketConsumerTick");
   const packetConsumerTick = await PacketConsumerTick.deploy(tunnelRouterAddr);
   await packetConsumerTick.waitForDeployment();

@@ -2,6 +2,7 @@ const { ethers } = require("hardhat");
 
 async function main() {
   const packetConsumerAddr = process.env.PACKET_CONSUMER;
+  const useZkSync = process.env.USE_ZKSYNC === "true";
   
   if (!packetConsumerAddr) {
     throw new Error("PACKET_CONSUMER environment variable is not set");
@@ -11,6 +12,9 @@ async function main() {
   const signerAddress = await signer.getAddress();
 
   console.log("Deploying PacketConsumerProxy...");
+  if (useZkSync) {
+    console.log("Using zkSync deployment mode");
+  }
   const PacketConsumerProxy = await ethers.getContractFactory("PacketConsumerProxy");
   const packetConsumerProxy = await PacketConsumerProxy.deploy(packetConsumerAddr, signerAddress);
   await packetConsumerProxy.waitForDeployment();

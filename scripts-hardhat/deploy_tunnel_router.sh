@@ -26,6 +26,8 @@ GAS_LIMIT=
 export REFUNDABLE=true
 export TRANSITION_PERIOD=172800
 export OPERATOR_ADDRESS=
+export USE_ZKSYNC=false
+export ETH_NETWORK=
 
 # Bandchain
 export BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
@@ -75,6 +77,10 @@ print_summary() {
     echo "Deployed contracts:"
     echo "Gas type: $GAS_TYPE "
     echo "Tunnel refundable: $REFUNDABLE"
+    echo "Using zkSync: $USE_ZKSYNC"
+    if [ "$USE_ZKSYNC" == "true" ]; then
+        echo "zkSync L1 Network: $ETH_NETWORK"
+    fi
     echo "VAULT(proxy): $VAULT"
     echo "VAULT(impl): $VAULT_IMPL"
     echo "VAULT(admin): $VAULT_ADMIN"

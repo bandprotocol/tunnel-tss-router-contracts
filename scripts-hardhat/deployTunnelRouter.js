@@ -26,6 +26,7 @@ async function main() {
   const sourceChainId = process.env.SOURCE_CHAIN_ID;
   const targetChainId = process.env.TARGET_CHAIN_ID;
   const refundable = process.env.REFUNDABLE === "true";
+  const useZkSync = process.env.USE_ZKSYNC === "true";
 
   if (!transitionPeriod || !transitionOriginatorHash || !tssParity || !tssPublicKey) {
     throw new Error("Missing required environment variables");
@@ -35,6 +36,9 @@ async function main() {
   }
 
   console.log("Deploying TunnelRouter contracts...");
+  if (useZkSync) {
+    console.log("Using zkSync deployment mode");
+  }
 
   // Get signer
   const [signer] = await ethers.getSigners();
@@ -67,12 +71,24 @@ async function main() {
   );
   await vaultProxy.waitForDeployment();
   const vaultProxyAddress = await vaultProxy.getAddress();
-  const vaultImplAddress = await upgrades.erc1967.getImplementationAddress(vaultProxyAddress);
-  const vaultAdminAddress = await upgrades.erc1967.getAdminAddress(vaultProxyAddress);
+  
+  let vaultImplAddress, vaultAdminAddress;
+  if (!useZkSync) {
+    vaultImplAddress = await upgrades.erc1967.getImplementationAddress(vaultProxyAddress);
+    vaultAdminAddress = await upgrades.erc1967.getAdminAddress(vaultProxyAddress);
+  } else {
+    // For zkSync, read ERC-1967 storage slots directly
+    const implSlot = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+    const adminSlot = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
+    const implStorage = await ethers.provider.getStorage(vaultProxyAddress, implSlot);
+    const adminStorage = await ethers.provider.getStorage(vaultProxyAddress, adminSlot);
+    vaultImplAddress = ethers.getAddress("0x" + implStorage.slice(-40));
+    vaultAdminAddress = ethers.getAddress("0x" + adminStorage.slice(-40));
+  }
   
   console.log("Vault Proxy deployed at:", vaultProxyAddress);
-  console.log("Vault Implementation deployed at:", vaultImplAddress);
-  console.log("Vault Admin deployed at:", vaultAdminAddress);
+  if (vaultImplAddress) console.log("Vault Implementation deployed at:", vaultImplAddress);
+  if (vaultAdminAddress) console.log("Vault Admin deployed at:", vaultAdminAddress);
 
   // Deploy TunnelRouter based on gas type
   let tunnelRouterProxy;
@@ -126,13 +142,25 @@ async function main() {
 
   await tunnelRouterProxy.waitForDeployment();
   const tunnelRouterProxyAddress = await tunnelRouterProxy.getAddress();
-  const tunnelRouterImplAddress = await upgrades.erc1967.getImplementationAddress(tunnelRouterProxyAddress);
-  const tunnelRouterAdminAddress = await upgrades.erc1967.getAdminAddress(tunnelRouterProxyAddress);
+  
+  let tunnelRouterImplAddress, tunnelRouterAdminAddress;
+  if (!useZkSync) {
+    tunnelRouterImplAddress = await upgrades.erc1967.getImplementationAddress(tunnelRouterProxyAddress);
+    tunnelRouterAdminAddress = await upgrades.erc1967.getAdminAddress(tunnelRouterProxyAddress);
+  } else {
+    // For zkSync, read ERC-1967 storage slots directly
+    const implSlot = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+    const adminSlot = "0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103";
+    const implStorage = await ethers.provider.getStorage(tunnelRouterProxyAddress, implSlot);
+    const adminStorage = await ethers.provider.getStorage(tunnelRouterProxyAddress, adminSlot);
+    tunnelRouterImplAddress = ethers.getAddress("0x" + implStorage.slice(-40));
+    tunnelRouterAdminAddress = ethers.getAddress("0x" + adminStorage.slice(-40));
+  }
 
   console.log("TunnelRouter type:", tunnelRouterType);
   console.log("TunnelRouter Proxy deployed at:", tunnelRouterProxyAddress);
-  console.log("TunnelRouter Implementation deployed at:", tunnelRouterImplAddress);
-  console.log("TunnelRouter Admin deployed at:", tunnelRouterAdminAddress);
+  if (tunnelRouterImplAddress) console.log("TunnelRouter Implementation deployed at:", tunnelRouterImplAddress);
+  if (tunnelRouterAdminAddress) console.log("TunnelRouter Admin deployed at:", tunnelRouterAdminAddress);
 
   // Set tunnel router in vault
   console.log("Setting tunnel router in vault...");

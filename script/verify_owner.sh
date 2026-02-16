@@ -92,6 +92,18 @@ get_owner() {
     fi
 }
 
+# Function to get pending owner from Ownable2Step contracts
+get_pending_owner() {
+    local contract_address=$1
+    local pending_owner=$(cast call "$contract_address" "pendingOwner()(address)" --rpc-url "$RPC_URL" 2>/dev/null)
+    
+    if [ $? -eq 0 ] && [ ! -z "$pending_owner" ] && [ "$pending_owner" != "0x0000000000000000000000000000000000000000" ]; then
+        echo "$pending_owner"
+    else
+        echo ""
+    fi
+}
+
 # Function to check if address has role
 has_role() {
     local contract_address=$1
@@ -223,6 +235,14 @@ if [ "$VAULT_PROXY" != "0x0000000000000000000000000000000000000000" ]; then
     else
         display_status "false" "true"
     fi
+    
+    # Check pending owner
+    pending_owner=$(get_pending_owner "$VAULT_PROXY")
+    if [ ! -z "$pending_owner" ]; then
+        echo -e "\n  ${YELLOW}⚠ PENDING OWNERSHIP TRANSFER DETECTED!${NC}"
+        echo -e "  ${BLUE}Pending Owner:${NC} $pending_owner"
+        echo -e "  ${RED}Action Required: Pending owner must call acceptOwnership()${NC}"
+    fi
 else
     echo -e "   ${YELLOW}⚠ Address not set${NC}"
 fi
@@ -249,6 +269,14 @@ if [ "$TSS_VERIFIER" != "0x0000000000000000000000000000000000000000" ]; then
         display_status "true" "true"
     else
         display_status "false" "true"
+    fi
+    
+    # Check pending owner
+    pending_owner=$(get_pending_owner "$TSS_VERIFIER")
+    if [ ! -z "$pending_owner" ]; then
+        echo -e "\n  ${YELLOW}⚠ PENDING OWNERSHIP TRANSFER DETECTED!${NC}"
+        echo -e "  ${BLUE}Pending Owner:${NC} $pending_owner"
+        echo -e "  ${RED}Action Required: Pending owner must call acceptOwnership()${NC}"
     fi
 else
     echo -e "   ${YELLOW}⚠ Address not set${NC}"

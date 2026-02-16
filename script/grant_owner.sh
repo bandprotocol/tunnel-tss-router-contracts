@@ -58,7 +58,7 @@ VAULT_PROXY_ADMIN=$(get_proxy_admin "$VAULT_PROXY_ADDRESS")
 
 TUNNEL_ROUTER_PROXY_ADMIN_OWNER=$(get_owner "$TUNNEL_ROUTER_PROXY_ADMIN")
 VAULT_PROXY_OWNER=$(get_owner "$VAULT_PROXY_ADDRESS")
-VAULT_PROXY_ADMIN_OWNER=$(get_owner "$VAULT_PROXY_ADDRESS")
+VAULT_PROXY_ADMIN_OWNER=$(get_owner "$VAULT_PROXY_ADMIN")
 TSS_VERIFIER_OWNER=$(get_owner "$TSS_VERIFIER_ADDRESS")
 PACKET_CONSUMER_PROXY_OWNER=$(get_owner "$PACKET_CONSUMER_PROXY_ADDRESS")
 
@@ -72,18 +72,21 @@ if [ -n "$TUNNEL_ROUTER_PROXY_ADMIN" ] && [ "$TUNNEL_ROUTER_PROXY_ADMIN_OWNER" !
     sleep 5
 fi
 
-# Transfer ownership of the Vault contract
+# Transfer ownership of the Vault contract (Ownable2Step - requires acceptOwnership)
 if [ "$VAULT_PROXY_OWNER" != "$TO_ADDRESS" ]; then
+    echo "Transferring Vault ownership to $TO_ADDRESS..."
     cast send "$VAULT_PROXY_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
     sleep 5
 fi
 if [ -n "$VAULT_PROXY_ADMIN" ] && [ "$VAULT_PROXY_ADMIN_OWNER" != "$TO_ADDRESS" ]; then
+    echo "Transferring Vault Proxy Admin ownership to $TO_ADDRESS..."
     cast send "$VAULT_PROXY_ADMIN" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
     sleep 5
 fi
 
-# Transfer ownership of the TssVerifier contract
+# Transfer ownership of the TssVerifier contract (Ownable2Step - requires acceptOwnership)
 if [ "$TSS_VERIFIER_OWNER" != "$TO_ADDRESS" ]; then
+    echo "Transferring TssVerifier ownership to $TO_ADDRESS..."
     cast send "$TSS_VERIFIER_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
     sleep 5
 fi
@@ -105,28 +108,37 @@ echo "================================================"
 echo "Summary of role/ownership transfers to: $TO_ADDRESS"
 echo ""
 echo "- TunnelRouterProxy ($TUNNEL_ROUTER_PROXY_ADDRESS):"
-echo "    Granted GasFeeUpdater role"
-echo "    Granted ADMIN role"
-echo "    Ownership transfer"
+echo "    ✓ Granted GasFeeUpdater role"
+echo "    ✓ Granted ADMIN role"
 if [ -n "$TUNNEL_ROUTER_PROXY_ADMIN" ]; then
     echo "    Proxy admin address: $TUNNEL_ROUTER_PROXY_ADMIN"
+    echo "    ✓ Transferred Proxy Admin ownership"
 fi
 echo ""
 echo "- VaultProxy ($VAULT_PROXY_ADDRESS):"
-echo "    Ownership transfer initiated (TO_ADDRESS must call acceptOwnership)"
+echo "    ✓ Ownership transfer initiated (Ownable2Step)"
 if [ -n "$VAULT_PROXY_ADMIN" ]; then
     echo "    Proxy admin address: $VAULT_PROXY_ADMIN"
-    echo "    Vault Proxy Admin: ownership transfer"
+    echo "    ✓ Vault Proxy Admin ownership transferred"
 fi
 echo ""
 echo "- TssVerifier ($TSS_VERIFIER_ADDRESS):"
-echo "    Ownership transfer initiated (TO_ADDRESS must call acceptOwnership)"
+echo "    ✓ Ownership transfer initiated (Ownable2Step)"
 echo ""
 echo "- PacketConsumer ($PACKET_CONSUMER_ADDRESS):"
-echo "    Granted TunnelActivator role"
-echo "    Granted ADMIN role"
+echo "    ✓ Granted TunnelActivator role"
+echo "    ✓ Granted ADMIN role"
 echo ""
 echo "- PacketConsumerProxy ($PACKET_CONSUMER_PROXY_ADDRESS):"
-echo "    Ownership transfer"
+echo "    ✓ Ownership transferred"
 echo ""
+echo "================================================"
+echo "NEXT STEPS:"
+echo "1. New owner ($TO_ADDRESS) must accept ownership:"
+echo "   cast send $VAULT_PROXY_ADDRESS 'acceptOwnership()' --private-key <NEW_OWNER_KEY> --rpc-url $RPC_URL"
+echo "   cast send $TSS_VERIFIER_ADDRESS 'acceptOwnership()' --private-key <NEW_OWNER_KEY> --rpc-url $RPC_URL"
+echo ""
+echo "2. After accepting ownership, run: ./revoke_owner.sh"
+echo ""
+echo "3. Verify everything with: ./verify_owner.sh"
 echo "================================================"

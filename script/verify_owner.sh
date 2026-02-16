@@ -34,9 +34,6 @@ normalize_address() {
     echo "$1" | tr '[:upper:]' '[:lower:]'
 }
 
-OLD_DEPLOYER_NORM=$(normalize_address "$OLD_DEPLOYER")
-NEW_OWNER_NORM=$(normalize_address "$NEW_OWNER")
-
 # Function to check if address matches
 check_address() {
     local addr1=$(normalize_address "$1")

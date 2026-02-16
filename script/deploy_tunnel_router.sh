@@ -9,6 +9,7 @@ set -e
 echo "========== Setting environment variables =========="
 
 # Destination Chain
+EVM_VERSION=shanghai
 RPC_URL=
 export TARGET_CHAIN_ID=
 RELAYER_ADDR=
@@ -86,10 +87,10 @@ trap print_summary EXIT
 # ================================================
 
 echo "========== Cleaning and Building contracts =========="
-forge clean && forge build --optimize true --optimizer-runs 200 $ZKSYNC_BUILD_FLAG
+forge clean && forge build --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $ZKSYNC_BUILD_FLAG 
 
 echo "========== Running deployment script to deploy contracts =========="
-MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200 $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+MSG=$(forge script script/SetupTunnelRouter.s.sol:Executor --rpc-url $RPC_URL --private-key $PRIVATE_KEY --slow --broadcast --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
 
 echo "Parsing deployed contract addresses ..."
 VAULT=$( echo "$MSG" | grep "Vault Proxy" | awk '{print $5}' | xargs)

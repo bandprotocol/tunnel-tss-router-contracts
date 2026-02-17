@@ -13,6 +13,7 @@ PACKET_CONSUMER_PROXY_ADDRESS=
 TO_ADDRESS=
 
 GAS_TYPE=eip1559
+GAS_LIMIT=
 
 # Note: Before running this script, export the following environment variables in your shell:
 #       export PRIVATE_KEY=<your_private_key>
@@ -21,6 +22,13 @@ if [ "$GAS_TYPE" == "legacy" ]; then
     GAS_TYPE_FLAG=--legacy
 else
     GAS_TYPE_FLAG=
+fi
+
+# Optional gas limit flag
+if [ -n "$GAS_LIMIT" ]; then
+    GAS_LIMIT_FLAG="--gas-limit $GAS_LIMIT"
+else
+    GAS_LIMIT_FLAG=
 fi
 
 ADMIN_ROLE=$(cast to-bytes32 0x00)
@@ -63,43 +71,43 @@ TSS_VERIFIER_OWNER=$(get_owner "$TSS_VERIFIER_ADDRESS")
 PACKET_CONSUMER_PROXY_OWNER=$(get_owner "$PACKET_CONSUMER_PROXY_ADDRESS")
 
 # Grant all roles of the TunnelRouter contract
-cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "grantGasFeeUpdater(address[])" "[$TO_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "grantGasFeeUpdater(address[])" "[$TO_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
-cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "grantRole(bytes32,address)" $ADMIN_ROLE "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "grantRole(bytes32,address)" $ADMIN_ROLE "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
 if [ -n "$TUNNEL_ROUTER_PROXY_ADMIN" ] && [ "$TUNNEL_ROUTER_PROXY_ADMIN_OWNER" != "$TO_ADDRESS" ]; then
-    cast send "$TUNNEL_ROUTER_PROXY_ADMIN" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+    cast send "$TUNNEL_ROUTER_PROXY_ADMIN" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
     sleep 5
 fi
 
 # Transfer ownership of the Vault contract (Ownable2Step - requires acceptOwnership)
 if [ "$VAULT_PROXY_OWNER" != "$TO_ADDRESS" ]; then
     echo "Transferring Vault ownership to $TO_ADDRESS..."
-    cast send "$VAULT_PROXY_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+    cast send "$VAULT_PROXY_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
     sleep 5
 fi
 if [ -n "$VAULT_PROXY_ADMIN" ] && [ "$VAULT_PROXY_ADMIN_OWNER" != "$TO_ADDRESS" ]; then
     echo "Transferring Vault Proxy Admin ownership to $TO_ADDRESS..."
-    cast send "$VAULT_PROXY_ADMIN" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+    cast send "$VAULT_PROXY_ADMIN" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
     sleep 5
 fi
 
 # Transfer ownership of the TssVerifier contract (Ownable2Step - requires acceptOwnership)
 if [ "$TSS_VERIFIER_OWNER" != "$TO_ADDRESS" ]; then
     echo "Transferring TssVerifier ownership to $TO_ADDRESS..."
-    cast send "$TSS_VERIFIER_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+    cast send "$TSS_VERIFIER_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
     sleep 5
 fi
 
 # Grant all roles of the PacketConsumer contract
-cast send "$PACKET_CONSUMER_ADDRESS" "grantTunnelActivatorRole(address[])" "[$TO_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$PACKET_CONSUMER_ADDRESS" "grantTunnelActivatorRole(address[])" "[$TO_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
-cast send "$PACKET_CONSUMER_ADDRESS" "grantRole(bytes32,address)" $ADMIN_ROLE "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$PACKET_CONSUMER_ADDRESS" "grantRole(bytes32,address)" $ADMIN_ROLE "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
 
 # Transfer ownership of the PacketConsumerProxy contract
 if [ "$PACKET_CONSUMER_PROXY_OWNER" != "$TO_ADDRESS" ]; then
-    cast send "$PACKET_CONSUMER_PROXY_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+    cast send "$PACKET_CONSUMER_PROXY_ADDRESS" "transferOwnership(address)" "$TO_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
     sleep 5
 fi
 

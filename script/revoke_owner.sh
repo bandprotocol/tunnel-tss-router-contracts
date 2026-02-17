@@ -10,6 +10,7 @@ PACKET_CONSUMER_ADDRESS=
 FROM_ADDRESS=
 
 GAS_TYPE=eip1559
+GAS_LIMIT=
 
 # Note: Before running this script, export the following environment variables in your shell:
 #       export PRIVATE_KEY=<your_private_key>
@@ -20,18 +21,25 @@ else
     GAS_TYPE_FLAG=
 fi
 
+# Optional gas limit flag
+if [ -n "$GAS_LIMIT" ]; then
+    GAS_LIMIT_FLAG="--gas-limit $GAS_LIMIT"
+else
+    GAS_LIMIT_FLAG=
+fi
+
 ADMIN_ROLE=$(cast to-bytes32 0x00)
 
 # Revoke all roles of the TunnelRouter contract
-cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "revokeGasFeeUpdater(address[])" "[$FROM_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "revokeGasFeeUpdater(address[])" "[$FROM_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
-cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "revokeRole(bytes32,address)" $ADMIN_ROLE "$FROM_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$TUNNEL_ROUTER_PROXY_ADDRESS" "revokeRole(bytes32,address)" $ADMIN_ROLE "$FROM_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
 
 # Revoke all roles of the PacketConsumer contract
-cast send "$PACKET_CONSUMER_ADDRESS" "revokeTunnelActivatorRole(address[])" "[$FROM_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$PACKET_CONSUMER_ADDRESS" "revokeTunnelActivatorRole(address[])" "[$FROM_ADDRESS]" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
-cast send "$PACKET_CONSUMER_ADDRESS" "revokeRole(bytes32,address)" $ADMIN_ROLE "$FROM_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG
+cast send "$PACKET_CONSUMER_ADDRESS" "revokeRole(bytes32,address)" $ADMIN_ROLE "$FROM_ADDRESS" --private-key "$PRIVATE_KEY" --rpc-url "$RPC_URL" $GAS_TYPE_FLAG $GAS_LIMIT_FLAG
 sleep 5
 
 # Print Summary at end

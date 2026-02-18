@@ -17,6 +17,7 @@ export TUNNEL_ROUTER=
 VAULT_BALANCE=
 OPERATOR_ADDRESS=
 GAS_TYPE=eip1559
+GAS_LIMIT=
 ZKSYNC=false
 
 # Bandchain
@@ -34,6 +35,13 @@ if [ "$GAS_TYPE" == "legacy" ]; then
     GAS_TYPE_FLAG=--legacy
 else
     GAS_TYPE_FLAG=
+fi
+
+# Optional gas limit flag
+if [ -n "$GAS_LIMIT" ]; then
+    GAS_LIMIT_FLAG="--gas-limit $GAS_LIMIT"
+else
+    GAS_LIMIT_FLAG=
 fi
 
 if [ "$ZKSYNC" == "true" ]; then
@@ -81,22 +89,22 @@ if [ "$ENCODER_TYPE" == "tick" ]; then
     echo "================================================"
 
     echo "========== Deploying PacketConsumerTick contract =========="
-    MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+    MSG=$(forge script script/DeployPacketConsumerTick.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $GAS_LIMIT_FLAG $ZKSYNC_FLAG)
     export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumerTick deployed at:" | awk '{print $4}' | xargs)
     PACKET_CONSUMER_TYPE=tick
 
     echo "========== Listing signal IDs on PacketConsumerTick =========="
-    cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $ZKSYNC_FLAG
+    cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $GAS_LIMIT_FLAG $ZKSYNC_FLAG
     sleep 5
 else
     echo "========== Deploying PacketConsumer contract =========="
-    MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+    MSG=$(forge script script/DeployPacketConsumer.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $GAS_LIMIT_FLAG $ZKSYNC_FLAG)
     export PACKET_CONSUMER=$( echo "$MSG" | grep "PacketConsumer deployed at:" | awk '{print $4}' | xargs)
     PACKET_CONSUMER_TYPE=fixed_point
 fi
 
 echo "========== Deploying PacketConsumerProxy contract =========="
-MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $ZKSYNC_FLAG)
+MSG=$(forge script script/DeployPacketConsumerProxy.s.sol:Executor --rpc-url $RPC_URL --slow --broadcast --private-key $PRIVATE_KEY --optimize true --optimizer-runs 200 --evm-version $EVM_VERSION $GAS_TYPE_FLAG $GAS_LIMIT_FLAG $ZKSYNC_FLAG)
 PACKET_CONSUMER_PROXY=$( echo "$MSG" | grep "PacketConsumerProxy deployed at:" | awk '{print $4}' | xargs)
 
 echo "================================================"
@@ -142,7 +150,7 @@ bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
 sleep 5
 
 echo "========== Granting Tunnel Activator role to operator =========="
-cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $ZKSYNC_FLAG
+cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $GAS_LIMIT_FLAG $ZKSYNC_FLAG
 sleep 5
 
 # ================================================
@@ -150,4 +158,4 @@ sleep 5
 # ================================================
 
 echo "========== Activating tunnel $TUNNEL_ID on target chain via PacketConsumer =========="
-cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $ZKSYNC_FLAG
+cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_TYPE_FLAG $GAS_LIMIT_FLAG $ZKSYNC_FLAG

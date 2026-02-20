@@ -35,7 +35,7 @@ contract Executor is Script {
 
         vm.startBroadcast();
         // Set the tunnel router address in the vault
-        Vault(payable(proxyVaultAddr)).setTunnelRouter(proxyTunnelRouterAddr);
+        Vault(payable(proxyVaultAddr)).setTunnelRouter{gas: 500000}(proxyTunnelRouterAddr);
         vm.stopBroadcast();
 
         console.log("Vault Proxy deployed at:", proxyVaultAddr);

@@ -22,6 +22,7 @@ export RELAYER_BALANCE=0.1ether
 export GAS_TYPE=eip1559
 export PRIORITY_FEE=1wei
 export GAS_PRICE=1gwei
+GAS_LIMIT=
 export REFUNDABLE=true
 export TRANSITION_PERIOD=172800
 export OPERATOR_ADDRESS=
@@ -52,6 +53,13 @@ if [ "$GAS_TYPE" == "legacy" ]; then
     GAS_FLAG="--legacy"
 else
     GAS_FLAG=""
+fi
+
+# Optional gas limit flag
+if [ -n "$GAS_LIMIT" ]; then
+    GAS_LIMIT_FLAG="--gas-limit $GAS_LIMIT"
+else
+    GAS_LIMIT_FLAG=
 fi
 
 # ================================================
@@ -108,12 +116,12 @@ sleep 5
 
 echo "========== Granting Relayer role in TunnelRouter =========="
 # Note: Some RPCs return non-standard responses that cast can't parse, but the tx still succeeds
-cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
+cast send $TUNNEL_ROUTER "grantRelayer(address[])" "[$RELAYER_ADDR]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG $GAS_LIMIT_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
 sleep 5
 
 if [ -n "$OPERATOR_ADDRESS" ]; then
     echo "========== Granting GasFeeUpdater role to operator =========="
-    cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
+    cast send $TUNNEL_ROUTER "grantGasFeeUpdater(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG $GAS_LIMIT_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
     sleep 5
 else
     echo "========== Skipping GasFeeUpdater role grant (OPERATOR_ADDRESS not set) =========="
@@ -122,6 +130,6 @@ fi
 echo "========== Sending initial balance to relayer(s) =========="
 for addr in $(echo $RELAYER_ADDR | tr ',' ' '); do
     echo "Sending balance to relayer $addr"
-    cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
+    cast send $addr --value $RELAYER_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG $GAS_LIMIT_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
     sleep 1
 done

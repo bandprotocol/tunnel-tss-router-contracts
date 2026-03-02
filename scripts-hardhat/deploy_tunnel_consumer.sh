@@ -22,6 +22,7 @@ export TUNNEL_ROUTER=
 export VAULT_BALANCE=1ether
 export OPERATOR_ADDRESS=
 export GAS_TYPE=eip1559
+GAS_LIMIT=
 
 # Bandchain
 export BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
@@ -31,6 +32,7 @@ export PRICE_INTERVAL=
 export PRICE_DEVIATION_JSON_FILE=
 export FEE_PAYER_BALANCE=
 export ENCODER_TYPE=
+export TUNNEL_CREATOR=
 
 export CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
 
@@ -39,6 +41,13 @@ if [ "$GAS_TYPE" == "legacy" ]; then
     GAS_FLAG="--legacy"
 else
     GAS_FLAG=""
+fi
+
+# Optional gas limit flag
+if [ -n "$GAS_LIMIT" ]; then
+    GAS_LIMIT_FLAG="--gas-limit $GAS_LIMIT"
+else
+    GAS_LIMIT_FLAG=
 fi
 
 # ================================================
@@ -84,7 +93,7 @@ if [ "$ENCODER_TYPE" == "tick" ]; then
     PACKET_CONSUMER_TYPE=tick
 
     echo "========== Listing signal IDs on PacketConsumerTick =========="
-    cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
+    cast send $PACKET_CONSUMER "listing(string[])" "[$SIGNAL_IDS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG $GAS_LIMIT_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
     sleep 5
 else
     echo "========== Deploying PacketConsumer contract =========="
@@ -110,21 +119,38 @@ echo "================================================"
 
 echo "========== Creating tunnel on BandChain =========="
 if [ "$ENCODER_TYPE" == "tick" ]; then
-    bandd tx tunnel create-tunnel tss \
-        $TARGET_CHAIN_ID $PACKET_CONSUMER 2 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
-        --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
-        -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
+    ENCODER_MODE=2
 else
-    bandd tx tunnel create-tunnel tss \
-    $TARGET_CHAIN_ID $PACKET_CONSUMER 1 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
-    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
-    -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
+    ENCODER_MODE=1
 fi
+
+bandd tx tunnel create-tunnel tss \
+    $TARGET_CHAIN_ID $PACKET_CONSUMER $ENCODER_MODE 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
+    --from ${TUNNEL_CREATOR:-$WALLET_NAME} --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
+    --generate-only --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL > temp.json
+
+TX_HASH=$(bandd tx authz exec temp.json \
+    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
+    -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL --output json | jq -r '.txhash // empty')
+echo "Transaction hash for tunnel creation: $TX_HASH"
+
+rm temp.json
 
 sleep 5
 
 echo "========== Querying TUNNEL_ID after creation =========="
-TUNNEL_ID=$(bandd q tunnel tunnels --page-count-total --page-limit 1 --output json --node $BANDCHAIN_RPC_URL | jq -r '.pagination.total')
+TUNNEL_ID=$(bandd q tx "$TX_HASH" --node $BANDCHAIN_RPC_URL --output json | jq -r '
+    [
+        (.events[]?.attributes[]? | select((.key | ascii_downcase | test("tunnel[_-]?id")) ) | .value)
+    ]
+    | map(select(. != null and . != ""))
+    | .[0] // empty
+')
+
+if [ -z "$TUNNEL_ID" ]; then
+    echo "Could not extract tunnel_id from tx response." >&2
+    exit 1
+fi
 
 echo "================================================"
 echo "TUNNEL_ID: $TUNNEL_ID is created" 
@@ -143,7 +169,7 @@ sleep 5
 
 if [ -n "$OPERATOR_ADDRESS" ]; then
     echo "========== Granting Tunnel Activator role to operator =========="
-    cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
+    cast send $PACKET_CONSUMER "grantTunnelActivatorRole(address[])" "[$OPERATOR_ADDRESS]" --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG $GAS_LIMIT_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
     sleep 5
 else
     echo "========== Skipping Tunnel Activator role grant (OPERATOR_ADDRESS not set) =========="
@@ -154,4 +180,4 @@ fi
 # ================================================
 
 echo "========== Activating tunnel $TUNNEL_ID on target chain via PacketConsumer =========="
-cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true
+cast send $PACKET_CONSUMER "activate(uint64,uint64)" $TUNNEL_ID 0 --value $VAULT_BALANCE --private-key $PRIVATE_KEY --rpc-url $RPC_URL $GAS_FLAG $GAS_LIMIT_FLAG 2>&1 | grep -E "(blockHash|transactionHash|Error: \()" || true

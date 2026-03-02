@@ -28,6 +28,7 @@ PRICE_INTERVAL=
 PRICE_DEVIATION_JSON_FILE=
 FEE_PAYER_BALANCE=
 ENCODER_TYPE=
+TUNNEL_CREATOR=
 
 CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
 
@@ -118,21 +119,38 @@ echo "================================================"
 
 echo "========== Creating tunnel on BandChain =========="
 if [ "$ENCODER_TYPE" == "tick" ]; then
-    bandd tx tunnel create-tunnel tss \
-        $TARGET_CHAIN_ID $PACKET_CONSUMER 2 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
-        --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
-        -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
+    ENCODER_MODE=2
 else
-    bandd tx tunnel create-tunnel tss \
-    $TARGET_CHAIN_ID $PACKET_CONSUMER 1 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
-    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
-    -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
+    ENCODER_MODE=1
 fi
+
+bandd tx tunnel create-tunnel tss \
+    $TARGET_CHAIN_ID $PACKET_CONSUMER $ENCODER_MODE 0uband $PRICE_INTERVAL $PRICE_DEVIATION_JSON_FILE \
+    --from ${TUNNEL_CREATOR:-$WALLET_NAME} --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
+    --generate-only --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL > temp.json
+
+TX_HASH=$(bandd tx authz exec temp.json \
+    --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
+    -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL --output json | jq -r '.txhash // empty')
+echo "Transaction hash for tunnel creation: $TX_HASH"
+
+rm temp.json
 
 sleep 5
 
 echo "========== Querying TUNNEL_ID after creation =========="
-TUNNEL_ID=$(bandd q tunnel tunnels --page-count-total --page-limit 1 --output json --node $BANDCHAIN_RPC_URL | jq -r '.pagination.total')
+TUNNEL_ID=$(bandd q tx "$TX_HASH" --node $BANDCHAIN_RPC_URL --output json | jq -r '
+    [
+        (.events[]?.attributes[]? | select((.key | ascii_downcase | test("tunnel[_-]?id")) ) | .value)
+    ]
+    | map(select(. != null and . != ""))
+    | .[0] // empty
+')
+
+if [ -z "$TUNNEL_ID" ]; then
+    echo "Could not extract tunnel_id from tx response." >&2
+    exit 1
+fi
 
 echo "================================================"
 echo "TUNNEL_ID: $TUNNEL_ID is created" 

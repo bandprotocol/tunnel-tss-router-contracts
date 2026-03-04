@@ -9,10 +9,12 @@ VAULT_PROXY=
 TSS_VERIFIER=
 PACKET_CONSUMER=
 PACKET_CONSUMER_PROXY=
+V2_PROXY=
 
-# Addresses to check - Update these with your deployer and new owner addresses
+# Addresses for checking
 OLD_DEPLOYER=
 NEW_OWNER=
+ACTIVATOR=
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -136,7 +138,7 @@ echo -e "${YELLOW}1. TunnelRouter (Proxy)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "Address: ${GREEN}$TUNNEL_ROUTER_PROXY${NC}"
 
-if [ "$TUNNEL_ROUTER_PROXY" != "0x0000000000000000000000000000000000000000" ]; then
+if [ -n "$TUNNEL_ROUTER_PROXY" ]; then
     # Check Proxy Admin Owner
     proxy_admin=$(get_proxy_admin "$TUNNEL_ROUTER_PROXY")
     if [ ! -z "$proxy_admin" ]; then
@@ -182,6 +184,10 @@ if [ "$TUNNEL_ROUTER_PROXY" != "0x0000000000000000000000000000000000000000" ]; t
     echo -n "    NEW OWNER:    "
     new_has_gas=$(has_role "$TUNNEL_ROUTER_PROXY" "$GAS_FEE_UPDATER_ROLE" "$NEW_OWNER")
     display_status "$new_has_gas" "true"
+    
+    echo -n "    ACTIVATOR:    "
+    activator_has_gas=$(has_role "$TUNNEL_ROUTER_PROXY" "$GAS_FEE_UPDATER_ROLE" "$ACTIVATOR")
+    display_status "$activator_has_gas" "true"
 else
     echo -e "   ${YELLOW}⚠ Address not set${NC}"
 fi
@@ -192,7 +198,7 @@ echo -e "${YELLOW}2. Vault (Proxy)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "Address: ${GREEN}$VAULT_PROXY${NC}"
 
-if [ "$VAULT_PROXY" != "0x0000000000000000000000000000000000000000" ]; then
+if [ -n "$VAULT_PROXY" ]; then
     # Check Proxy Admin Owner
     proxy_admin=$(get_proxy_admin "$VAULT_PROXY")
     if [ ! -z "$proxy_admin" ]; then
@@ -250,7 +256,7 @@ echo -e "${YELLOW}3. TSSVerifier${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "Address: ${GREEN}$TSS_VERIFIER${NC}"
 
-if [ "$TSS_VERIFIER" != "0x0000000000000000000000000000000000000000" ]; then
+if [ -n "$TSS_VERIFIER" ]; then
     owner=$(get_owner "$TSS_VERIFIER")
     echo -e "\n  ${BLUE}Owner (Ownable2Step):${NC} $owner"
     
@@ -285,7 +291,7 @@ echo -e "${YELLOW}4. PacketConsumer${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "Address: ${GREEN}$PACKET_CONSUMER${NC}"
 
-if [ "$PACKET_CONSUMER" != "0x0000000000000000000000000000000000000000" ]; then
+if [ -n "$PACKET_CONSUMER" ]; then
     # Check DEFAULT_ADMIN_ROLE
     echo -e "\n  ${BLUE}DEFAULT_ADMIN_ROLE:${NC}"
     DEFAULT_ADMIN_ROLE="0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -309,6 +315,10 @@ if [ "$PACKET_CONSUMER" != "0x0000000000000000000000000000000000000000" ]; then
     echo -n "    NEW OWNER:    "
     new_has_activator=$(has_role "$PACKET_CONSUMER" "$TUNNEL_ACTIVATOR_ROLE" "$NEW_OWNER")
     display_status "$new_has_activator" "true"
+
+    echo -n "    ACTIVATOR:    "
+    activator_has_activator=$(has_role "$PACKET_CONSUMER" "$TUNNEL_ACTIVATOR_ROLE" "$ACTIVATOR")
+    display_status "$activator_has_activator" "true"
 else
     echo -e "   ${YELLOW}⚠ Address not set${NC}"
 fi
@@ -319,8 +329,35 @@ echo -e "${YELLOW}5. PacketConsumerProxy${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "Address: ${GREEN}$PACKET_CONSUMER_PROXY${NC}"
 
-if [ "$PACKET_CONSUMER_PROXY" != "0x0000000000000000000000000000000000000000" ]; then
+if [ -n "$PACKET_CONSUMER_PROXY" ]; then
     owner=$(get_owner "$PACKET_CONSUMER_PROXY")
+    echo -e "\n  ${BLUE}Owner (Ownable):${NC} $owner"
+    
+    echo -n "    OLD DEPLOYER: "
+    if check_address "$owner" "$OLD_DEPLOYER"; then
+        display_status "true" "false"
+    else
+        display_status "false" "false"
+    fi
+    
+    echo -n "    NEW OWNER:    "
+    if check_address "$owner" "$NEW_OWNER"; then
+        display_status "true" "true"
+    else
+        display_status "false" "true"
+    fi
+else
+    echo -e "   ${YELLOW}⚠ Address not set${NC}"
+fi
+echo ""
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}6. V2 Proxy${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "Address: ${GREEN}$V2_PROXY${NC}"
+
+if [ -n "$V2_PROXY" ]; then
+    owner=$(get_owner "$V2_PROXY")
     echo -e "\n  ${BLUE}Owner (Ownable):${NC} $owner"
     
     echo -n "    OLD DEPLOYER: "

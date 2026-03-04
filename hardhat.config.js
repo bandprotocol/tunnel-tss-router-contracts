@@ -30,7 +30,8 @@ const config = {
   networks: {
     localhost: {
       url: process.env.RPC_URL,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      gas: process.env.GAS_LIMIT ? parseInt(process.env.GAS_LIMIT) : "auto",
     }
   }
 };

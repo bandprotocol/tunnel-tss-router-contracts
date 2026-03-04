@@ -164,10 +164,10 @@ echo "================================================"
 
 # transfer token to fee payer
 echo "========== Querying tunnel fee payer address =========="
-fee_payer=$(bandd q tunnel tunnel $TUNNEL_ID --node $BANDCHAIN_RPC_URL --output json | jq -r '.tunnel.fee_payer') 
+FEE_PAYER=$(bandd q tunnel tunnel $TUNNEL_ID --node $BANDCHAIN_RPC_URL --output json | jq -r '.tunnel.fee_payer') 
 
-echo "========== Transferring $FEE_PAYER_BALANCE to tunnel fee payer: $fee_payer =========="
-bandd tx bank send $WALLET_NAME $fee_payer $FEE_PAYER_BALANCE \
+echo "========== Transferring $FEE_PAYER_BALANCE to tunnel fee payer: $FEE_PAYER =========="
+bandd tx bank send $WALLET_NAME $FEE_PAYER $FEE_PAYER_BALANCE \
     --from $WALLET_NAME --keyring-backend $BANDCHAIN_KEYRING_BACKEND --gas-prices 0.0025uband \
      -y --chain-id $CHAIN_ID --node $BANDCHAIN_RPC_URL
 

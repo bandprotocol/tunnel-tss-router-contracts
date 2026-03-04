@@ -9,22 +9,22 @@ set -e
 echo "========== Setting environment variables =========="
 
 # Destination Chain
-EVM_VERSION=shanghai
-RPC_URL=
+export EVM_VERSION=shanghai
+export RPC_URL=
 export TARGET_CHAIN_ID=
-RELAYER_ADDR=
-RELAYER_BALANCE=
+export RELAYER_ADDR=
+export RELAYER_BALANCE=
 export GAS_TYPE=eip1559
 export PRIORITY_FEE=1wei
 export GAS_PRICE=
-GAS_LIMIT=
+export GAS_LIMIT=
 export REFUNDABLE=false
 export TRANSITION_PERIOD=172800
+export OPERATOR_ADDRESS=
 export ZKSYNC=false
-OPERATOR_ADDRESS=
 
 # Bandchain
-BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
+export BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
 
 echo "Getting SOURCE_CHAIN_ID from BandChain node $BANDCHAIN_RPC_URL ..."
 export SOURCE_CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')

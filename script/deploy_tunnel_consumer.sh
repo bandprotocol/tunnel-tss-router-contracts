@@ -10,27 +10,27 @@ set -e
 #       For non-refundable tunnels (router REFUNDABLE=false), funding is not needed.
 
 # Destination Chain
-EVM_VERSION=shanghai
-RPC_URL=
-TARGET_CHAIN_ID=
+export EVM_VERSION=shanghai
+export RPC_URL=
+export TARGET_CHAIN_ID=
 export TUNNEL_ROUTER=
-VAULT_BALANCE=
-OPERATOR_ADDRESS=
-GAS_TYPE=eip1559
-GAS_LIMIT=
-ZKSYNC=false
+export VAULT_BALANCE=
+export OPERATOR_ADDRESS=
+export GAS_TYPE=eip1559
+export GAS_LIMIT=
+export ZKSYNC=false
 
 # Bandchain
-BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
-WALLET_NAME=
-BANDCHAIN_KEYRING_BACKEND=
-PRICE_INTERVAL=
-PRICE_DEVIATION_JSON_FILE=
-FEE_PAYER_BALANCE=
-ENCODER_TYPE=
-TUNNEL_CREATOR=
+export BANDCHAIN_RPC_URL=https://rpc.laozi3.bandchain.org/
+export WALLET_NAME=
+export BANDCHAIN_KEYRING_BACKEND=
+export PRICE_INTERVAL=
+export PRICE_DEVIATION_JSON_FILE=
+export FEE_PAYER_BALANCE=
+export ENCODER_TYPE=
+export TUNNEL_CREATOR=
 
-CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
+export CHAIN_ID=$(bandd status --node $BANDCHAIN_RPC_URL --output json | jq -r '.node_info.network')
 
 if [ "$GAS_TYPE" == "legacy" ]; then
     GAS_TYPE_FLAG=--legacy
